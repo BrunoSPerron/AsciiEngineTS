@@ -1,0 +1,41 @@
+import { ChunkRecord } from "./ChunkRecord"
+import { Entity } from "./Entities/Entity"
+import type { Region } from "./Region"
+
+export class GlobalWorld {
+  regions = new Map<string, Region>()
+  chunksRecords = new Map<string, ChunkRecord>
+  entities = new Map<number, Entity>()
+
+  private nextId = 1
+
+  getChunkRecord(cx: number, cy: number) {
+    const key = `${cx},${cy}`
+
+    let chunk = this.chunksRecords.get(key)
+
+    if (!chunk) {
+      chunk = new ChunkRecord(cx, cy)
+      this.chunksRecords.set(key, chunk)
+    }
+
+    return chunk
+  }
+
+
+  spawnBaseEntity(glyph: string, x: number, y: number) {
+    const entity = new Entity(this.nextId++, glyph, x, y)
+    this.entities.set(entity.id, entity)
+    return entity
+  }
+
+  spawnEntity(entity: Entity) {
+    if (entity.id === -1)
+      entity.id = this.nextId++
+    this.entities.set(entity.id, entity)
+  }
+
+  update() {
+
+  }
+}
