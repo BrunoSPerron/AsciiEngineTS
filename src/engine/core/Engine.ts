@@ -8,10 +8,18 @@ export const STEP = 1000 / 32
 const MAX_FRAME_DELTA = 250
 const MAX_UPDATES_PER_FRAME = 8
 
-export class Engine {
+export class AsciiEngine {
+   // Unloaded world data
+   // WISHLIST Global World Simulation call in entity at interval
   globalWorld = new GlobalWorld()
+
+  // Rendered and simulated part of the world
   localWorld = new LocalWorld()
+
   renderer: Renderer
+
+  globalSimulationInterval = 500  // TODO settings
+  globalSimulationUpdateCounter: number;
 
   last = 0
   acc = 0
@@ -20,18 +28,35 @@ export class Engine {
   paused = false
   rafId = 0
 
+  private environmentReady = false
+
   constructor(root: HTMLDivElement) {
-    const playerUnit = new PlayerUnit(-1, "☺", 8, 8, 450)
+    root.classList.add("ascii-engine-host")
+    const gameContainer = document.createElement("div")
+    gameContainer.classList.add("ascii-engine")
+    root.appendChild(gameContainer)
+
+    //TEMPORARY camera target
+    const playerUnit = new PlayerUnit("☺", 8, 8, 450)
     this.localWorld.spawnEntity(playerUnit)
-    const camera = new Camera(root, playerUnit)
-    this.renderer = new Renderer(root, camera)
+
+    const camera = new Camera(gameContainer, playerUnit)
+    this.renderer = new Renderer(gameContainer, camera)
 
     document.addEventListener("visibilitychange", this.handleVisibility)
     window.addEventListener("resize", this.handleWindowState)
+
+    this.globalSimulationUpdateCounter = this.globalSimulationInterval;
+
   }
 
   start() {
-    this.resume()
+    document.fonts.ready.then(function() {
+      this.renderer.setTileHAndW();
+      this.environmentReady = true;
+      this.renderer.camera.jumpToTarget();
+      this.resume()
+    }.bind(this))
   }
 
   destroy() {
@@ -70,7 +95,7 @@ export class Engine {
 
     this.running = true
 
-    // reset timing to avoid giant delta after tab restore
+    // reset timing to avoid giant delta
     this.last = 0
     this.acc = 0
 
@@ -99,6 +124,7 @@ export class Engine {
 
   frame = (now: number) => {
     if (!this.running) return
+    if (!this.environmentReady) return
 
     if (this.last === 0) {
       this.last = now
@@ -107,24 +133,26 @@ export class Engine {
     let deltaTime = now - this.last
     this.last = now
 
-    if (deltaTime > MAX_FRAME_DELTA) {
-      deltaTime = MAX_FRAME_DELTA
-    }
+    if (!this.paused) {
+      if (deltaTime > MAX_FRAME_DELTA) {
+        deltaTime = MAX_FRAME_DELTA
+      }
 
-    this.acc += deltaTime
-    let updates = 0
+      this.acc += deltaTime
+      let updates = 0
 
-    while (
-      this.acc >= STEP &&
-      updates < MAX_UPDATES_PER_FRAME
-    ) {
-      this.update()
-      this.acc -= STEP
-      updates++
-    }
+      while (
+        this.acc >= STEP &&
+        updates < MAX_UPDATES_PER_FRAME
+      ) {
+        this.update(deltaTime)
+        this.acc -= STEP
+        updates++
+      }
 
-    if (updates === MAX_UPDATES_PER_FRAME) {
-      this.acc = 0
+      if (updates === MAX_UPDATES_PER_FRAME) {
+        this.acc = 0
+      }
     }
 
     const removedEntitiesIds: Array<number> = this.renderer.render(this.localWorld, deltaTime)
@@ -132,15 +160,20 @@ export class Engine {
     for (const entityId of removedEntitiesIds) {
       const entity = this.localWorld.extractEntity(entityId)
       if (entity !== null) {
-        this.globalWorld
+        this.globalWorld //TODO move extracted unit/chunk to global world
+        entity.OnUnload()
       }
       delete this.localWorld.entities[entityId]
     }
-
     this.rafId = requestAnimationFrame(this.frame)
   }
 
-  update() {
+  update(deltaTime: number) {
     this.localWorld.update()
+    this.globalSimulationUpdateCounter -= deltaTime
+    if (this.globalSimulationUpdateCounter <= 0) {
+      this.globalWorld.update()
+      this.globalSimulationUpdateCounter += this.globalSimulationInterval;
+    }
   }
 }

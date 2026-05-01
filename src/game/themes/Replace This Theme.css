@@ -1,0 +1,39 @@
+/*
+This css file is loaded when the style is selected
+Note that it'll affect the whole page so all css here should start with '.ascii-engine' unless you want the style to affect non-engine elements
+This'll extend and overrides the css defined in ./engine/render/css/base.css
+*/
+
+.ascii-engine {
+  --color-bg: #0A174E;
+  --color-text: #F5D042;
+
+  /*
+  --ui-bg: var(--color-bg);
+  --ui-text: var(--color-text);
+
+  --selected-bg: var(--color-text);
+  --selected-text: var(--color-bg);
+  */
+}
+
+.ascii-engine .layer-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  
+  background:
+    radial-gradient(circle, #F5D04255 0 1px, transparent 2px) 0 0 / 24px 24px,
+    radial-gradient(circle, #F5D04230 0 1px, transparent 2px) 12px 12px / 24px 24px;
+
+  animation: glitter 1.5s linear infinite;
+}
+
+@keyframes glitter {
+  50% {
+    opacity: 0.25;
+  }
+  100% {
+    top: -24px;
+  }
+}

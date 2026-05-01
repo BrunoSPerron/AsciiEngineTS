@@ -16,13 +16,11 @@ export class Entity {
   nextAction: number
 
   constructor(
-      id: number,
       glyph: string,
       x: number,
       y: number,
       moveSpeed: number = 0,
     ) {
-    this.id = id
     this.glyph = glyph
     
     this.x = x
@@ -41,14 +39,6 @@ export class Entity {
     return this._moveSpeed
   }
 
-  public get visualPosition(): Array<number> {
-    let alpha = 1 - this.nextAction / this.moveSpeed
-    return [
-      lerp(this.prevX, this.x, alpha),
-      lerp(this.prevY, this.y, alpha)
-    ]
-  }
-
   public set moveSpeed(value: number) {
     if (value >= 10) {
       this._moveSpeed = value
@@ -57,8 +47,24 @@ export class Entity {
     }
   }
 
+  public get visualPosition(): Array<number> {
+    let alpha = 1 - this.nextAction / this.moveSpeed
+    return [
+      lerp(this.prevX, this.x, alpha),
+      lerp(this.prevY, this.y, alpha)
+    ]
+  }
+
+  OnLoad() {
+    
+  }
+
+  OnUnload() {
+    
+  }
+
   /**
-   * @returns time until the next action, in ms
+   * @returns time until the next action, in milliseconds
    */
   act(_world: LocalWorld): number {
     this.prevX = this.x

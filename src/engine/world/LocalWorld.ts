@@ -38,15 +38,16 @@ export class LocalWorld {
   }
 
   spawnBaseEntity(glyph: string, x: number, y: number) {
-    const entity = new Entity(this.nextId++, glyph, x, y)
-    this.entities.set(entity.id, entity)
+    const entity = new Entity(glyph, x, y)
+    entity.uid = this.nextId++
+    this.entities.set(entity.uid, entity)
     return entity
   }
 
   spawnEntity(entity: Entity) {
-    if (entity.id === -1)
-      entity.id = this.nextId++
-    this.entities.set(entity.id, entity)
+    if (entity.uid === -1)
+      entity.uid = this.nextId++
+    this.entities.set(entity.uid, entity)
   }
 
   update() {

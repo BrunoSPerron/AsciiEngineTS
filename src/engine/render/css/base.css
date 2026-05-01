@@ -1,0 +1,86 @@
+.ascii-engine-host {
+  position: fixed !important;
+  inset: 0px ! important;
+}
+
+.ascii-engine {
+  
+  --color-bg: #222;
+  --color-text: #bbb;
+
+  --ui-bg: var(--color-bg);
+  --ui-text: var(--color-text);
+
+  --selected-bg: var(--color-text);
+  --selected-text: var(--color-bg);
+
+  --font-size: 18px;
+  --line-height: 18px;
+
+  position: absolute;
+  box-sizing: border-box;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+
+  font-family: monospace;
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  letter-spacing: 0 !important;
+  text-align: left;
+}
+
+.ascii-engine.default {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ascii-engine .ui {
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+}
+
+.ascii-engine .ui .selectable:hover,
+.ascii-engine .ui .selectable.selected {
+  background-color: var(--selected-bg);
+  color: var(--selected-text);
+}
+
+.ascii-engine .ui .selectable {
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.ascii-engine {
+  position: relative;
+}
+
+.ascii-engine .layer {
+  position: absolute;
+  inset: 0;
+  /*
+  TODO make ui works with and use for zoom
+  */
+  transform: scale(1)
+}
+
+.ascii-engine .chunk {
+  position: absolute;
+  white-space: pre;
+}
+
+.ascii-engine .actor {
+  position: absolute;
+  background-color: var(--color-bg)
+}
+
+.ascii-engine .ui-node.ui-line {
+  font-weight: 100;
+}
+
+.ascii-engine .ui-panel {
+  padding: 4px;
+  left: -2px;
+  top: -2px;
+}

@@ -1,34 +1,68 @@
 import { CHUNK_SIZE } from "../world/Chunk"
 import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "./Camera"
-import { Stylizer } from "./Stylizer"
+import { RendererUI } from "./RendererUI"
+import { ThemeManager } from "./ThemeManager"
 
-export const TILE_W = 10
-export const TILE_H = 18
+import baseCssUrl from "./css/base.css?url"
 
-const PALETTE = "copper_caves"
+export let TileMetrics = {
+  w: 19.90625,
+  h: 18
+}
 
 export class Renderer {
   root: HTMLElement
 
   camera: Camera
-  stylizer: Stylizer = new Stylizer()
+  themeManager: ThemeManager
 
   bg: HTMLDivElement
   actors: HTMLDivElement
   ui: HTMLDivElement
+  uiLayer: RendererUI
 
   actorEls = new Map<number, HTMLDivElement>()
   chunkEls = new Map<string, HTMLPreElement>()
 
   constructor(root: HTMLElement, camera: Camera) {
     this.root = root
-    this.stylizer.setStyleOn(root, PALETTE)
+    this.root.classList.add("default")
+    const link = document.createElement("link")
+    link.rel = "stylesheet"
+    link.href = baseCssUrl
+    document.head.appendChild(link)
+
+    this.themeManager = new ThemeManager()
+
     this.camera = camera
 
     this.bg = this.makeLayer()
     this.actors = this.makeLayer()
     this.ui = this.makeLayer()
+    this.uiLayer = new RendererUI(this.ui)
+  }
+
+  setTileHAndW() {
+    const span = document.createElement("span")
+    span.style.visibility = "hidden"
+    span.style.whiteSpace = "pre"
+    span.style.position = "absolute"
+    span.style.left = "0"
+    span.style.top = "0"
+    span.style.padding = "0"
+    span.style.border = "0"
+    span.style.margin = "0"
+    span.style.transform = "none"
+    span.style.scale = "1"
+    span.textContent = "M"
+
+    this.root.appendChild(span)
+
+    TileMetrics.w = span.getBoundingClientRect().width
+    TileMetrics.h = span.getBoundingClientRect().height
+
+    span.remove()
   }
 
   private makeLayer() {
@@ -90,8 +124,8 @@ export class Renderer {
         }
 
         el.style.transform = `translate(
-          ${cx * CHUNK_SIZE * TILE_W - camera.x * TILE_W}px,
-          ${cy * CHUNK_SIZE * TILE_H - camera.y * TILE_H}px
+          ${cx * CHUNK_SIZE * TileMetrics.w - camera.x * TileMetrics.w}px,
+          ${cy * CHUNK_SIZE * TileMetrics.h - camera.y * TileMetrics.h}px
         )`
       }
     }
@@ -129,20 +163,20 @@ export class Renderer {
       const key = `${cx},${cy}`
 
       if (!visibleChunks.has(key)) {
-        const existing = this.actorEls.get(entity.id)
+        const existing = this.actorEls.get(entity.uid)
 
         if (existing) {
           existing.remove()
-          this.actorEls.delete(entity.id)
-          removed.push(entity.id)
+          this.actorEls.delete(entity.uid)
+          removed.push(entity.uid)
         }
 
         continue
       }
 
-      seen.add(entity.id)
+      seen.add(entity.uid)
 
-      let el = this.actorEls.get(entity.id)
+      let el = this.actorEls.get(entity.uid)
 
       if (!el) {
         el = document.createElement("div")
@@ -150,14 +184,12 @@ export class Renderer {
         el.textContent = entity.glyph
 
         this.actors.appendChild(el)
-        this.actorEls.set(entity.id, el)
-
-        this.stylizer.setStyleOn(el, PALETTE)
+        this.actorEls.set(entity.uid, el)
       }
 
       el.style.transform = `translate(
-        ${pos[0] * TILE_W - camera.x * TILE_W}px,
-        ${pos[1] * TILE_H - camera.y * TILE_H}px
+        ${pos[0] * TileMetrics.w - camera.x * TileMetrics.w}px,
+        ${pos[1] * TileMetrics.h - camera.y * TileMetrics.h}px
       )`
     }
 
