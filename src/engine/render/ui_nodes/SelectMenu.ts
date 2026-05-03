@@ -1,21 +1,15 @@
 import type { InputManager } from "../../core/InputManager"
 import type { RendererUI } from "../RendererUI"
-import { TileMetrics } from "../Renderer"
+import { TileMetrics } from "../TileMetrics"
+import { UIPanel } from "./UIPanel"
 
-export class SelectMenu {
-  private rendererUI: RendererUI
-  private inputManager: InputManager
-
-  private menuBoxId: number = -1
+export class SelectMenu extends UIPanel {
   private itemEls: HTMLDivElement[] = []
   private currentIndex: number = 0
-
-  private openingPromise: Promise<void> = Promise.resolve()
   private resolve!: (index: number) => void
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
-    this.rendererUI = rendererUI
-    this.inputManager = inputManager
+    super(rendererUI, inputManager)
   }
 
   open(
@@ -49,11 +43,10 @@ export class SelectMenu {
     return new Promise<number>(resolve => {
       this.resolve = resolve
 
-      this.openingPromise = this.rendererUI.animatedMenuBoxOpening(
-        x, y, w, h, void 0, container
-      ).then(id => {
-        this.menuBoxId = id
-      })
+      this.openingPromise = this.openBox(x, y, w, h, undefined, container)
+        .then(id => {
+          this.menuBoxId = id
+        })
     })
   }
 
@@ -82,17 +75,17 @@ export class SelectMenu {
       switch (e.key) {
         case "ArrowUp":
         case "w":
-          this.move(-1, wraparound);
+          this.move(-1, wraparound)
           break
         case "ArrowDown":
         case "s":
-          this.move(+1, wraparound);
+          this.move(+1, wraparound)
           break
-        case "Enter": 
-          this.close(this.currentIndex);
+        case "Enter":
+          this.close(this.currentIndex)
           break
         case "Escape":
-          this.close(-1);
+          this.close(-1)
           break
       }
     })
@@ -100,10 +93,8 @@ export class SelectMenu {
 
   private close(index: number) {
     this.inputManager.popContext("select_menu")
-    this.openingPromise.then(() => {
-      this.rendererUI.animatedMenuBoxClosing(this.menuBoxId).then(() => {
-        this.resolve(index)
-      })
+    this.closeBox().then(() => {
+      this.resolve(index)
     })
   }
 }

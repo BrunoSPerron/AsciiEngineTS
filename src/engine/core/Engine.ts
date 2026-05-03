@@ -1,10 +1,10 @@
 import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "../render/Camera"
-import { Renderer, TileMetrics } from "../render/Renderer"
 import { PlayerUnit } from "../world/entities/PlayerUnit"
 import { GlobalWorld } from "../world/GlobalWorld"
 import { InputManager } from "./InputManager"
-import { Entity } from "../world/entities/Entity"
+import { Renderer } from "../render/Renderer"
+import { TileMetrics } from "../render/TileMetrics"
 
 export const STEP = 1000 / 32
 const MAX_FRAME_DELTA = 250
@@ -60,15 +60,22 @@ export class AsciiEngine {
       const uiLayer = this.renderer.uiLayer
 
       this.inputManager.onKeyDown((e) => {
+        let options
         switch (e.key) {
           case "Escape":
-            const options = ["Test", "Test2", "Palette"]
+            options = ["Test", "Test2", "Palette"]
             uiLayer.showSelectMenu(10, 10, options).then((selected: number) => {
-            console.log(selected);
-          })
-          break;
-        default:
-          break;
+              console.log(selected);
+            })
+            break;
+          case "e":
+            options = ["Test", "Test2", "Palette"]
+            uiLayer.showRollerMenu(10, 10, options).then((selected: number) => {
+              console.log(selected);
+            })
+          break
+          default:
+            break;
         }
       })
 

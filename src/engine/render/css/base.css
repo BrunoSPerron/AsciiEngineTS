@@ -92,3 +92,19 @@
   padding: 4px;
   inset: -4px;
 }
+
+/* ── Roller menu ─────────────────────────────────────── */
+
+.ascii-engine .ui-roller {
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+  transition: opacity 0.1s;
+}
+
+.ascii-engine .ui-roller.fade-low {
+  opacity: 0.45;
+}
+
+.ascii-engine .ui-roller.fade-high {
+  opacity: 0.2;
+}

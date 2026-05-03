@@ -1,6 +1,8 @@
 import type { InputManager } from "../core/InputManager"
-import { TileMetrics } from "./Renderer"
+import { TileMetrics } from "./TileMetrics"
+import { UINode, type UIKind } from "./ui_nodes/UINode"
 import { SelectMenu } from "./ui_nodes/SelectMenu"
+import { RollerMenu } from "./ui_nodes/RollerMenu"
 
 /**
  * Maps a line mask to its box-drawing glyph.
@@ -52,31 +54,12 @@ const LINE_GLYPHS: Record<number, string> = {
   0b11111: "╬",
 }
 
-type UIKind =
-  | "text"
-  | "hline"
-  | "vline"
-  | "panel"
-
 type CellRef = {
   nodeId: number
   index: number
 }
 
-type UINode = {
-  id: number
-  kind: UIKind
-  el: HTMLDivElement
-
-  x: number
-  y: number
-  w: number
-  h: number
-
-  chars: string[]
-}
-
-type UIMenuBox = {
+export type UIMenuBox = {
   id: number
   topId: number
   bottomId: number
@@ -154,7 +137,7 @@ export class RendererUI {
 
         topNode.chars[0] = "╠"
         topNode.chars[topNode.chars.length - 1] = "╣"
-        this.refreshText(topNode)
+        topNode.refreshText()
 
         const phase2Anim = this.animateHorizontalCollapse(topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO)
 
@@ -266,7 +249,7 @@ export class RendererUI {
     return this.renderLineRun(x, y, w, "hline")
   }
 
- drawVLine(
+  drawVLine(
     x: number,
     y: number,
     h: number,
@@ -322,7 +305,7 @@ export class RendererUI {
     node.x = x
     node.y = y
 
-    this.applyTransform(node)
+    node.applyTransform()
 
     this.registerNode(node)
   }
@@ -354,7 +337,7 @@ export class RendererUI {
 
     node.chars[ref.index] = glyph
 
-    this.refreshText(node)
+    node.refreshText()
 
     return true
   }
@@ -373,6 +356,16 @@ export class RendererUI {
 
     return new SelectMenu(this, this.inputManager)
       .open(x, y, w, h, items, paddingX, paddingY, wraparound)
+  }
+
+  showRollerMenu(
+    x: number,
+    y: number,
+    items: string[],
+    paddingX = 1
+  ): Promise<number> {
+    return new RollerMenu(this, this.inputManager)
+      .open(x, y, items, paddingX)
   }
 
   // ==================================================
@@ -629,7 +622,7 @@ export class RendererUI {
     chars: string[]
   ): UINode {
     const el = document.createElement("div")
-    
+
     let clsName = "ui ui-node"
     if (kind === "vline" || kind === "hline") {
       clsName += " ui-line"
@@ -639,15 +632,11 @@ export class RendererUI {
 
     el.style.position = "absolute"
     el.style.whiteSpace = "pre"
-    el.style.willChange =
-      "transform, opacity"
+    el.style.willChange = "transform, opacity"
 
-    const node: UINode = {
-      id: this.nextId++,
-      kind, el, x, y, w, h, chars
-    }
+    const node = new UINode(this.nextId++, kind, el, x, y, w, h, chars)
 
-    this.applyTransform(node)
+    node.applyTransform()
 
     this.root.appendChild(el)
     this.nodes.set(node.id, node)
@@ -655,27 +644,7 @@ export class RendererUI {
     return node
   }
 
-  private applyTransform(node: UINode) {
-    node.el.style.transform =
-      `translate(${node.x * TileMetrics.w}px, ${node.y * TileMetrics.h}px)`
-  }
-
-  private refreshText(node: UINode) {
-    if (node.kind === "vline") {
-      node.el.textContent = node.chars.join("\n")
-      return
-    }
-
-    node.el.textContent = node.chars.join("")
-  }
-
-  // ==================================================
-  // CELL REGISTRATION
-  // ==================================================
-
-  private registerNode(
-    node: UINode
-  ) {
+  private registerNode(node: UINode) {
     switch (node.kind) {
       case "text":
       case "hline":
@@ -692,9 +661,7 @@ export class RendererUI {
     }
   }
 
-  private unregisterNode(
-    node: UINode
-  ) {
+  private unregisterNode(node: UINode) {
     for (let yy = node.y; yy < node.y + node.h; yy++) {
       for (let xx = node.x; xx < node.x + node.w; xx++) {
         const key = this.key(xx, yy)
@@ -711,10 +678,7 @@ export class RendererUI {
     for (let i = 0; i < node.w; i++) {
       this.cells.set(
         this.key(node.x + i, node.y),
-        {
-          nodeId: node.id,
-          index: i
-        }
+        { nodeId: node.id, index: i }
       )
     }
   }
@@ -723,10 +687,7 @@ export class RendererUI {
     for (let i = 0; i < node.h; i++) {
       this.cells.set(
         this.key(node.x, node.y + i),
-        {
-          nodeId: node.id,
-          index: i
-        }
+        { nodeId: node.id, index: i }
       )
     }
   }
@@ -736,10 +697,7 @@ export class RendererUI {
       for (let xx = 0; xx < node.w; xx++) {
         this.cells.set(
           this.key(node.x + xx, node.y + yy),
-          {
-            nodeId: node.id,
-            index: -1
-          }
+          { nodeId: node.id, index: -1 }
         )
       }
     }

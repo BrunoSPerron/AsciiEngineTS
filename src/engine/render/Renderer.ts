@@ -4,13 +4,9 @@ import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "./Camera"
 import { RendererUI } from "./RendererUI"
 import { ThemeManager } from "./ThemeManager"
+import { TileMetrics } from "./TileMetrics.ts"
 
 import baseCssUrl from "./css/base.css?url"
-
-export let TileMetrics = {
-  w: 19.90625,
-  h: 18
-}
 
 export class Renderer {
   root: HTMLElement
