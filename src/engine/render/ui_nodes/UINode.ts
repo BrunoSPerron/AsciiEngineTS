@@ -43,7 +43,7 @@ export class UINode {
       `translate(${this.x * TileMetrics.w}px, ${this.y * TileMetrics.h}px)`
   }
 
-  refreshText() {
+  refresh() {
     if (this.kind === "vline") {
       this.el.textContent = this.chars.join("\n")
       return
