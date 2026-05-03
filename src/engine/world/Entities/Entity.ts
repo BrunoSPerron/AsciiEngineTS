@@ -3,7 +3,7 @@ import { lerp } from "../../util/math"
 import type { LocalWorld } from "../LocalWorld"
 
 export class Entity {
-  id: number
+  uid: number
   glyph: string
 
   x: number
@@ -12,7 +12,7 @@ export class Entity {
   prevX: number
   prevY: number
 
-  protected _moveSpeed: number
+  private _moveSpeed: number
   nextAction: number
 
   constructor(

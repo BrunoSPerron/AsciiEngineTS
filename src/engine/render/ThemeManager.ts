@@ -13,7 +13,7 @@ export class ThemeManager {
     document.head.appendChild(this.link)
 
     this.registerAllThemes()
-    this.set("Copper")
+    this.set("Violet")
   }
 
   register(name: string, path: string) {

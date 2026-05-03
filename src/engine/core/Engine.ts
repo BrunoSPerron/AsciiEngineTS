@@ -9,11 +9,10 @@ const MAX_FRAME_DELTA = 250
 const MAX_UPDATES_PER_FRAME = 8
 
 export class AsciiEngine {
-   // Unloaded world data
-   // WISHLIST Global World Simulation call in entity at interval
+   // Unloaded world data, world simulation called at interval
   globalWorld = new GlobalWorld()
 
-  // Rendered and simulated part of the world
+  // Rendered and fully simulated part of the world
   localWorld = new LocalWorld()
 
   renderer: Renderer
@@ -37,7 +36,7 @@ export class AsciiEngine {
     root.appendChild(gameContainer)
 
     //TEMPORARY camera target
-    const playerUnit = new PlayerUnit("☺", 8, 8, 450)
+    const playerUnit = new PlayerUnit("☺", 8, 8, 250)
     this.localWorld.spawnEntity(playerUnit)
 
     const camera = new Camera(gameContainer, playerUnit)
@@ -47,7 +46,6 @@ export class AsciiEngine {
     window.addEventListener("resize", this.handleWindowState)
 
     this.globalSimulationUpdateCounter = this.globalSimulationInterval;
-
   }
 
   start() {
@@ -55,6 +53,24 @@ export class AsciiEngine {
       this.renderer.setTileHAndW();
       this.environmentReady = true;
       this.renderer.camera.jumpToTarget();
+
+
+      // TEST
+      const div: HTMLDivElement = document.createElement('div');
+      div.style.width = '100%';
+      div.style.height = '100%';
+      div.style.backgroundImage = 'url("https://picsum.photos/160/300")';
+      div.style.backgroundSize = '100%';
+      const uiLayer = this.renderer.uiLayer
+
+      uiLayer.animatedMenuBoxOpening(
+        10, 10, 10, 10, 1000, div
+      ).then((uid: number) => {
+        uiLayer.animatedMenuBoxClosing(uid);
+      })
+
+
+
       this.resume()
     }.bind(this))
   }

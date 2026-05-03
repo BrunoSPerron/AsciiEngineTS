@@ -1,5 +1,55 @@
 import { TileMetrics } from "./Renderer"
 
+/**
+ * Maps a line mask to its box-drawing glyph.
+ * Mask bits: top right bottom left double
+ */
+const LINE_GLYPHS: Record<number, string> = {
+  0b00000: " ",
+  0b00001: " ",
+
+  0b01010: "─",
+  0b00010: "─",
+  0b01000: "─",
+  0b01011: "═",
+  0b00011: "═",
+  0b01001: "═",
+
+  0b10100: "│",
+  0b00100: "│",
+  0b10000: "│",
+  0b10101: "║",
+  0b00101: "║",
+  0b10001: "║",
+
+  0b01100: "┌",
+  0b01101: "╔",
+
+  0b00110: "┐",
+  0b00111: "╗",
+
+  0b11000: "└",
+  0b11001: "╚",
+
+  0b10010: "┘",
+  0b10011: "╝",
+
+  0b11100: "├",
+  0b11101: "╠",
+
+  0b10110: "┤",
+  0b10111: "╣",
+
+  0b11010: "┴",
+  0b11011: "╩",
+
+  0b01110: "┬",
+  0b01111: "╦",
+
+  0b11110: "┼",
+  0b11111: "╬",
+}
+
 type UIKind =
   | "text"
   | "hline"
@@ -24,6 +74,15 @@ type UINode = {
   chars: string[]
 }
 
+type UIMenuBox = {
+  id: number
+  topId: number
+  bottomId: number
+  leftId: number
+  rightId: number
+  panelId: number
+}
+
 const TOP    = 0b10000
 const RIGHT  = 0b01000
 const BOTTOM = 0b00100
@@ -33,11 +92,15 @@ const DOUBLE = 0b00001
 export class RendererUI {
   root: HTMLDivElement
 
+  private static readonly PHASE1_RATIO = 0.55
+  private static readonly PHASE2_RATIO = 0.45
+
   private nextId = 1
 
   nodes = new Map<number, UINode>()
+  menuBoxes = new Map<number, UIMenuBox>()
   cells = new Map<string, CellRef>()
-  lineMasks = new Map<string, number>() // mask used to link the lines
+  lineMasks = new Map<string, number>() // Mask used to link ui lines
 
   constructor(root: HTMLDivElement) {
     this.root = root
@@ -53,24 +116,84 @@ export class RendererUI {
     this.cells.clear()
   }
 
-  animatedMenuBoxOpening(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
+  animatedMenuBoxClosing(
+    id: number,
     duration = 960
-  ): number[] {
+  ): Promise<void> {
+    const menuBox = this.menuBoxes.get(id)
+    if (!menuBox) return Promise.resolve()
+
+    const topNode    = this.nodes.get(menuBox.topId)!
+    const bottomNode = this.nodes.get(menuBox.bottomId)!
+    const leftNode   = this.nodes.get(menuBox.leftId)!
+    const rightNode  = this.nodes.get(menuBox.rightId)!
+    const panelNode  = this.nodes.get(menuBox.panelId)!
+
+    const midY = topNode.y + (bottomNode.y - topNode.y) / 2
+    const x    = topNode.x
+
+    return new Promise(resolve => {
+      // Phase 1: sides + panel collapse inward, top/bottom converge to midY
+      const phase1Duration = duration * RendererUI.PHASE1_RATIO
+
+      for (const node of [leftNode, rightNode, panelNode]) {
+        this.animateVerticalClipCollapse(node.el, node.x, node.y, phase1Duration)
+      }
+
+      this.animateVerticalSlide(topNode.el, x, topNode.y, midY, phase1Duration, "ease-in")
+
+      const bottomAnim = this.animateVerticalSlide(bottomNode.el, x, bottomNode.y, midY, phase1Duration, "ease-in")
+
+      // Phase 2: top bar clips back to nothing, then everything is removed
+      bottomAnim.onfinish = () => {
+        bottomNode.el.style.display = "none"
+
+        topNode.chars[0] = "╠"
+        topNode.chars[topNode.chars.length - 1] = "╣"
+        this.refreshText(topNode)
+
+        const phase2Anim = this.animateHorizontalCollapse(topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO)
+
+        phase2Anim.onfinish = () => {
+          this.remove(menuBox.topId)
+          this.remove(menuBox.bottomId)
+          this.remove(menuBox.leftId)
+          this.remove(menuBox.rightId)
+          this.remove(menuBox.panelId)
+          this.menuBoxes.delete(id)
+          resolve()
+        }
+      }
+    })
+  }
+
+  animatedMenuBoxOpening(
+    x: number, y: number, w: number, h: number,
+    duration = 1000, content?: HTMLDivElement
+  ): Promise<number> {
     const midY = y + h / 2
 
     const leftId = this.drawVLine(x, y + 1, h - 2, true)
     const rightId = this.drawVLine(x + w - 1, y + 1, h - 2, true)
+    const topId = this.drawHLine(x, y, w, true)
+    const bottomId = this.drawHLine(x, y + h - 1, w, true)
+    const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2, content)
+
     const leftNode = this.nodes.get(leftId)!
     const rightNode = this.nodes.get(rightId)!
-
-    const topId = this.drawHLine(x, y, w, true)
     const topNode = this.nodes.get(topId)!
-    const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2)
+    const bottomNode = this.nodes.get(bottomId)!
     const backgroundPanelNode = this.nodes.get(backgroundPanelId)!
+
+    const menuBox: UIMenuBox = {
+      id: this.nextId++,
+      topId,
+      bottomId,
+      leftId,
+      rightId,
+      panelId: backgroundPanelId,
+    }
+    this.menuBoxes.set(menuBox.id, menuBox)
 
     for (const node of [leftNode, rightNode, backgroundPanelNode]) {
       node.el.style.transformOrigin = "50% 50%"
@@ -78,93 +201,33 @@ export class RendererUI {
     }
 
     topNode.el.style.clipPath = "inset(0 50% 0 50%)"
+    bottomNode.el.style.display = "none"
 
     this.setSymbolAt(x, y, "╠")
     this.setSymbolAt(x + w - 1, y, "╣")
-    const topAnim = topNode.el.animate(
-      [
-        {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
-          clipPath: "inset(0 50% 0 50%)"
-        },
-        {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
-          clipPath: "inset(0 0 0 0)"
-        }
-      ],
-      {
-        duration: duration * 0.45,
-        easing: "ease-out",
-        fill: "forwards"
+    const topAnim = this.animateHorizontalExpand(topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO)
+
+    return new Promise(resolve => {
+      topAnim.onfinish = () => {
+        this.reconcileAt(x, y)
+        this.reconcileAt(x + w - 1, y)
+
+        backgroundPanelNode.el.style.setProperty("z-index", "-1");
+
+        this.animateVerticalSlide(topNode.el, x, midY, y, duration * RendererUI.PHASE1_RATIO)
+
+        bottomNode.el.style.display = "block"
+        this.animateVerticalSlide(bottomNode.el, x, midY, y + h - 1, duration * RendererUI.PHASE1_RATIO)
+
+        const phase2Anims = [leftNode, rightNode, backgroundPanelNode].map(node => {
+          node.el.style.transformOrigin = "50% 50%"
+          node.el.style.clipPath = "inset(50% 0 50% 0)"
+          return this.animateVerticalClipReveal(node.el, node.x, node.y, duration * RendererUI.PHASE1_RATIO)
+        })
+
+        Promise.all(phase2Anims.map(anim => anim.finished)).then(() => resolve(menuBox.id))
       }
-    )
-
-    topAnim.onfinish = () => {
-      const bottomId = this.drawHLine(x, y + h - 1, w, true)
-      const bottomNode = this.nodes.get(bottomId)!
-
-      this.reconcileAt(x, y)
-      this.reconcileAt(x + w - 1, y)
-
-      backgroundPanelNode.el.style.setProperty("z-index", "-1");
-
-      topNode.el.animate(
-        [
-          {
-            transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`
-          },
-          {
-            transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`
-          }
-        ],
-        {
-          duration: duration * 0.55,
-          easing: "ease-out",
-          fill: "forwards"
-        }
-      )
-
-      bottomNode.el.animate(
-        [
-          {
-            transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`
-          },
-          {
-            transform: `translate(${x * TileMetrics.w}px, ${(y + h - 1) * TileMetrics.h}px)`
-          }
-        ],
-        {
-          duration: duration * 0.55,
-          easing: "ease-out",
-          fill: "forwards"
-        }
-      )
-
-      for (const node of [leftNode, rightNode, backgroundPanelNode]) {
-        node.el.style.transformOrigin = "50% 50%"
-        node.el.style.clipPath = "inset(50% 0 50% 0)"
-
-        node.el.animate(
-          [
-            {
-              transform: `translate(${node.x * TileMetrics.w}px, ${node.y * TileMetrics.h}px)`,
-              clipPath: "inset(50% 0 50% 0)"
-            },
-            {
-              transform: `translate(${node.x * TileMetrics.w}px, ${node.y * TileMetrics.h}px)`,
-              clipPath: "inset(0 0 0 0)"
-            }
-          ],
-          {
-            duration: duration * 0.55,
-            easing: "ease-out",
-            fill: "forwards"
-          }
-        )
-      }
-    }
-
-    return [topId]
+    })
   }
 
   drawText(x: number, y: number, text: string): number {
@@ -226,12 +289,16 @@ export class RendererUI {
     return this.renderLineColumn(x, y, h)
   }
 
-  drawPanel(x: number, y: number, w: number, h: number): number {
+  drawPanel(x: number, y: number, w: number, h: number, content?: HTMLDivElement): number {
     const node = this.createNode("panel", x, y, w, h, [])
 
     node.el.className = "ui ui-panel"
     node.el.style.width = `${w * TileMetrics.w}px`
     node.el.style.height = `${h * TileMetrics.h}px`
+
+    if (content) {
+      node.el.appendChild(content)
+    }
 
     this.registerRectCells(node)
 
@@ -286,6 +353,151 @@ export class RendererUI {
     this.refreshText(node)
 
     return true
+  }
+
+  // ==================================================
+  // ANIMATION HELPERS
+  // ==================================================
+
+  /**
+   * Phase 1 of the menu box opening:
+   *    Reveal horizontally from center outward, staying at midY.
+   */
+  private animateHorizontalExpand(
+    el: HTMLElement,
+    x: number,
+    midY: number,
+    duration: number
+  ): Animation {
+    return el.animate(
+      [
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          clipPath: "inset(0 50% 0 50%)"
+        },
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          clipPath: "inset(0 0 0 0)"
+        },
+      ],
+      {
+        duration,
+        easing: "ease-out",
+        fill: "forwards"
+      }
+    )
+  }
+
+  /**
+   * Phase 2 of the menu box opening top/bottom bars:
+   *    Slide vertically from midY to their final row.
+   */
+  private animateVerticalSlide(
+    el: HTMLElement,
+    x: number,
+    fromY: number,
+    toY: number,
+    duration: number,
+    easing: string = "ease-out"
+  ): Animation {
+    return el.animate(
+      [
+        { transform: `translate(${x * TileMetrics.w}px, ${fromY * TileMetrics.h}px)` },
+        { transform: `translate(${x * TileMetrics.w}px, ${toY  * TileMetrics.h}px)` },
+      ],
+      {
+        duration,
+        easing,
+        fill: "forwards"
+      }
+    )
+  }
+
+  /**
+   * Phase 2 of the menu box opening side/panel nodes:
+   *    Reveal vertically by collapsing the clip-path inset.
+   */
+  private animateVerticalClipReveal(
+    el: HTMLElement,
+    x: number,
+    y: number,
+    duration: number
+  ): Animation {
+    return el.animate(
+      [
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`,
+          clipPath: "inset(50% 0 50% 0)"
+        },
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`,
+          clipPath: "inset(0 0 0 0)"
+        },
+      ],
+      {
+        duration,
+        easing: "ease-out",
+        fill: "forwards"
+      }
+    )
+  }
+
+  /**
+   * Phase 1 of the menu box closing side/panel nodes:
+   *    Collapse vertically by expanding the clip-path inset to 50%.
+   */
+  private animateVerticalClipCollapse(
+    el: HTMLElement,
+    x: number,
+    y: number,
+    duration: number
+  ): Animation {
+    return el.animate(
+      [
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`,
+          clipPath: "inset(0 0 0 0)"
+        },
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`,
+          clipPath: "inset(50% 0 50% 0)"
+        },
+      ],
+      {
+        duration,
+        easing: "ease-in",
+        fill: "forwards"
+      }
+    )
+  }
+
+  /**
+   * Phase 2 of the menu box closing top bar:
+   *    Collapse horizontally back to center.
+   */
+  private animateHorizontalCollapse(
+    el: HTMLElement,
+    x: number,
+    midY: number,
+    duration: number
+  ): Animation {
+    return el.animate(
+      [
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          clipPath: "inset(0 0 0 0)"
+        },
+        {
+          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          clipPath: "inset(0 50% 0 50%)"
+        },
+      ],
+      {
+        duration,
+        easing: "ease-in",
+        fill: "forwards"
+      }
+    )
   }
 
   // ==================================================
@@ -368,59 +580,7 @@ export class RendererUI {
   }
 
   private maskToGlyph(mask: number): string {
-    return this.getLineChars()[mask] ?? "?"
-  }
-
-  /**
-   * bits:
-   * top right bottom left double
-   */
-  private getLineChars(): Record<number, string> {
-    return {
-      0b00000: " ",
-      0b00001: " ",
-
-      0b01010: "─",
-      0b00010: "─",
-      0b01000: "─",
-      0b01011: "═",
-      0b00011: "═",
-      0b01001: "═",
-
-      0b10100: "│",
-      0b00100: "│",
-      0b10000: "│",
-      0b10101: "║",
-      0b00101: "║",
-      0b10001: "║",
-
-      0b01100: "┌",
-      0b01101: "╔",
-
-      0b00110: "┐",
-      0b00111: "╗",
-
-      0b11000: "└",
-      0b11001: "╚",
-
-      0b10010: "┘",
-      0b10011: "╝",
-
-      0b11100: "├",
-      0b11101: "╠",
-
-      0b10110: "┤",
-      0b10111: "╣",
-
-      0b11010: "┴",
-      0b11011: "╩",
-
-      0b01110: "┬",
-      0b01111: "╦",
-
-      0b11110: "┼",
-      0b11111: "╬",
-    }
+    return LINE_GLYPHS[mask] ?? "?"
   }
 
   // ==================================================

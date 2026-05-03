@@ -25,15 +25,15 @@ export class GlobalWorld {
 
   spawnBaseEntity(glyph: string, x: number, y: number) {
     const entity = new Entity(glyph, x, y)
-    entity.id = this.nextId++
-    this.entities.set(entity.id, entity)
+    entity.uid = this.nextId++
+    this.entities.set(entity.uid, entity)
     return entity
   }
 
   spawnEntity(entity: Entity) {
-    if (entity.id === -1)
-      entity.id = this.nextId++
-    this.entities.set(entity.id, entity)
+    if (entity.uid === -1)
+      entity.uid = this.nextId++
+    this.entities.set(entity.uid, entity)
   }
 
   update() {

@@ -24,7 +24,7 @@ export class Chunk {
           y > CHUNK_SIZE - 3
 
         this.tiles[i] = {
-          glyph: edge ? "#" : "",
+          glyph: edge ? "#" : " ",
           solid: edge
         }
       }

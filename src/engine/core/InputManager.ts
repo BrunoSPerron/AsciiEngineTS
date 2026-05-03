@@ -38,13 +38,13 @@ export class InputManager {
     return this.add(this.keyUpListeners, fn)
   }
 
+  isKeyDown(key: string): boolean {
+    return this.keyDownState.has(key)
+  }
+
   unlisten(key: string): void {
     this.keyDownListeners.delete(key)
     this.keyUpListeners.delete(key)
-  }
-
-  isKeyDown(key: string): boolean {
-    return this.keyDownState.has(key)
   }
 
   // ---------- Internals ----------
