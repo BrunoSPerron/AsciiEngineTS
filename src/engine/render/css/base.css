@@ -4,7 +4,6 @@
 }
 
 .ascii-engine {
-  
   --color-bg: #222;
   --color-text: #bbb;
 
@@ -18,7 +17,7 @@
   --actor-text: var(--color-text);
 
   --font-size: 18px;
-  --line-height: 18px;
+  --line-height: var(--font-size);
 
   position: absolute;
   box-sizing: border-box;
@@ -77,6 +76,12 @@
   position: absolute;
   background-color: var(--actor-bg);
   color: var(--actor-text);
+  height: var(--line-height);
+}
+
+.ascii-engine .layer-ui {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .ascii-engine .ui-node.ui-line {

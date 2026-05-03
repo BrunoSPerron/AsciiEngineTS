@@ -1,3 +1,4 @@
+import type { InputManager } from "../core/InputManager"
 import { CHUNK_SIZE } from "../world/Chunk"
 import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "./Camera"
@@ -16,16 +17,16 @@ export class Renderer {
 
   camera: Camera
   themeManager: ThemeManager
+  inputManager: InputManager
 
   bg: HTMLDivElement
   actors: HTMLDivElement
-  ui: HTMLDivElement
   uiLayer: RendererUI
 
   actorEls = new Map<number, HTMLDivElement>()
   chunkEls = new Map<string, HTMLPreElement>()
 
-  constructor(root: HTMLElement, camera: Camera) {
+  constructor(root: HTMLElement, camera: Camera, inputManager: InputManager) {
     this.root = root
     this.root.classList.add("default")
     const link = document.createElement("link")
@@ -34,13 +35,13 @@ export class Renderer {
     document.head.appendChild(link)
 
     this.themeManager = new ThemeManager()
+    this.inputManager = inputManager
 
     this.camera = camera
 
-    this.bg = this.makeLayer()
-    this.actors = this.makeLayer()
-    this.ui = this.makeLayer()
-    this.uiLayer = new RendererUI(this.ui)
+    this.bg = this.makeLayer("layer-background")
+    this.actors = this.makeLayer("layer-actor")
+    this.uiLayer = new RendererUI(this.makeLayer("layer-ui"), this.inputManager)
   }
 
   setTileHAndW() {
@@ -65,9 +66,10 @@ export class Renderer {
     span.remove()
   }
 
-  private makeLayer() {
+  private makeLayer(css: string) {
     const el = document.createElement("div")
     el.className = "layer"
+    el.classList.add(css)
     this.root.appendChild(el)
     return el
   }

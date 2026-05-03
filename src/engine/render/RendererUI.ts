@@ -1,4 +1,6 @@
+import type { InputManager } from "../core/InputManager"
 import { TileMetrics } from "./Renderer"
+import { SelectMenu } from "./ui_nodes/SelectMenu"
 
 /**
  * Maps a line mask to its box-drawing glyph.
@@ -91,9 +93,10 @@ const DOUBLE = 0b00001
 
 export class RendererUI {
   root: HTMLDivElement
+  inputManager: InputManager
 
-  private static readonly PHASE1_RATIO = 0.55
-  private static readonly PHASE2_RATIO = 0.45
+  private static readonly PHASE1_RATIO = 0.60
+  private static readonly PHASE2_RATIO = 0.4
 
   private nextId = 1
 
@@ -102,7 +105,8 @@ export class RendererUI {
   cells = new Map<string, CellRef>()
   lineMasks = new Map<string, number>() // Mask used to link ui lines
 
-  constructor(root: HTMLDivElement) {
+  constructor(root: HTMLDivElement, inputManager: InputManager) {
+    this.inputManager = inputManager
     this.root = root
   }
 
@@ -118,7 +122,7 @@ export class RendererUI {
 
   animatedMenuBoxClosing(
     id: number,
-    duration = 960
+    duration = 500
   ): Promise<void> {
     const menuBox = this.menuBoxes.get(id)
     if (!menuBox) return Promise.resolve()
@@ -169,7 +173,7 @@ export class RendererUI {
 
   animatedMenuBoxOpening(
     x: number, y: number, w: number, h: number,
-    duration = 1000, content?: HTMLDivElement
+    duration = 500, content?: HTMLDivElement
   ): Promise<number> {
     const midY = y + h / 2
 
@@ -353,6 +357,22 @@ export class RendererUI {
     this.refreshText(node)
 
     return true
+  }
+
+  showSelectMenu(
+    x: number,
+    y: number,
+    items: string[],
+    paddingX = 1,
+    paddingY = 0,
+    wraparound = true
+  ): Promise<number> {
+    const maxLen = Math.max(...items.map(s => s.length))
+    const w = maxLen + paddingX * 2 + 2
+    const h = items.length + paddingY * 2 + 2
+
+    return new SelectMenu(this, this.inputManager)
+      .open(x, y, w, h, items, paddingX, paddingY, wraparound)
   }
 
   // ==================================================

@@ -1,5 +1,5 @@
 import { ChunkRecord } from "./ChunkRecord"
-import { Entity } from "./Entities/Entity"
+import { Entity } from "./entities/Entity"
 import type { Region } from "./Region"
 
 export class GlobalWorld {

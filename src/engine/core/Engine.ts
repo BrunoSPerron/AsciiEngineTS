@@ -1,20 +1,23 @@
 import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "../render/Camera"
-import { Renderer } from "../render/Renderer"
-import { PlayerUnit } from "../world/Entities/PlayerUnit"
+import { Renderer, TileMetrics } from "../render/Renderer"
+import { PlayerUnit } from "../world/entities/PlayerUnit"
 import { GlobalWorld } from "../world/GlobalWorld"
+import { InputManager } from "./InputManager"
+import { Entity } from "../world/entities/Entity"
 
 export const STEP = 1000 / 32
 const MAX_FRAME_DELTA = 250
 const MAX_UPDATES_PER_FRAME = 8
 
 export class AsciiEngine {
-   // Unloaded world data, world simulation called at interval
+  // Unloaded world data, world simulation called at interval
   globalWorld = new GlobalWorld()
 
   // Rendered and fully simulated part of the world
   localWorld = new LocalWorld()
 
+  inputManager: InputManager
   renderer: Renderer
 
   globalSimulationInterval = 500  // TODO settings
@@ -35,12 +38,12 @@ export class AsciiEngine {
     gameContainer.classList.add("ascii-engine")
     root.appendChild(gameContainer)
 
-    //TEMPORARY camera target
-    const playerUnit = new PlayerUnit("☺", 8, 8, 250)
-    this.localWorld.spawnEntity(playerUnit)
-
-    const camera = new Camera(gameContainer, playerUnit)
-    this.renderer = new Renderer(gameContainer, camera)
+    const cameraTarget = new PlayerUnit("☺", 8, 8, 250)
+    //const cameraTarget = new Entity("☺", 8, 8, Number.MAX_SAFE_INTEGER)
+    this.localWorld.spawnEntity(cameraTarget)
+    const camera = new Camera(gameContainer, cameraTarget)
+    this.inputManager = new InputManager()
+    this.renderer = new Renderer(gameContainer, camera, this.inputManager)
 
     document.addEventListener("visibilitychange", this.handleVisibility)
     window.addEventListener("resize", this.handleWindowState)
@@ -54,25 +57,53 @@ export class AsciiEngine {
       this.environmentReady = true;
       this.renderer.camera.jumpToTarget();
 
-
-      // TEST
-      const div: HTMLDivElement = document.createElement('div');
-      div.style.width = '100%';
-      div.style.height = '100%';
-      div.style.backgroundImage = 'url("https://picsum.photos/160/300")';
-      div.style.backgroundSize = '100%';
       const uiLayer = this.renderer.uiLayer
 
-      uiLayer.animatedMenuBoxOpening(
-        10, 10, 10, 10, 1000, div
-      ).then((uid: number) => {
-        uiLayer.animatedMenuBoxClosing(uid);
+      this.inputManager.onKeyDown((e) => {
+        switch (e.key) {
+          case "Escape":
+            const options = ["Test", "Test2", "Palette"]
+            uiLayer.showSelectMenu(10, 10, options).then((selected: number) => {
+            console.log(selected);
+          })
+          break;
+        default:
+          break;
+        }
       })
-
-
 
       this.resume()
     }.bind(this))
+  }
+
+  displayImageTest(x: number, y: number, w: number, h: number, closeDelay = 1000) {
+    const uiLayer = this.renderer.uiLayer;
+
+    const url = `https://picsum.photos/${Math.ceil(w * TileMetrics.w)}/${Math.ceil(h * TileMetrics.h)}`;
+
+    const img = new Image();
+
+    img.onload = () => {
+      const div: HTMLDivElement = document.createElement('div');
+      div.style.width = '100%';
+      div.style.height = '100%';
+      div.style.backgroundImage = `url("${url}")`;
+      div.style.backgroundSize = '100%';
+
+      uiLayer.animatedMenuBoxOpening(
+        x, y, w, h, 1000, div
+      ).then((menuBoxId: number) => {
+        setTimeout(() => {
+          uiLayer.animatedMenuBoxClosing(menuBoxId);
+        }, closeDelay);
+      });
+    };
+
+    img.onerror = () => {
+      console.error('Image failed to load:', url);
+    };
+
+    img.src = url;
   }
 
   destroy() {

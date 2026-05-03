@@ -1,6 +1,6 @@
 import { STEP } from "../core/Engine"
 import { Chunk, CHUNK_SIZE } from "./Chunk"
-import { Entity } from "./Entities/Entity"
+import { Entity } from "./entities/Entity"
 
 export class LocalWorld {
   chunks = new Map<string, Chunk>()
