@@ -19,6 +19,7 @@ export class ThemeManager {
     document.head.appendChild(this.link)
 
     this.registerAllThemes()
+    this.preloadAllThemes()
     this.set("Copper")
   }
 
@@ -36,6 +37,12 @@ export class ThemeManager {
 
   getThemeNames(): string[] {
     return [...this.themes.values()].map(t => t.name)
+  }
+
+  private preloadAllThemes() {
+    for (const def of this.themes.values()) {
+      fetch(def.path)
+    }
   }
 
   private registerAllThemes() {

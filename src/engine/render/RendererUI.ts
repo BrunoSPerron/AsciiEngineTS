@@ -96,7 +96,7 @@ export class RendererUI {
       bottomAnim.onfinish = () => {
         bottomNode.el.style.display = "none"
 
-        // Force corner glyphs for collapse bar — write directly to DOM,
+        // Force line glyphs for collapse bar — write directly to DOM,
         // do not call refresh() which would recompute from ownMasks.
         topNode.chars[0] = "═"
         topNode.chars[topNode.chars.length - 1] = "═"
@@ -125,16 +125,16 @@ export class RendererUI {
   ): Promise<number> {
     const midY = y + h / 2
 
-    const leftId            = this.drawVLine(x,         y,     h, true)
-    const rightId           = this.drawVLine(x + w - 1, y,     h, true)
-    const topId             = this.drawHLine(x,         y,         w,     true)
-    const bottomId          = this.drawHLine(x,         y + h - 1, w,     true)
+    const leftId = this.drawVLine(x, y, h, true)
+    const rightId = this.drawVLine(x + w - 1, y, h, true)
+    const topId = this.drawHLine(x, y, w, true)
+    const bottomId = this.drawHLine(x, y + h - 1, w, true)
     const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2, content)
 
-    const leftNode            = this.nodes.get(leftId)!
-    const rightNode           = this.nodes.get(rightId)!
-    const topNode             = this.nodes.get(topId)!
-    const bottomNode          = this.nodes.get(bottomId)!
+    const leftNode = this.nodes.get(leftId)!
+    const rightNode = this.nodes.get(rightId)!
+    const topNode = this.nodes.get(topId)!
+    const bottomNode = this.nodes.get(bottomId)!
     const backgroundPanelNode = this.nodes.get(backgroundPanelId)!
 
     const menuBox: UIMenuBox = {
@@ -155,8 +155,11 @@ export class RendererUI {
     topNode.el.style.clipPath = "inset(0 50% 0 50%)"
     bottomNode.el.style.display = "none"
 
-    this.setSymbolAt(x,         y, "╠")
-    this.setSymbolAt(x + w - 1, y, "╣")
+    // Force line glyphs for collapse bar — write directly to DOM,
+    // do not call refresh() which would recompute from ownMasks.
+    topNode.chars[0] = "╠"
+    topNode.chars[topNode.chars.length - 1] = "╣"
+    topNode.el.textContent = topNode.chars.join("")
 
     const topAnim = this.animateHorizontalExpand(
       topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO
