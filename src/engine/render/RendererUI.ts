@@ -95,9 +95,6 @@ export class RendererUI {
 
       bottomAnim.onfinish = () => {
         bottomNode.el.style.display = "none"
-
-        // Force line glyphs for collapse bar — write directly to DOM,
-        // do not call refresh() which would recompute from ownMasks.
         topNode.chars[0] = "═"
         topNode.chars[topNode.chars.length - 1] = "═"
         topNode.el.textContent = topNode.chars.join("")
@@ -154,9 +151,6 @@ export class RendererUI {
 
     topNode.el.style.clipPath = "inset(0 50% 0 50%)"
     bottomNode.el.style.display = "none"
-
-    // Force line glyphs for collapse bar — write directly to DOM,
-    // do not call refresh() which would recompute from ownMasks.
     topNode.chars[0] = "╠"
     topNode.chars[topNode.chars.length - 1] = "╣"
     topNode.el.textContent = topNode.chars.join("")
@@ -201,7 +195,6 @@ export class RendererUI {
   drawHLine(x: number, y: number, w: number, doubleLine = false): number {
     const node = this.buildHLine(x, y, w, doubleLine)
 
-    // Reconcile this line's cells AND their immediate neighbors
     for (let i = 0; i < w; i++) {
       this.reconcileAt(x + i, y)
       this.reconcileAt(x + i, y - 1)
@@ -243,7 +236,6 @@ export class RendererUI {
     if (!node) return
 
     this.popCells(node)
-    // Reconcile footprint that was vacated
     this.reconcileFootprint(node)
 
     node.x = x
@@ -262,10 +254,8 @@ export class RendererUI {
     node.el.remove()
     this.nodes.delete(id)
 
-    // Reconcile the vacated footprint so underlying nodes refresh
     this.reconcileFootprint(node)
 
-    // Also reconcile neighbors one cell beyond the border
     if (node instanceof LineNode) {
       this.reconcileNeighborsOf(node)
     }
@@ -276,7 +266,6 @@ export class RendererUI {
     const stack = this.cellStack.get(key)
     if (!stack || stack.length === 0) return false
 
-    // Find the topmost LineNode in the stack
     for (let i = stack.length - 1; i >= 0; i--) {
       const node = this.nodes.get(stack[i])
       if (!(node instanceof LineNode)) continue
@@ -398,7 +387,6 @@ export class RendererUI {
     const stack = this.cellStack.get(key)
     if (!stack || stack.length === 0) return
 
-    // Collect all LineNodes in this cell's stack
     const lineNodes: LineNode[] = []
     for (const id of stack) {
       const n = this.nodes.get(id)
@@ -406,20 +394,16 @@ export class RendererUI {
     }
     if (lineNodes.length === 0) return
 
-    // Merge own masks from all LineNodes at this cell
     let merged = 0
     for (const ln of lineNodes) {
       merged |= ln.getOwnMask(x, y)
     }
 
-    // Propagate connectivity from live neighbors
     if (this.hasLineAt(x,     y - 1)) merged |= TOP
     if (this.hasLineAt(x + 1, y    )) merged |= RIGHT
     if (this.hasLineAt(x,     y + 1)) merged |= BOTTOM
     if (this.hasLineAt(x - 1, y    )) merged |= LEFT
 
-    // The topmost LineNode renders the merged glyph.
-    // All others render a space at this cell so they don't overdraw.
     const topLine = lineNodes[lineNodes.length - 1]
     for (const ln of lineNodes) {
       const idx = this.charIndexFor(ln, x, y)
@@ -429,7 +413,7 @@ export class RendererUI {
       } else {
         ln.chars[idx] = " "
       }
-      // Directly update DOM without recomputing from ownMasks
+
       ln.el.textContent = ln.kind === "vline"
         ? ln.chars.join("\n")
         : ln.chars.join("")
@@ -451,7 +435,6 @@ export class RendererUI {
    */
   private reconcileNeighborsOf(node: LineNode) {
     if (node.kind === "hline") {
-      // cells above and below the whole run, plus just outside each end
       for (let i = 0; i < node.w; i++) {
         this.reconcileAt(node.x + i, node.y - 1)
         this.reconcileAt(node.x + i, node.y + 1)
@@ -499,7 +482,6 @@ export class RendererUI {
       node.setOwnMask(x + i, y, mask)
     }
 
-    // Build initial chars from own masks only
     node.refresh()
 
     this.root.appendChild(el)
@@ -608,7 +590,7 @@ export class RendererUI {
   }
 
   // ==========================================================================
-  // ANIMATION HELPERS (unchanged from original)
+  // ANIMATION HELPERS
   // ==========================================================================
 
   private animateHorizontalExpand(el: HTMLElement, x: number, midY: number, duration: number): Animation {
