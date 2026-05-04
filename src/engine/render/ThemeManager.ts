@@ -7,6 +7,12 @@ export class ThemeManager {
   private themes = new Map<string, ThemeDef>()
   private link: HTMLLinkElement
 
+  private _current: string = ""
+
+  get current(): string {
+    return this._current
+  }
+
   constructor() {
     this.link = document.createElement("link")
     this.link.rel = "stylesheet"
@@ -22,7 +28,14 @@ export class ThemeManager {
 
   set(name: string) {
     const theme = this.themes.get(name.toLowerCase())
-    if (theme) this.link.href = theme.path
+    if (theme) {
+      this.link.href = theme.path
+      this._current = theme.name
+    }
+  }
+
+  getThemeNames(): string[] {
+    return [...this.themes.values()].map(t => t.name)
   }
 
   private registerAllThemes() {

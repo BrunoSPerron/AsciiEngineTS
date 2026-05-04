@@ -5,6 +5,7 @@ import { GlobalWorld } from "../world/GlobalWorld"
 import { InputManager } from "./InputManager"
 import { Renderer } from "../render/Renderer"
 import { TileMetrics } from "../render/TileMetrics"
+import { DefaultMenu } from "../render/DefaultMenu"
 
 export const STEP = 1000 / 32
 const MAX_FRAME_DELTA = 250
@@ -53,31 +54,11 @@ export class AsciiEngine {
 
   start() {
     document.fonts.ready.then(function() {
-      this.renderer.setTileHAndW();
-      this.environmentReady = true;
-      this.renderer.camera.jumpToTarget();
+      this.renderer.setTileHAndW()
+      this.environmentReady = true
+      this.renderer.camera.jumpToTarget()
 
-      const uiLayer = this.renderer.uiLayer
-
-      this.inputManager.onKeyDown((e) => {
-        let options
-        switch (e.key) {
-          case "Escape":
-            options = ["Test", "Test2", "Palette"]
-            uiLayer.showSelectMenu(10, 10, options).then((selected: number) => {
-              console.log(selected);
-            })
-            break;
-          case "e":
-            options = ["Test", "Test2", "Palette"]
-            uiLayer.showRollerMenu(10, 10, options).then((selected: number) => {
-              console.log(selected);
-            })
-          break
-          default:
-            break;
-        }
-      })
+      new DefaultMenu(this.inputManager, this.renderer)
 
       this.resume()
     }.bind(this))

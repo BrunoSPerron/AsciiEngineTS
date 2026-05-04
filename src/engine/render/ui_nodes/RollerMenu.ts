@@ -20,14 +20,34 @@ const SLOT_CLASSES: readonly string[] = [
   "ui-roller fade-high",
 ]
 
+type ChangeHandler = (index: number) => void
+type ListenerMap = Map<string, ChangeHandler>
+
 export class RollerMenu extends UIPanel {
   private items: string[] = []
   private currentIndex: number = 0
   private slotEls: HTMLDivElement[] = []
   private resolve!: (index: number) => void
 
+  private idCounter = 0
+  private changeListeners: ListenerMap = new Map()
+
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
     super(rendererUI, inputManager)
+  }
+
+  onChanged(fn: ChangeHandler): string {
+    const key = `lk_${++this.idCounter}`
+    this.changeListeners.set(key, fn)
+    return key
+  }
+
+  unlisten(key: string): void {
+    this.changeListeners.delete(key)
+  }
+
+  private emitChanged(index: number) {
+    for (const fn of this.changeListeners.values()) fn(index)
   }
 
   /**
@@ -42,25 +62,30 @@ export class RollerMenu extends UIPanel {
     y: number,
     items: string[],
     paddingX: number = 1,
+    startIndex: number = 0,
   ): Promise<number> {
-    this.items = items
-    this.currentIndex = 0
+    const pad = " ".repeat(paddingX)
+    this.items = new Array<string>(items.length)
+    for (let i = 0; i < items.length; i++) {
+      this.items[i] = `${pad}${items[i]}${pad}`
+    }
+    this.currentIndex = startIndex
 
-    const innerW = Math.max(...items.map(s => s.length)) + paddingX * 2
-    const w = innerW + 2  // + 2 border cols
-    const h = VISIBLE_ROWS + 2 // + 2 border rows
+    const innerW = Math.max(...this.items.map(s => s.length))
+    const w = innerW + 2
+    const h = VISIBLE_ROWS + 2
 
     const container = document.createElement("div")
     container.style.position = "relative"
 
     this.slotEls = Array.from({ length: VISIBLE_ROWS }, (_, slot) => {
-      const el = document.createElement("div")
-      el.style.position   = "absolute"
-      el.style.top        = `${slot * TileMetrics.h}px`
-      el.style.whiteSpace = "pre"
-      el.style.width      = `${innerW * TileMetrics.w}px`
-      container.appendChild(el)
-      return el
+        const el = document.createElement("div")
+        el.style.position   = "absolute"
+        el.style.top        = `${slot * TileMetrics.h}px`
+        el.style.whiteSpace = "pre"
+        el.style.width      = `${innerW * TileMetrics.w}px`
+        container.appendChild(el)
+        return el
     })
 
     this.renderSlots()
@@ -68,7 +93,6 @@ export class RollerMenu extends UIPanel {
 
     return new Promise<number>(resolve => {
       this.resolve = resolve
-
       this.openingPromise = this.openBox(x, y, w, h, undefined, container)
         .then(id => {
           this.menuBoxId = id
@@ -110,6 +134,7 @@ export class RollerMenu extends UIPanel {
     const count = this.items.length
     this.currentIndex = ((this.currentIndex + delta) % count + count) % count
     this.renderSlots()
+    this.emitChanged(this.currentIndex)   // ← fire here
   }
 
   // ==================================================

@@ -314,6 +314,10 @@ export class RendererUI {
       .open(x, y, items, paddingX)
   }
 
+  createRollerMenu(): RollerMenu {
+    return new RollerMenu(this, this.inputManager)
+  }
+
   // ==========================================================================
   // CELL STACK MANAGEMENT
   // ==========================================================================
