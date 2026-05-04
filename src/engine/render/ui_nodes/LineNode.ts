@@ -1,10 +1,6 @@
 import { TileMetrics } from "../TileMetrics"
 import { UINode } from "./UINode"
 
-/**
- * Maps a line mask to its box-drawing glyph.
- * Mask bits: top right bottom left double
- */
 export const LINE_GLYPHS: Record<number, string> = {
   0b00000: " ",
   0b00001: " ",
@@ -57,17 +53,18 @@ export const BOTTOM = 0b00100
 export const LEFT   = 0b00010
 export const DOUBLE = 0b00001
 
+export const OPPOSITE: Record<number, number> = {
+  [TOP]:    BOTTOM,
+  [BOTTOM]: TOP,
+  [LEFT]:   RIGHT,
+  [RIGHT]:  LEFT,
+}
+
 export function maskToGlyph(mask: number): string {
   return LINE_GLYPHS[mask] ?? "?"
 }
 
-/**
- * A LineNode owns its own mask contributions for every cell it covers.
- * It never reads from a global mask map — RendererUI hands it the merged
- * mask (from all LineNodes in the cell's z-stack) when asking it to refresh.
- */
 export class LineNode extends UINode {
-  /** Per-cell mask contributions owned by THIS node only. Key: "x,y" */
   ownMasks: Map<string, number> = new Map()
 
   constructor(
@@ -91,11 +88,47 @@ export class LineNode extends UINode {
   }
 
   /**
-   * Rebuild glyphs from this node's own masks only and flush to DOM.
-   * Only call this during initial construction or after a move.
-   * After drawing, reconcileAt() in RendererUI writes merged glyphs
-   * directly into chars[] and updates the DOM itself.
+   * Grant a directional bit toward a neighbor at (nx, ny).
+   * The neighbor gets the reciprocal bit back toward us.
+   * DOUBLE is granted only when both nodes are double-line.
    */
+  grantBit(
+    x: number, y: number, bit: number,
+    neighbor: LineNode, nx: number, ny: number
+  ) {
+    const myDouble    = (this.getOwnMask(x, y) & DOUBLE) !== 0
+    const theirDouble = (neighbor.getOwnMask(nx, ny) & DOUBLE) !== 0
+    const bothDouble  = myDouble && theirDouble ? DOUBLE : 0
+
+    this.ownMasks.set(
+      `${x},${y}`,
+      (this.getOwnMask(x, y) | bit | bothDouble)
+    )
+    neighbor.ownMasks.set(
+      `${nx},${ny}`,
+      (neighbor.getOwnMask(nx, ny) | OPPOSITE[bit] | bothDouble)
+    )
+  }
+
+  /**
+   * Withdraw a directional bit toward a neighbor at (nx, ny).
+   * Clears our bit toward them and their reciprocal bit toward us.
+   * Also clears DOUBLE on both sides of this junction.
+   */
+  withdrawBit(
+    x: number, y: number, bit: number,
+    neighbor: LineNode, nx: number, ny: number
+  ) {
+    this.ownMasks.set(
+      `${x},${y}`,
+      (this.getOwnMask(x, y) & ~bit & ~DOUBLE)
+    )
+    neighbor.ownMasks.set(
+      `${nx},${ny}`,
+      (neighbor.getOwnMask(nx, ny) & ~OPPOSITE[bit] & ~DOUBLE)
+    )
+  }
+
   refresh() {
     if (this.kind === "vline") {
       const lines: string[] = []
@@ -116,9 +149,6 @@ export class LineNode extends UINode {
     }
   }
 
-  /**
-   * Convenience: apply a transform and style for vertical line nodes.
-   */
   applyVerticalStyle() {
     this.el.style.whiteSpace = "pre"
     this.el.style.lineHeight = `${TileMetrics.h}px`

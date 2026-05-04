@@ -31,6 +31,7 @@ export class RollerMenu extends UIPanel {
 
   private idCounter = 0
   private changeListeners: ListenerMap = new Map()
+  private listenerKey: string = ""
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
     super(rendererUI, inputManager)
@@ -143,7 +144,7 @@ export class RollerMenu extends UIPanel {
 
   private registerKeys() {
     this.inputManager.pushContext("roller_menu")
-    this.inputManager.onKeyDown(e => {
+    this.listenerKey = this.inputManager.onKeyDown(e => {
       switch (e.key) {
         case "ArrowUp":
         case "w":
@@ -164,8 +165,9 @@ export class RollerMenu extends UIPanel {
   }
 
   private close(index: number) {
-    this.inputManager.popContext("roller_menu")
+    this.inputManager.unlisten(this.listenerKey)
     this.closeBox().then(() => {
+      this.inputManager.popContext("roller_menu")
       this.resolve(index)
     })
   }

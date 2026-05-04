@@ -6,6 +6,8 @@ import { UIPanel } from "./UIPanel"
 export class SelectMenu extends UIPanel {
   private itemEls: HTMLDivElement[] = []
   private currentIndex: number = 0
+  private listenerKey: string = ""
+
   private resolve!: (index: number) => void
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
@@ -71,7 +73,7 @@ export class SelectMenu extends UIPanel {
 
   private registerKeys(wraparound: boolean) {
     this.inputManager.pushContext("select_menu")
-    this.inputManager.onKeyDown(e => {
+    this.listenerKey = this.inputManager.onKeyDown(e => {
       switch (e.key) {
         case "ArrowUp":
         case "w":
@@ -92,8 +94,9 @@ export class SelectMenu extends UIPanel {
   }
 
   private close(index: number) {
-    this.inputManager.popContext("select_menu")
+    this.inputManager.unlisten(this.listenerKey)
     this.closeBox().then(() => {
+      this.inputManager.popContext("select_menu")
       this.resolve(index)
     })
   }

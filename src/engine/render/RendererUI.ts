@@ -14,23 +14,6 @@ export type UIMenuBox = {
   panelId: number
 }
 
-// ---------------------------------------------------------------------------
-// RendererUI
-// ---------------------------------------------------------------------------
-// Cell ownership model:
-//
-//   cellStack: Map<"x,y", number[]>
-//     An ordered list of node IDs occupying that cell, from bottom to top
-//     (last element = topmost / highest z).
-//
-// For LINE cells the merged glyph is computed by OR-ing the ownMasks of
-// every LineNode in the stack for that cell, then resolving via maskToGlyph.
-//
-// For PANEL background cells the topmost panel occludes everything beneath
-// it visually.  When that panel is removed every cell in its footprint is
-// reconciled, naturally restoring the glyphs of any LineNodes underneath.
-// ---------------------------------------------------------------------------
-
 export class RendererUI {
   root: HTMLDivElement
   inputManager: InputManager
@@ -40,12 +23,8 @@ export class RendererUI {
 
   private nextId = 1
 
-  nodes    = new Map<number, UINode>()
+  nodes     = new Map<number, UINode>()
   menuBoxes = new Map<number, UIMenuBox>()
-
-  /**
-   * Per-cell z-stack of node IDs, ordered bottom → top.
-   */
   cellStack = new Map<string, number[]>()
 
   constructor(root: HTMLDivElement, inputManager: InputManager) {
@@ -65,44 +44,78 @@ export class RendererUI {
 
   // ---------- animated box helpers ------------------------------------------
 
-  animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
+animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     const menuBox = this.menuBoxes.get(id)
     if (!menuBox) return Promise.resolve()
-
     const topNode    = this.nodes.get(menuBox.topId)!
     const bottomNode = this.nodes.get(menuBox.bottomId)!
     const leftNode   = this.nodes.get(menuBox.leftId)!
     const rightNode  = this.nodes.get(menuBox.rightId)!
     const panelNode  = this.nodes.get(menuBox.panelId)!
+    const lineNodes = [topNode, bottomNode, leftNode, rightNode] as LineNode[]
+
+    const closingCells = new Set<string>()
+    for (const node of lineNodes) {
+      if (node.kind === "hline") {
+        for (let i = 0; i < node.w; i++) closingCells.add(this.key(node.x + i, node.y))
+      } else {
+        for (let i = 0; i < node.h; i++) closingCells.add(this.key(node.x, node.y + i))
+      }
+    }
+
+    const toReconcile = new Set<string>()
+    const enqueue = (x: number, y: number) => {
+      const k = this.key(x, y)
+      if (!closingCells.has(k)) toReconcile.add(k)
+    }
+
+    for (const node of lineNodes) {
+      this.exchangeBitsAt(node, "withdraw")
+      node.ownMasks.clear()
+      if (node.kind === "hline") {
+        enqueue(node.x - 1,      node.y)
+        enqueue(node.x + node.w, node.y)
+        for (let i = 0; i < node.w; i++) {
+          enqueue(node.x + i, node.y - 1)
+          enqueue(node.x + i, node.y + 1)
+        }
+      } else {
+        enqueue(node.x, node.y - 1)
+        enqueue(node.x, node.y + node.h)
+        for (let i = 0; i < node.h; i++) {
+          enqueue(node.x - 1, node.y + i)
+          enqueue(node.x + 1, node.y + i)
+        }
+      }
+    }
+
+    for (const cell of toReconcile) {
+      const [x, y] = cell.split(",").map(Number)
+      this.reconcileAt(x, y)
+    }
 
     const midY = topNode.y + (bottomNode.y - topNode.y) / 2
     const x    = topNode.x
-
     return new Promise(resolve => {
       const phase1Duration = duration * RendererUI.PHASE1_RATIO
-
       for (const node of [leftNode, rightNode, panelNode]) {
         this.animateVerticalClipCollapse(node.el, node.x, node.y, phase1Duration)
       }
-
       this.animateVerticalSlide(
         topNode.el, x, topNode.y, midY, phase1Duration, "ease-in"
       )
-
       const bottomAnim = this.animateVerticalSlide(
         bottomNode.el, x, bottomNode.y, midY, phase1Duration, "ease-in"
       )
-
       bottomAnim.onfinish = () => {
+        resolve()
         bottomNode.el.style.display = "none"
         topNode.chars[0] = "═"
         topNode.chars[topNode.chars.length - 1] = "═"
         topNode.el.textContent = topNode.chars.join("")
-
         const phase2Anim = this.animateHorizontalCollapse(
           topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO
         )
-
         phase2Anim.onfinish = () => {
           this.remove(menuBox.topId)
           this.remove(menuBox.bottomId)
@@ -110,7 +123,6 @@ export class RendererUI {
           this.remove(menuBox.rightId)
           this.remove(menuBox.panelId)
           this.menuBoxes.delete(id)
-          resolve()
         }
       }
     })
@@ -128,10 +140,10 @@ export class RendererUI {
     const bottomId = this.drawHLine(x, y + h - 1, w, true)
     const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2, content)
 
-    const leftNode = this.nodes.get(leftId)!
-    const rightNode = this.nodes.get(rightId)!
-    const topNode = this.nodes.get(topId)!
-    const bottomNode = this.nodes.get(bottomId)!
+    const leftNode            = this.nodes.get(leftId)!
+    const rightNode           = this.nodes.get(rightId)!
+    const topNode             = this.nodes.get(topId)!
+    const bottomNode          = this.nodes.get(bottomId)!
     const backgroundPanelNode = this.nodes.get(backgroundPanelId)!
 
     const menuBox: UIMenuBox = {
@@ -194,24 +206,22 @@ export class RendererUI {
 
   drawHLine(x: number, y: number, w: number, doubleLine = false): number {
     const node = this.buildHLine(x, y, w, doubleLine)
+    this.exchangeBitsAt(node, "grant")
 
-    for (let i = 0; i < w; i++) {
-      this.reconcileAt(x + i, y)
-      this.reconcileAt(x + i, y - 1)
-      this.reconcileAt(x + i, y + 1)
-    }
+    for (let i = 0; i < w; i++) this.reconcileAt(x + i, y)
+    this.reconcileAt(x - 1,    y)
+    this.reconcileAt(x + w,    y)
 
     return node.id
   }
 
   drawVLine(x: number, y: number, h: number, doubleLine = false): number {
     const node = this.buildVLine(x, y, h, doubleLine)
+    this.exchangeBitsAt(node, "grant")
 
-    for (let i = 0; i < h; i++) {
-      this.reconcileAt(x,     y + i)
-      this.reconcileAt(x - 1, y + i)
-      this.reconcileAt(x + 1, y + i)
-    }
+    for (let i = 0; i < h; i++) this.reconcileAt(x, y + i)
+    this.reconcileAt(x, y - 1)
+    this.reconcileAt(x, y + h)
 
     return node.id
   }
@@ -235,20 +245,35 @@ export class RendererUI {
     const node = this.nodes.get(id)
     if (!node) return
 
+    if (node instanceof LineNode) {
+      this.exchangeBitsAt(node, "withdraw")
+    }
+
     this.popCells(node)
     this.reconcileFootprint(node)
+    if (node instanceof LineNode) this.reconcileNeighborsOf(node)
 
     node.x = x
     node.y = y
     node.applyTransform()
 
     this.pushCells(node)
+
+    if (node instanceof LineNode) {
+      this.exchangeBitsAt(node, "grant")
+    }
+
     this.reconcileFootprint(node)
+    if (node instanceof LineNode) this.reconcileNeighborsOf(node)
   }
 
   remove(id: number) {
     const node = this.nodes.get(id)
     if (!node) return
+
+    if (node instanceof LineNode) {
+      this.exchangeBitsAt(node, "withdraw")
+    }
 
     this.popCells(node)
     node.el.remove()
@@ -372,16 +397,62 @@ export class RendererUI {
   }
 
   // ==========================================================================
-  // RECONCILIATION
+  // BIT EXCHANGE
   // ==========================================================================
 
   /**
-   * Recompute the glyph at (x, y) by merging ownMasks of all LineNodes
-   * in the cell's stack, then writing the result to the topmost LineNode.
+   * For each cell in a LineNode's footprint, look at the four orthogonal
+   * neighbors. If a neighboring cell contains a LineNode, grant or withdraw
+   * the directional bit between them.
    *
-   * Panel nodes in the stack occlude lines visually but we still merge
-   * the masks so that when the panel is removed the lines snap back.
+   * "grant"    → called after the node is pushed to the cell stack
+   * "withdraw" → called before the node is popped from the cell stack
    */
+  private exchangeBitsAt(node: LineNode, mode: "grant" | "withdraw") {
+    const cells = node.kind === "vline"
+      ? Array.from({ length: node.h }, (_, i): [number, number] => [node.x, node.y + i])
+      : Array.from({ length: node.w }, (_, i): [number, number] => [node.x + i, node.y])
+
+    const directions: Array<[number, number, number]> = [
+      [0, -1, TOP],
+      [1,  0, RIGHT],
+      [0,  1, BOTTOM],
+      [-1, 0, LEFT],
+    ]
+
+    for (const [cx, cy] of cells) {
+      for (const [dx, dy, bit] of directions) {
+        const nx = cx + dx
+        const ny = cy + dy
+        const neighbor = this.topLineNodeAt(nx, ny)
+        if (!neighbor || neighbor === node) continue
+
+        if (mode === "grant") {
+          node.grantBit(cx, cy, bit, neighbor, nx, ny)
+        } else {
+          node.withdrawBit(cx, cy, bit, neighbor, nx, ny)
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns the topmost LineNode in the cell stack at (x, y), or null.
+   */
+  private topLineNodeAt(x: number, y: number): LineNode | null {
+    const stack = this.cellStack.get(this.key(x, y))
+    if (!stack) return null
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const n = this.nodes.get(stack[i])
+      if (n instanceof LineNode) return n
+    }
+    return null
+  }
+
+  // ==========================================================================
+  // RECONCILIATION
+  // ==========================================================================
+
   private reconcileAt(x: number, y: number) {
     const key   = this.key(x, y)
     const stack = this.cellStack.get(key)
@@ -399,48 +470,31 @@ export class RendererUI {
       merged |= ln.getOwnMask(x, y)
     }
 
-    if (this.hasLineAt(x,     y - 1)) merged |= TOP
-    if (this.hasLineAt(x + 1, y    )) merged |= RIGHT
-    if (this.hasLineAt(x,     y + 1)) merged |= BOTTOM
-    if (this.hasLineAt(x - 1, y    )) merged |= LEFT
-
     const topLine = lineNodes[lineNodes.length - 1]
     for (const ln of lineNodes) {
       const idx = this.charIndexFor(ln, x, y)
       if (idx === -1) continue
-      if (ln === topLine) {
-        ln.chars[idx] = maskToGlyph(merged)
-      } else {
-        ln.chars[idx] = " "
-      }
-
+      ln.chars[idx] = ln === topLine ? maskToGlyph(merged) : " "
       ln.el.textContent = ln.kind === "vline"
         ? ln.chars.join("\n")
         : ln.chars.join("")
     }
   }
 
-  /**
-   * Reconcile every cell in a node's footprint.
-   */
   private reconcileFootprint(node: UINode) {
     for (const [x, y] of this.footprintCoords(node)) {
       this.reconcileAt(x, y)
     }
   }
 
-  /**
-   * Reconcile the cells one step beyond each edge of a LineNode,
-   * so neighboring nodes update their junction glyphs.
-   */
   private reconcileNeighborsOf(node: LineNode) {
     if (node.kind === "hline") {
       for (let i = 0; i < node.w; i++) {
         this.reconcileAt(node.x + i, node.y - 1)
         this.reconcileAt(node.x + i, node.y + 1)
       }
-      this.reconcileAt(node.x - 1,          node.y)
-      this.reconcileAt(node.x + node.w,     node.y)
+      this.reconcileAt(node.x - 1,      node.y)
+      this.reconcileAt(node.x + node.w, node.y)
     } else {
       for (let i = 0; i < node.h; i++) {
         this.reconcileAt(node.x - 1, node.y + i)
@@ -451,15 +505,6 @@ export class RendererUI {
     }
   }
 
-  /**
-   * Returns true if there is at least one LineNode in the stack at (x, y).
-   */
-  private hasLineAt(x: number, y: number): boolean {
-    const stack = this.cellStack.get(this.key(x, y))
-    if (!stack) return false
-    return stack.some(id => this.nodes.get(id) instanceof LineNode)
-  }
-
   // ==========================================================================
   // LINE BUILDERS
   // ==========================================================================
@@ -467,7 +512,7 @@ export class RendererUI {
   private buildHLine(x: number, y: number, w: number, doubleLine: boolean): LineNode {
     const el = document.createElement("div")
     el.className = "ui ui-node ui-line"
-    el.style.position  = "absolute"
+    el.style.position   = "absolute"
     el.style.whiteSpace = "pre"
     el.style.willChange = "transform, opacity"
 
@@ -476,9 +521,9 @@ export class RendererUI {
 
     for (let i = 0; i < w; i++) {
       let mask = 0
-      if (i > 0)     mask |= LEFT
-      if (i < w - 1) mask |= RIGHT
-      if (doubleLine) mask |= DOUBLE
+      if (i > 0)      mask |= LEFT
+      if (i < w - 1)  mask |= RIGHT
+      if (doubleLine)  mask |= DOUBLE
       node.setOwnMask(x + i, y, mask)
     }
 
@@ -494,7 +539,7 @@ export class RendererUI {
   private buildVLine(x: number, y: number, h: number, doubleLine: boolean): LineNode {
     const el = document.createElement("div")
     el.className = "ui ui-node ui-line"
-    el.style.position  = "absolute"
+    el.style.position   = "absolute"
     el.style.whiteSpace = "pre"
     el.style.willChange = "transform, opacity"
 
@@ -504,9 +549,9 @@ export class RendererUI {
 
     for (let i = 0; i < h; i++) {
       let mask = 0
-      if (i > 0)     mask |= TOP
-      if (i < h - 1) mask |= BOTTOM
-      if (doubleLine) mask |= DOUBLE
+      if (i > 0)      mask |= TOP
+      if (i < h - 1)  mask |= BOTTOM
+      if (doubleLine)  mask |= DOUBLE
       node.setOwnMask(x, y + i, mask)
     }
 
@@ -559,10 +604,6 @@ export class RendererUI {
   // UTILITIES
   // ==========================================================================
 
-  /**
-   * Returns the char array index for the cell (x, y) within a node,
-   * or -1 if the node doesn't cover that cell.
-   */
   private charIndexFor(node: UINode, x: number, y: number): number {
     if (node.kind === "vline") {
       const i = y - node.y
@@ -572,9 +613,6 @@ export class RendererUI {
     return i >= 0 && i < node.w ? i : -1
   }
 
-  /**
-   * All (x, y) coordinates covered by a node's bounding box.
-   */
   private footprintCoords(node: UINode): Array<[number, number]> {
     const coords: Array<[number, number]> = []
     for (let yy = node.y; yy < node.y + node.h; yy++) {
