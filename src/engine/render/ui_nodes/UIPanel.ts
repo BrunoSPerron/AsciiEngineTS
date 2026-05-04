@@ -2,30 +2,22 @@ import type { InputManager } from "../../core/InputManager"
 import type { RendererUI } from "../RendererUI"
 import { UINode } from "./UINode"
 
-/**
- * A UIPanel is a self-contained animated box (borders + background panel).
- * It wraps the four border line node IDs and the background panel node ID
- * produced by RendererUI, and exposes open/close helpers.
- */
+
 export class UIPanel extends UINode {
   protected rendererUI: RendererUI
   protected inputManager: InputManager
 
-  /** IDs of the five constituent RendererUI nodes that make up this panel box */
   topId: number = -1
   bottomId: number = -1
   leftId: number = -1
   rightId: number = -1
   panelId: number = -1
 
-  /** ID returned by RendererUI.animatedMenuBoxOpening */
   menuBoxId: number = -1
 
-  /** Promise that resolves once the opening animation finishes */
   protected openingPromise: Promise<void> = Promise.resolve()
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
-    // Placeholder values — real geometry is set during open()
     const el = document.createElement("div")
     super(-1, "panel", el, 0, 0, 0, 0)
     this.rendererUI = rendererUI
@@ -57,7 +49,6 @@ export class UIPanel extends UINode {
         .then(id => {
           this.menuBoxId = id
 
-          // Backfill the constituent node IDs from the menuBox record
           const menuBox = this.rendererUI.menuBoxes.get(id)
           if (menuBox) {
             this.topId    = menuBox.topId

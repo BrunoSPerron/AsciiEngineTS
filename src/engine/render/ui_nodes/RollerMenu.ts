@@ -4,13 +4,10 @@ import { TileMetrics } from "../TileMetrics"
 import { UIPanel } from "./UIPanel"
 
 const VISIBLE_ROWS = 5
-const CENTER = 2 // index of the selected slot among the 5 visible rows
+const CENTER = 2
 
 /**
  * CSS class applied per slot position:
- *   slot 0, 4 → "ui-roller fade-high"
- *   slot 1, 3 → "ui-roller fade-low"
- *   slot 2    → "ui-roller selected"
  */
 const SLOT_CLASSES: readonly string[] = [
   "ui-roller fade-high",
@@ -81,10 +78,10 @@ export class RollerMenu extends UIPanel {
 
     this.slotEls = Array.from({ length: VISIBLE_ROWS }, (_, slot) => {
         const el = document.createElement("div")
-        el.style.position   = "absolute"
-        el.style.top        = `${slot * TileMetrics.h}px`
+        el.style.position = "absolute"
+        el.style.top = `${slot * TileMetrics.h}px`
         el.style.whiteSpace = "pre"
-        el.style.width      = `${innerW * TileMetrics.w}px`
+        el.style.width = `${innerW * TileMetrics.w}px`
         container.appendChild(el)
         return el
     })
