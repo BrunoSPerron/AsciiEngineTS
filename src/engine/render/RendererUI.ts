@@ -27,6 +27,8 @@ export class RendererUI {
   menuBoxes = new Map<number, UIMenuBox>()
   cellStack = new Map<string, number[]>()
 
+  globalLineMask = new Map<string, boolean>()
+
   constructor(root: HTMLDivElement, inputManager: InputManager) {
     this.inputManager = inputManager
     this.root = root
@@ -40,88 +42,60 @@ export class RendererUI {
     this.root.innerHTML = ""
     this.nodes.clear()
     this.cellStack.clear()
+    this.globalLineMask.clear()
   }
 
   // ---------- animated box helpers ------------------------------------------
 
-animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
+  animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     const menuBox = this.menuBoxes.get(id)
     if (!menuBox) return Promise.resolve()
-    const topNode    = this.nodes.get(menuBox.topId)!
-    const bottomNode = this.nodes.get(menuBox.bottomId)!
-    const leftNode   = this.nodes.get(menuBox.leftId)!
-    const rightNode  = this.nodes.get(menuBox.rightId)!
+
+    const topNode    = this.nodes.get(menuBox.topId)    as LineNode
+    const bottomNode = this.nodes.get(menuBox.bottomId) as LineNode
+    const leftNode   = this.nodes.get(menuBox.leftId)   as LineNode
+    const rightNode  = this.nodes.get(menuBox.rightId)  as LineNode
     const panelNode  = this.nodes.get(menuBox.panelId)!
-    const lineNodes = [topNode, bottomNode, leftNode, rightNode] as LineNode[]
-
-    const closingCells = new Set<string>()
-    for (const node of lineNodes) {
-      if (node.kind === "hline") {
-        for (let i = 0; i < node.w; i++) closingCells.add(this.key(node.x + i, node.y))
-      } else {
-        for (let i = 0; i < node.h; i++) closingCells.add(this.key(node.x, node.y + i))
-      }
-    }
-
-    const toReconcile = new Set<string>()
-    const enqueue = (x: number, y: number) => {
-      const k = this.key(x, y)
-      if (!closingCells.has(k)) toReconcile.add(k)
-    }
+    const lineNodes  = [topNode, bottomNode, leftNode, rightNode]
 
     for (const node of lineNodes) {
-      this.exchangeBitsAt(node, "withdraw")
-      node.ownMasks.clear()
-      if (node.kind === "hline") {
-        enqueue(node.x - 1,      node.y)
-        enqueue(node.x + node.w, node.y)
-        for (let i = 0; i < node.w; i++) {
-          enqueue(node.x + i, node.y - 1)
-          enqueue(node.x + i, node.y + 1)
-        }
-      } else {
-        enqueue(node.x, node.y - 1)
-        enqueue(node.x, node.y + node.h)
-        for (let i = 0; i < node.h; i++) {
-          enqueue(node.x - 1, node.y + i)
-          enqueue(node.x + 1, node.y + i)
-        }
-      }
+      node.unregisterNodeInMask(this.globalLineMask)
     }
-
-    for (const cell of toReconcile) {
-      const [x, y] = cell.split(",").map(Number)
+    const toReconcile = this.borderNeighborCells(lineNodes)
+    for (const [x, y] of toReconcile) {
       this.reconcileAt(x, y)
     }
 
     const midY = topNode.y + (bottomNode.y - topNode.y) / 2
     const x    = topNode.x
+
     return new Promise(resolve => {
       const phase1Duration = duration * RendererUI.PHASE1_RATIO
+
       for (const node of [leftNode, rightNode, panelNode]) {
         this.animateVerticalClipCollapse(node.el, node.x, node.y, phase1Duration)
       }
-      this.animateVerticalSlide(
-        topNode.el, x, topNode.y, midY, phase1Duration, "ease-in"
-      )
+
+      this.animateVerticalSlide(topNode.el, x, topNode.y, midY, phase1Duration, "ease-in")
+
       const bottomAnim = this.animateVerticalSlide(
         bottomNode.el, x, bottomNode.y, midY, phase1Duration, "ease-in"
       )
+
       bottomAnim.onfinish = () => {
         resolve()
         bottomNode.el.style.display = "none"
         topNode.chars[0] = "═"
         topNode.chars[topNode.chars.length - 1] = "═"
         topNode.el.textContent = topNode.chars.join("")
+
         const phase2Anim = this.animateHorizontalCollapse(
           topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO
         )
+
         phase2Anim.onfinish = () => {
-          this.remove(menuBox.topId)
-          this.remove(menuBox.bottomId)
-          this.remove(menuBox.leftId)
-          this.remove(menuBox.rightId)
-          this.remove(menuBox.panelId)
+          for (const node of lineNodes) this.removeNode(node.id)
+          this.removeNode(menuBox.panelId)
           this.menuBoxes.delete(id)
         }
       }
@@ -134,16 +108,16 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
   ): Promise<number> {
     const midY = y + h / 2
 
-    const leftId = this.drawVLine(x, y, h, true)
-    const rightId = this.drawVLine(x + w - 1, y, h, true)
-    const topId = this.drawHLine(x, y, w, true)
-    const bottomId = this.drawHLine(x, y + h - 1, w, true)
+    const leftId            = this.drawVLine(x,         y, h)
+    const rightId           = this.drawVLine(x + w - 1, y, h)
+    const topId             = this.drawHLine(x,         y, w)
+    const bottomId          = this.drawHLine(x, y + h - 1, w)
     const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2, content)
 
     const leftNode            = this.nodes.get(leftId)!
     const rightNode           = this.nodes.get(rightId)!
-    const topNode             = this.nodes.get(topId)!
-    const bottomNode          = this.nodes.get(bottomId)!
+    const topNode             = this.nodes.get(topId)   as LineNode
+    const bottomNode          = this.nodes.get(bottomId) as LineNode
     const backgroundPanelNode = this.nodes.get(backgroundPanelId)!
 
     const menuBox: UIMenuBox = {
@@ -178,12 +152,9 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
 
         backgroundPanelNode.el.style.setProperty("z-index", "-1")
 
-        this.animateVerticalSlide(
-          topNode.el, x, midY, y,         duration * RendererUI.PHASE1_RATIO)
-
+        this.animateVerticalSlide(topNode.el,    x, midY, y,         duration * RendererUI.PHASE1_RATIO)
         bottomNode.el.style.display = "block"
-        this.animateVerticalSlide(
-          bottomNode.el, x, midY, y + h - 1, duration * RendererUI.PHASE1_RATIO)
+        this.animateVerticalSlide(bottomNode.el, x, midY, y + h - 1, duration * RendererUI.PHASE1_RATIO)
 
         const phase2Anims = [leftNode, rightNode, backgroundPanelNode].map(node => {
           node.el.style.transformOrigin = "50% 50%"
@@ -204,25 +175,19 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     return this.createTextNode("text", x, y, text)
   }
 
-  drawHLine(x: number, y: number, w: number, doubleLine = false): number {
-    const node = this.buildHLine(x, y, w, doubleLine)
-    this.exchangeBitsAt(node, "grant")
-
-    for (let i = 0; i < w; i++) this.reconcileAt(x + i, y)
-    this.reconcileAt(x - 1,    y)
-    this.reconcileAt(x + w,    y)
-
+  drawHLine(x: number, y: number, w: number): number {
+    const node = this.buildHLine(x, y, w)
+    node.registerNodeInMask(this.globalLineMask)
+    this.reconcileFootprint(node)
+    this.reconcileNeighborsOf(node)
     return node.id
   }
 
-  drawVLine(x: number, y: number, h: number, doubleLine = false): number {
-    const node = this.buildVLine(x, y, h, doubleLine)
-    this.exchangeBitsAt(node, "grant")
-
-    for (let i = 0; i < h; i++) this.reconcileAt(x, y + i)
-    this.reconcileAt(x, y - 1)
-    this.reconcileAt(x, y + h)
-
+  drawVLine(x: number, y: number, h: number): number {
+    const node = this.buildVLine(x, y, h)
+    node.registerNodeInMask(this.globalLineMask)
+    this.reconcileFootprint(node)
+    this.reconcileNeighborsOf(node)
     return node.id
   }
 
@@ -246,12 +211,12 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     if (!node) return
 
     if (node instanceof LineNode) {
-      this.exchangeBitsAt(node, "withdraw")
+      node.unregisterNodeInMask(this.globalLineMask)
+      this.reconcileFootprint(node)
+      this.reconcileNeighborsOf(node)
     }
 
     this.popCells(node)
-    this.reconcileFootprint(node)
-    if (node instanceof LineNode) this.reconcileNeighborsOf(node)
 
     node.x = x
     node.y = y
@@ -260,11 +225,10 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     this.pushCells(node)
 
     if (node instanceof LineNode) {
-      this.exchangeBitsAt(node, "grant")
+      node.registerNodeInMask(this.globalLineMask)
+      this.reconcileFootprint(node)
+      this.reconcileNeighborsOf(node)
     }
-
-    this.reconcileFootprint(node)
-    if (node instanceof LineNode) this.reconcileNeighborsOf(node)
   }
 
   remove(id: number) {
@@ -272,7 +236,7 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     if (!node) return
 
     if (node instanceof LineNode) {
-      this.exchangeBitsAt(node, "withdraw")
+      node.unregisterNodeInMask(this.globalLineMask)
     }
 
     this.popCells(node)
@@ -397,87 +361,44 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
   }
 
   // ==========================================================================
-  // BIT EXCHANGE
-  // ==========================================================================
-
-  /**
-   * For each cell in a LineNode's footprint, look at the four orthogonal
-   * neighbors. If a neighboring cell contains a LineNode, grant or withdraw
-   * the directional bit between them.
-   *
-   * "grant"    → called after the node is pushed to the cell stack
-   * "withdraw" → called before the node is popped from the cell stack
-   */
-  private exchangeBitsAt(node: LineNode, mode: "grant" | "withdraw") {
-    const cells = node.kind === "vline"
-      ? Array.from({ length: node.h }, (_, i): [number, number] => [node.x, node.y + i])
-      : Array.from({ length: node.w }, (_, i): [number, number] => [node.x + i, node.y])
-
-    const directions: Array<[number, number, number]> = [
-      [0, -1, TOP],
-      [1,  0, RIGHT],
-      [0,  1, BOTTOM],
-      [-1, 0, LEFT],
-    ]
-
-    for (const [cx, cy] of cells) {
-      for (const [dx, dy, bit] of directions) {
-        const nx = cx + dx
-        const ny = cy + dy
-        const neighbor = this.topLineNodeAt(nx, ny)
-        if (!neighbor || neighbor === node) continue
-
-        if (mode === "grant") {
-          node.grantBit(cx, cy, bit, neighbor, nx, ny)
-        } else {
-          node.withdrawBit(cx, cy, bit, neighbor, nx, ny)
-        }
-      }
-    }
-  }
-
-  /**
-   * Returns the topmost LineNode in the cell stack at (x, y), or null.
-   */
-  private topLineNodeAt(x: number, y: number): LineNode | null {
-    const stack = this.cellStack.get(this.key(x, y))
-    if (!stack) return null
-    for (let i = stack.length - 1; i >= 0; i--) {
-      const n = this.nodes.get(stack[i])
-      if (n instanceof LineNode) return n
-    }
-    return null
-  }
-
-  // ==========================================================================
   // RECONCILIATION
   // ==========================================================================
 
+  /**
+   * Derive the glyph at (x, y) purely from the globalLineMask.
+   * Always treats all lines as double — single line can be added back later.
+   */
   private reconcileAt(x: number, y: number) {
-    const key   = this.key(x, y)
-    const stack = this.cellStack.get(key)
+    const stack = this.cellStack.get(this.key(x, y))
     if (!stack || stack.length === 0) return
 
-    const lineNodes: LineNode[] = []
+    // Find the topmost LineNode in the stack
+    let topLine: LineNode | null = null
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const n = this.nodes.get(stack[i])
+      if (n instanceof LineNode) { topLine = n; break }
+    }
+    if (!topLine) return
+
+    // Build direction mask from neighbors in the global mask
+    let mask = DOUBLE
+    if (this.globalLineMask.get(this.key(x, y - 1))) mask |= TOP
+    if (this.globalLineMask.get(this.key(x + 1, y))) mask |= RIGHT
+    if (this.globalLineMask.get(this.key(x, y + 1))) mask |= BOTTOM
+    if (this.globalLineMask.get(this.key(x - 1, y))) mask |= LEFT
+
+    const glyph = maskToGlyph(mask)
+
+    // All LineNodes in the stack: topmost gets the merged glyph, others get blank
     for (const id of stack) {
-      const n = this.nodes.get(id)
-      if (n instanceof LineNode) lineNodes.push(n)
-    }
-    if (lineNodes.length === 0) return
-
-    let merged = 0
-    for (const ln of lineNodes) {
-      merged |= ln.getOwnMask(x, y)
-    }
-
-    const topLine = lineNodes[lineNodes.length - 1]
-    for (const ln of lineNodes) {
-      const idx = this.charIndexFor(ln, x, y)
+      const node = this.nodes.get(id)
+      if (!(node instanceof LineNode)) continue
+      const idx = this.charIndexFor(node, x, y)
       if (idx === -1) continue
-      ln.chars[idx] = ln === topLine ? maskToGlyph(merged) : " "
-      ln.el.textContent = ln.kind === "vline"
-        ? ln.chars.join("\n")
-        : ln.chars.join("")
+      node.chars[idx] = node === topLine ? glyph : " "
+      node.el.textContent = node.kind === "vline"
+        ? node.chars.join("\n")
+        : node.chars.join("")
     }
   }
 
@@ -505,11 +426,58 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     }
   }
 
+  /**
+   * Collect all cells orthogonally neighboring a set of LineNodes
+   * that are NOT part of those nodes' own footprint.
+   * Used to know what to reconcile after unregistering a closing box.
+   */
+  private borderNeighborCells(lineNodes: LineNode[]): Array<[number, number]> {
+    const own   = new Set<string>()
+    const outer = new Map<string, [number, number]>()
+
+    for (const node of lineNodes) {
+      if (node.kind === "hline") {
+        for (let i = 0; i < node.w; i++) own.add(this.key(node.x + i, node.y))
+      } else {
+        for (let i = 0; i < node.h; i++) own.add(this.key(node.x, node.y + i))
+      }
+    }
+
+    for (const node of lineNodes) {
+      if (node.kind === "hline") {
+        for (let i = 0; i < node.w; i++) {
+          this.addIfNotOwn(node.x + i, node.y - 1, own, outer)
+          this.addIfNotOwn(node.x + i, node.y + 1, own, outer)
+        }
+        this.addIfNotOwn(node.x - 1,      node.y, own, outer)
+        this.addIfNotOwn(node.x + node.w, node.y, own, outer)
+      } else {
+        for (let i = 0; i < node.h; i++) {
+          this.addIfNotOwn(node.x - 1, node.y + i, own, outer)
+          this.addIfNotOwn(node.x + 1, node.y + i, own, outer)
+        }
+        this.addIfNotOwn(node.x, node.y - 1,      own, outer)
+        this.addIfNotOwn(node.x, node.y + node.h, own, outer)
+      }
+    }
+
+    return [...outer.values()]
+  }
+
+  private addIfNotOwn(
+    x: number, y: number,
+    own: Set<string>,
+    out: Map<string, [number, number]>
+  ) {
+    const k = this.key(x, y)
+    if (!own.has(k)) out.set(k, [x, y])
+  }
+
   // ==========================================================================
   // LINE BUILDERS
   // ==========================================================================
 
-  private buildHLine(x: number, y: number, w: number, doubleLine: boolean): LineNode {
+  private buildHLine(x: number, y: number, w: number): LineNode {
     const el = document.createElement("div")
     el.className = "ui ui-node ui-line"
     el.style.position   = "absolute"
@@ -519,14 +487,10 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     const node = new LineNode(this.nextId++, "hline", el, x, y, w, 1)
     node.applyTransform()
 
+    // Initial chars — will be overwritten by reconcileAt, but pre-fill sensibly
     for (let i = 0; i < w; i++) {
-      let mask = 0
-      if (i > 0)      mask |= LEFT
-      if (i < w - 1)  mask |= RIGHT
-      if (doubleLine)  mask |= DOUBLE
-      node.setOwnMask(x + i, y, mask)
+      node.chars[i] = "═"
     }
-
     node.refresh()
 
     this.root.appendChild(el)
@@ -536,7 +500,7 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     return node
   }
 
-  private buildVLine(x: number, y: number, h: number, doubleLine: boolean): LineNode {
+  private buildVLine(x: number, y: number, h: number): LineNode {
     const el = document.createElement("div")
     el.className = "ui ui-node ui-line"
     el.style.position   = "absolute"
@@ -547,14 +511,10 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     node.applyTransform()
     node.applyVerticalStyle()
 
+    // Initial chars — will be overwritten by reconcileAt
     for (let i = 0; i < h; i++) {
-      let mask = 0
-      if (i > 0)      mask |= TOP
-      if (i < h - 1)  mask |= BOTTOM
-      if (doubleLine)  mask |= DOUBLE
-      node.setOwnMask(x, y + i, mask)
+      node.chars[i] = "║"
     }
-
     node.refresh()
 
     this.root.appendChild(el)
@@ -598,6 +558,18 @@ animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
     this.root.appendChild(el)
     this.nodes.set(node.id, node)
     return node
+  }
+
+  /**
+   * Internal removal used by the closing animation, after unregister/reconcile
+   * have already been done. Skips the mask/reconcile steps.
+   */
+  private removeNode(id: number) {
+    const node = this.nodes.get(id)
+    if (!node) return
+    this.popCells(node)
+    node.el.remove()
+    this.nodes.delete(id)
   }
 
   // ==========================================================================

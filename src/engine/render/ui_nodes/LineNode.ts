@@ -53,19 +53,11 @@ export const BOTTOM = 0b00100
 export const LEFT   = 0b00010
 export const DOUBLE = 0b00001
 
-export const OPPOSITE: Record<number, number> = {
-  [TOP]:    BOTTOM,
-  [BOTTOM]: TOP,
-  [LEFT]:   RIGHT,
-  [RIGHT]:  LEFT,
-}
-
 export function maskToGlyph(mask: number): string {
   return LINE_GLYPHS[mask] ?? "?"
 }
 
 export class LineNode extends UINode {
-  ownMasks: Map<string, number> = new Map()
 
   constructor(
     id: number,
@@ -79,74 +71,32 @@ export class LineNode extends UINode {
     super(id, kind, el, x, y, w, h, [])
   }
 
-  setOwnMask(x: number, y: number, mask: number) {
-    this.ownMasks.set(`${x},${y}`, mask)
+  registerNodeInMask(mask: Map<string, boolean>) {
+    for (const [x, y] of this.cellCoords()) {
+      mask.set(`${x},${y}`, true)
+    }
   }
 
-  getOwnMask(x: number, y: number): number {
-    return this.ownMasks.get(`${x},${y}`) ?? 0
+  unregisterNodeInMask(mask: Map<string, boolean>) {
+    for (const [x, y] of this.cellCoords()) {
+      mask.delete(`${x},${y}`)
+    }
   }
 
-  /**
-   * Grant a directional bit toward a neighbor at (nx, ny).
-   * The neighbor gets the reciprocal bit back toward us.
-   * DOUBLE is granted only when both nodes are double-line.
-   */
-  grantBit(
-    x: number, y: number, bit: number,
-    neighbor: LineNode, nx: number, ny: number
-  ) {
-    const myDouble    = (this.getOwnMask(x, y) & DOUBLE) !== 0
-    const theirDouble = (neighbor.getOwnMask(nx, ny) & DOUBLE) !== 0
-    const bothDouble  = myDouble && theirDouble ? DOUBLE : 0
-
-    this.ownMasks.set(
-      `${x},${y}`,
-      (this.getOwnMask(x, y) | bit | bothDouble)
-    )
-    neighbor.ownMasks.set(
-      `${nx},${ny}`,
-      (neighbor.getOwnMask(nx, ny) | OPPOSITE[bit] | bothDouble)
-    )
-  }
-
-  /**
-   * Withdraw a directional bit toward a neighbor at (nx, ny).
-   * Clears our bit toward them and their reciprocal bit toward us.
-   * Also clears DOUBLE on both sides of this junction.
-   */
-  withdrawBit(
-    x: number, y: number, bit: number,
-    neighbor: LineNode, nx: number, ny: number
-  ) {
-    this.ownMasks.set(
-      `${x},${y}`,
-      (this.getOwnMask(x, y) & ~bit & ~DOUBLE)
-    )
-    neighbor.ownMasks.set(
-      `${nx},${ny}`,
-      (neighbor.getOwnMask(nx, ny) & ~OPPOSITE[bit] & ~DOUBLE)
-    )
+  private cellCoords(): Array<[number, number]> {
+    if (this.kind === "vline") {
+      return Array.from({ length: this.h }, (_, i): [number, number] => [this.x, this.y + i])
+    } else {
+      return Array.from({ length: this.w }, (_, i): [number, number] => [this.x + i, this.y])
+    }
   }
 
   refresh() {
     if (this.kind === "vline") {
-      const lines: string[] = []
-      for (let i = 0; i < this.h; i++) {
-        const glyph = maskToGlyph(this.getOwnMask(this.x, this.y + i))
-        this.chars[i] = glyph
-        lines.push(glyph)
-      }
-      this.el.textContent = lines.join("\n")
-    } else {
-      let text = ""
-      for (let i = 0; i < this.w; i++) {
-        const glyph = maskToGlyph(this.getOwnMask(this.x + i, this.y))
-        this.chars[i] = glyph
-        text += glyph
-      }
-      this.el.textContent = text
+      this.el.textContent = this.chars.join("\n")
+      return
     }
+    this.el.textContent = this.chars.join("")
   }
 
   applyVerticalStyle() {
