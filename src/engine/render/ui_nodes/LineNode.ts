@@ -5,9 +5,13 @@ export const LINE_GLYPHS: Record<number, string> = {
   0b00000: " ",
   0b00001: " ",
 
+  // TODO: single-line variants (no DOUBLE bit) are not yet wired up.
+  // Until the single/double distinction is implemented, DOUBLE is always
+  // forced on in neighborMask(), making these entries unreachable dead code.
   0b01010: "─",
   0b00010: "─",
   0b01000: "─",
+
   0b01011: "═",
   0b00011: "═",
   0b01001: "═",
@@ -15,6 +19,7 @@ export const LINE_GLYPHS: Record<number, string> = {
   0b10100: "│",
   0b00100: "│",
   0b10000: "│",
+
   0b10101: "║",
   0b00101: "║",
   0b10001: "║",
@@ -71,19 +76,8 @@ export class LineNode extends UINode {
     super(id, kind, el, x, y, w, h, [])
   }
 
-  registerNodeInMask(mask: Map<string, boolean>) {
-    for (const [x, y] of this.cellCoords()) {
-      mask.set(`${x},${y}`, true)
-    }
-  }
-
-  unregisterNodeInMask(mask: Map<string, boolean>) {
-    for (const [x, y] of this.cellCoords()) {
-      mask.delete(`${x},${y}`)
-    }
-  }
-
-  private cellCoords(): Array<[number, number]> {
+  /** The grid coordinates this node occupies. Used by RendererUI to update lineCells. */
+  cellCoords(): Array<[number, number]> {
     if (this.kind === "vline") {
       return Array.from({ length: this.h }, (_, i): [number, number] => [this.x, this.y + i])
     } else {

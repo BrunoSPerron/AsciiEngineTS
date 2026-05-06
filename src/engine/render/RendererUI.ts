@@ -25,9 +25,15 @@ export class RendererUI {
 
   nodes     = new Map<number, UINode>()
   menuBoxes = new Map<number, UIMenuBox>()
+
+  // Maps each cell key to the ordered stack of node IDs occupying it (topmost = last).
+  // Used to find which node should render the reconciled glyph at a given cell.
   cellStack = new Map<string, number[]>()
 
-  globalLineMask = new Map<string, boolean>()
+  // Tracks which cells are occupied by a LineNode. Used exclusively by
+  // neighborMask() during reconciliation to determine which directions have
+  // a connecting line.
+  private lineCells = new Map<string, boolean>()
 
   constructor(root: HTMLDivElement, inputManager: InputManager) {
     this.inputManager = inputManager
@@ -42,7 +48,7 @@ export class RendererUI {
     this.root.innerHTML = ""
     this.nodes.clear()
     this.cellStack.clear()
-    this.globalLineMask.clear()
+    this.lineCells.clear()
   }
 
   // ---------- animated box helpers ------------------------------------------
@@ -59,8 +65,12 @@ export class RendererUI {
     const lineNodes  = [topNode, bottomNode, leftNode, rightNode]
 
     for (const node of lineNodes) {
-      node.unregisterNodeInMask(this.globalLineMask)
+      this.unregisterLine(node)
     }
+
+    // After unregistering, reconcile cells that were adjacent to this box's
+    // border — they may have been rendering as intersections and now need to
+    // revert to plain line glyphs.
     const toReconcile = this.borderNeighborCells(lineNodes)
     for (const [x, y] of toReconcile) {
       this.reconcileAt(x, y)
@@ -177,7 +187,7 @@ export class RendererUI {
 
   drawHLine(x: number, y: number, w: number): number {
     const node = this.buildHLine(x, y, w)
-    node.registerNodeInMask(this.globalLineMask)
+    this.registerLine(node)
     this.reconcileFootprint(node)
     this.reconcileNeighborsOf(node)
     return node.id
@@ -185,7 +195,7 @@ export class RendererUI {
 
   drawVLine(x: number, y: number, h: number): number {
     const node = this.buildVLine(x, y, h)
-    node.registerNodeInMask(this.globalLineMask)
+    this.registerLine(node)
     this.reconcileFootprint(node)
     this.reconcileNeighborsOf(node)
     return node.id
@@ -211,7 +221,7 @@ export class RendererUI {
     if (!node) return
 
     if (node instanceof LineNode) {
-      node.unregisterNodeInMask(this.globalLineMask)
+      this.unregisterLine(node)
       this.reconcileFootprint(node)
       this.reconcileNeighborsOf(node)
     }
@@ -225,7 +235,7 @@ export class RendererUI {
     this.pushCells(node)
 
     if (node instanceof LineNode) {
-      node.registerNodeInMask(this.globalLineMask)
+      this.registerLine(node)
       this.reconcileFootprint(node)
       this.reconcileNeighborsOf(node)
     }
@@ -236,7 +246,7 @@ export class RendererUI {
     if (!node) return
 
     if (node instanceof LineNode) {
-      node.unregisterNodeInMask(this.globalLineMask)
+      this.unregisterLine(node)
     }
 
     this.popCells(node)
@@ -297,6 +307,24 @@ export class RendererUI {
 
   createRollerMenu(): RollerMenu {
     return new RollerMenu(this, this.inputManager)
+  }
+
+  // ==========================================================================
+  // LINE CELL REGISTRATION
+  // ==========================================================================
+
+  /** Mark all cells occupied by a LineNode as present in lineCells. */
+  private registerLine(node: LineNode) {
+    for (const [x, y] of node.cellCoords()) {
+      this.lineCells.set(this.key(x, y), true)
+    }
+  }
+
+  /** Remove all cells occupied by a LineNode from lineCells. */
+  private unregisterLine(node: LineNode) {
+    for (const [x, y] of node.cellCoords()) {
+      this.lineCells.delete(this.key(x, y))
+    }
   }
 
   // ==========================================================================
@@ -365,14 +393,13 @@ export class RendererUI {
   // ==========================================================================
 
   /**
-   * Derive the glyph at (x, y) purely from the globalLineMask.
-   * Always treats all lines as double — single line can be added back later.
+   * Recompute and write the correct glyph for the LineNode at (x, y).
    */
   private reconcileAt(x: number, y: number) {
+    // Find the topmost LineNode in the cellStack at this cell.
     const stack = this.cellStack.get(this.key(x, y))
     if (!stack || stack.length === 0) return
 
-    // Find the topmost LineNode in the stack
     let topLine: LineNode | null = null
     for (let i = stack.length - 1; i >= 0; i--) {
       const n = this.nodes.get(stack[i])
@@ -380,16 +407,10 @@ export class RendererUI {
     }
     if (!topLine) return
 
-    // Build direction mask from neighbors in the global mask
-    let mask = DOUBLE
-    if (this.globalLineMask.get(this.key(x, y - 1))) mask |= TOP
-    if (this.globalLineMask.get(this.key(x + 1, y))) mask |= RIGHT
-    if (this.globalLineMask.get(this.key(x, y + 1))) mask |= BOTTOM
-    if (this.globalLineMask.get(this.key(x - 1, y))) mask |= LEFT
+    // Build a direction bitmask from lineCells neighbors (neighborMask).
+    const glyph = maskToGlyph(this.neighborMask(x, y))
 
-    const glyph = maskToGlyph(mask)
-
-    // All LineNodes in the stack: topmost gets the merged glyph, others get blank
+    // Write the resolved glyph to that node's chars[], blank all others.
     for (const id of stack) {
       const node = this.nodes.get(id)
       if (!(node instanceof LineNode)) continue
@@ -400,6 +421,22 @@ export class RendererUI {
         ? node.chars.join("\n")
         : node.chars.join("")
     }
+  }
+
+  /**
+   * Build the direction bitmask at (x, y) by checking the four orthogonal
+   * neighbors in lineCells.
+   *
+   * Note: DOUBLE is always forced on — single-line glyphs are not yet wired up.
+   * See LINE_GLYPHS in LineNode.ts for the corresponding TODO.
+   */
+  private neighborMask(x: number, y: number): number {
+    let mask = DOUBLE
+    if (this.lineCells.get(this.key(x,     y - 1))) mask |= TOP
+    if (this.lineCells.get(this.key(x + 1, y    ))) mask |= RIGHT
+    if (this.lineCells.get(this.key(x,     y + 1))) mask |= BOTTOM
+    if (this.lineCells.get(this.key(x - 1, y    ))) mask |= LEFT
+    return mask
   }
 
   private reconcileFootprint(node: UINode) {
@@ -427,9 +464,13 @@ export class RendererUI {
   }
 
   /**
-   * Collect all cells orthogonally neighboring a set of LineNodes
-   * that are NOT part of those nodes' own footprint.
-   * Used to know what to reconcile after unregistering a closing box.
+   * Collect all cells orthogonally neighboring the given LineNodes that are
+   * NOT part of those nodes' own footprint.
+   *
+   * Used during box-closing animations: because lines are unregistered from
+   * lineCells before the closing animation runs, any cell that was previously
+   * an intersection (e.g. where this box's border met another line) needs to
+   * be reconciled so it reverts to the correct non-intersecting glyph.
    */
   private borderNeighborCells(lineNodes: LineNode[]): Array<[number, number]> {
     const own   = new Set<string>()
@@ -487,7 +528,6 @@ export class RendererUI {
     const node = new LineNode(this.nextId++, "hline", el, x, y, w, 1)
     node.applyTransform()
 
-    // Initial chars — will be overwritten by reconcileAt, but pre-fill sensibly
     for (let i = 0; i < w; i++) {
       node.chars[i] = "═"
     }
@@ -511,7 +551,6 @@ export class RendererUI {
     node.applyTransform()
     node.applyVerticalStyle()
 
-    // Initial chars — will be overwritten by reconcileAt
     for (let i = 0; i < h; i++) {
       node.chars[i] = "║"
     }
@@ -562,7 +601,7 @@ export class RendererUI {
 
   /**
    * Internal removal used by the closing animation, after unregister/reconcile
-   * have already been done. Skips the mask/reconcile steps.
+   * have already been done. Skips the lineCells and reconcile steps.
    */
   private removeNode(id: number) {
     const node = this.nodes.get(id)
