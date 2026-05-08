@@ -16,8 +16,6 @@
 }
 
 .ascii-engine {
-  --color-bg: #222;
-  --color-text: #bbb;
 
   --ui-bg: var(--color-bg);
   --ui-text: var(--color-text);
