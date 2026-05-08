@@ -91,6 +91,11 @@
 .ascii-engine .ui-panel {
   padding: 4px;
   inset: -4px;
+  z-index: -1
+}
+
+.ascii-engine .ui-panel-container {
+  z-index: 1;
 }
 
 /* ── Roller menu ─────────────────────────────────────── */

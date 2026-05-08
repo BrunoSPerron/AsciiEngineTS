@@ -3,15 +3,19 @@ import type { RendererUI } from "../RendererUI"
 import { TileMetrics } from "../TileMetrics"
 import { UIPanel } from "./UIPanel"
 
-export class SelectMenu extends UIPanel {
+export class SelectMenu {
+  private rendererUI: RendererUI
+  private inputManager: InputManager
   private itemEls: HTMLDivElement[] = []
   private currentIndex: number = 0
   private listenerKey: string = ""
+  private panel: UIPanel | null = null
 
   private resolve!: (index: number) => void
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
-    super(rendererUI, inputManager)
+    this.rendererUI  = rendererUI
+    this.inputManager = inputManager
   }
 
   open(
@@ -40,15 +44,13 @@ export class SelectMenu extends UIPanel {
     })
 
     this.setSelected(0)
-    this.registerKeys(wraparound)
+
+    const panelId = this.rendererUI.reserveId()
+    this.registerKeys(panelId, wraparound)
+    this.panel = this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
 
     return new Promise<number>(resolve => {
       this.resolve = resolve
-
-      this.openingPromise = this.openBox(x, y, w, h, undefined, container)
-        .then(id => {
-          this.menuBoxId = id
-        })
     })
   }
 
@@ -71,8 +73,8 @@ export class SelectMenu extends UIPanel {
     this.setSelected(next)
   }
 
-  private registerKeys(wraparound: boolean) {
-    this.inputManager.pushContext("select_menu")
+  private registerKeys(panelId: number, wraparound: boolean) {
+    this.inputManager.pushContext(`select_menu_${panelId}`)
     this.listenerKey = this.inputManager.onKeyDown(e => {
       switch (e.key) {
         case "ArrowUp":
@@ -95,8 +97,17 @@ export class SelectMenu extends UIPanel {
 
   private close(index: number) {
     this.inputManager.unlisten(this.listenerKey)
-    this.closeBox().then(() => {
-      this.inputManager.popContext("select_menu")
+    const ctxName = `select_menu_${this.panel?.id ?? ""}`
+    if (!this.panel) {
+      this.inputManager.popContext(ctxName)
+      this.resolve(index)
+      return
+    }
+    this.rendererUI.unregisterPanelEarly(this.panel)
+    this.panel.close().then(() => {
+      this.rendererUI.removePanel(this.panel!)
+      this.panel = null
+      this.inputManager.popContext(ctxName)
       this.resolve(index)
     })
   }

@@ -6,9 +6,6 @@ import { UIPanel } from "./UIPanel"
 const VISIBLE_ROWS = 5
 const CENTER = 2
 
-/**
- * CSS class applied per slot position:
- */
 const SLOT_CLASSES: readonly string[] = [
   "ui-roller fade-high",
   "ui-roller fade-low",
@@ -20,10 +17,14 @@ const SLOT_CLASSES: readonly string[] = [
 type ChangeHandler = (index: number) => void
 type ListenerMap = Map<string, ChangeHandler>
 
-export class RollerMenu extends UIPanel {
+export class RollerMenu {
+  private rendererUI: RendererUI
+  private inputManager: InputManager
+
   private items: string[] = []
   private currentIndex: number = 0
   private slotEls: HTMLDivElement[] = []
+  private panel: UIPanel | null = null
   private resolve!: (index: number) => void
 
   private idCounter = 0
@@ -31,7 +32,8 @@ export class RollerMenu extends UIPanel {
   private listenerKey: string = ""
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
-    super(rendererUI, inputManager)
+    this.rendererUI   = rendererUI
+    this.inputManager = inputManager
   }
 
   onChanged(fn: ChangeHandler): string {
@@ -48,13 +50,6 @@ export class RollerMenu extends UIPanel {
     for (const fn of this.changeListeners.values()) fn(index)
   }
 
-  /**
-   * Open the roller at (x, y).
-   * Height is always 7 (5 visible rows + 2 border rows).
-   * Width is derived from the longest item + paddingX * 2 + 2 border cols.
-   *
-   * @returns Promise resolving with the selected item index, or -1 on Escape.
-   */
   open(
     x: number,
     y: number,
@@ -77,24 +72,22 @@ export class RollerMenu extends UIPanel {
     container.style.position = "relative"
 
     this.slotEls = Array.from({ length: VISIBLE_ROWS }, (_, slot) => {
-        const el = document.createElement("div")
-        el.style.position = "absolute"
-        el.style.top = `${slot * TileMetrics.h}px`
-        el.style.whiteSpace = "pre"
-        el.style.width = `${innerW * TileMetrics.w}px`
-        container.appendChild(el)
-        return el
+      const el = document.createElement("div")
+      el.style.position  = "absolute"
+      el.style.top       = `${slot * TileMetrics.h}px`
+      el.style.whiteSpace = "pre"
+      el.style.width     = `${innerW * TileMetrics.w}px`
+      container.appendChild(el)
+      return el
     })
 
     this.renderSlots()
     this.registerKeys()
 
+    this.panel = this.rendererUI.drawPanel(x, y, w, h, container)
+
     return new Promise<number>(resolve => {
       this.resolve = resolve
-      this.openingPromise = this.openBox(x, y, w, h, undefined, container)
-        .then(id => {
-          this.menuBoxId = id
-        })
     })
   }
 
@@ -102,11 +95,6 @@ export class RollerMenu extends UIPanel {
   // SLOT RENDERING
   // ==================================================
 
-  /**
-   * Repaint all 5 slot elements from the current selectedIndex.
-   * The item shown in slot `s` is the one at logical index:
-   *   (currentIndex + s - CENTER + items.length * largeMultiple) % items.length
-   */
   private renderSlots() {
     const count = this.items.length
 
@@ -117,7 +105,6 @@ export class RollerMenu extends UIPanel {
       const el = this.slotEls[slot]
       el.textContent = text
 
-      // Clear all roller classes, then apply the correct one for this slot
       el.className = slot === CENTER
         ? "selectable selected " + SLOT_CLASSES[slot]
         : SLOT_CLASSES[slot]
@@ -132,7 +119,7 @@ export class RollerMenu extends UIPanel {
     const count = this.items.length
     this.currentIndex = ((this.currentIndex + delta) % count + count) % count
     this.renderSlots()
-    this.emitChanged(this.currentIndex)   // ← fire here
+    this.emitChanged(this.currentIndex)
   }
 
   // ==================================================
@@ -163,7 +150,15 @@ export class RollerMenu extends UIPanel {
 
   private close(index: number) {
     this.inputManager.unlisten(this.listenerKey)
-    this.closeBox().then(() => {
+    if (!this.panel) {
+      this.inputManager.popContext("roller_menu")
+      this.resolve(index)
+      return
+    }
+    this.rendererUI.unregisterPanelEarly(this.panel)
+    this.panel.close().then(() => {
+      this.rendererUI.removePanel(this.panel!)
+      this.panel = null
       this.inputManager.popContext("roller_menu")
       this.resolve(index)
     })

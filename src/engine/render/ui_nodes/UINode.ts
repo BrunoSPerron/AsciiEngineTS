@@ -6,6 +6,16 @@ export type UIKind =
   | "vline"
   | "panel"
 
+export interface ILineLike {
+  cellCoords(): Array<[number, number]>
+  charIndexFor(x: number, y: number): number
+  setCharAt(x: number, y: number, glyph: string): void
+}
+
+export function isLineLike(node: UINode): node is UINode & ILineLike {
+  return node.kind === "hline" || node.kind === "vline" || node.kind === "panel"
+}
+
 export class UINode {
   id: number
   kind: UIKind

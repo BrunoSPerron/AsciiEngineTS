@@ -1,39 +1,23 @@
 import type { InputManager } from "../core/InputManager"
 import { TileMetrics } from "./TileMetrics"
-import { UINode, type UIKind } from "./ui_nodes/UINode"
+import { UINode, type UIKind, isLineLike } from "./ui_nodes/UINode"
 import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from "./ui_nodes/LineNode"
+import { UIPanel } from "./ui_nodes/UIPanel"
 import { SelectMenu } from "./ui_nodes/SelectMenu"
 import { RollerMenu } from "./ui_nodes/RollerMenu"
-
-export type UIMenuBox = {
-  id: number
-  topId: number
-  bottomId: number
-  leftId: number
-  rightId: number
-  panelId: number
-}
 
 export class RendererUI {
   root: HTMLDivElement
   inputManager: InputManager
 
-  private static readonly PHASE1_RATIO = 0.60
-  private static readonly PHASE2_RATIO = 0.4
-
   private nextId = 1
 
   nodes     = new Map<number, UINode>()
-  menuBoxes = new Map<number, UIMenuBox>()
 
   // Maps each cell key to the ordered stack of node IDs occupying it (topmost = last).
-  // Used to find which node should render the reconciled glyph at a given cell.
   cellStack = new Map<string, number[]>()
 
-  // Tracks which cells have a LineNode as their topmost entry in cellStack.
-  // A panel on top of a line removes that cell from lineCells, hiding it from
-  // neighbor detection. Derived from cellStack — updated by recomputeLineCells()
-  // whenever the stack at a cell changes. Used exclusively by neighborMask().
+  // Tracks which cells have a line-like node as their topmost entry in cellStack.
   private lineCells = new Map<string, boolean>()
 
   constructor(root: HTMLDivElement, inputManager: InputManager) {
@@ -41,136 +25,15 @@ export class RendererUI {
     this.root = root
   }
 
-  // ==========================================================================
-  // PUBLIC API
-  // ==========================================================================
+  reserveId(): number {
+    return this.nextId++
+  }
 
   clear() {
     this.root.innerHTML = ""
     this.nodes.clear()
     this.cellStack.clear()
     this.lineCells.clear()
-  }
-
-  // ---------- animated box helpers ------------------------------------------
-
-  animatedMenuBoxClosing(id: number, duration = 500): Promise<void> {
-    const menuBox = this.menuBoxes.get(id)
-    if (!menuBox) return Promise.resolve()
-
-    const topNode    = this.nodes.get(menuBox.topId)    as LineNode
-    const bottomNode = this.nodes.get(menuBox.bottomId) as LineNode
-    const leftNode   = this.nodes.get(menuBox.leftId)   as LineNode
-    const rightNode  = this.nodes.get(menuBox.rightId)  as LineNode
-    const panelNode  = this.nodes.get(menuBox.panelId)!
-    const lineNodes  = [topNode, bottomNode, leftNode, rightNode]
-
-    for (const node of lineNodes) {
-      this.unregisterLine(node)
-    }
-    this.unregisterPanel(panelNode)
-
-    const midY = topNode.y + (bottomNode.y - topNode.y) / 2
-    const x    = topNode.x
-
-    return new Promise(resolve => {
-      const phase1Duration = duration * RendererUI.PHASE1_RATIO
-
-      for (const node of [leftNode, rightNode, panelNode]) {
-        this.animateVerticalClipCollapse(node.el, node.x, node.y, phase1Duration)
-      }
-
-      this.animateVerticalSlide(topNode.el, x, topNode.y, midY, phase1Duration, "ease-in")
-
-      const bottomAnim = this.animateVerticalSlide(
-        bottomNode.el, x, bottomNode.y, midY, phase1Duration, "ease-in"
-      )
-
-      bottomAnim.onfinish = () => {
-        resolve()
-        bottomNode.el.style.display = "none"
-        topNode.chars[0] = "═"
-        topNode.chars[topNode.chars.length - 1] = "═"
-        topNode.el.textContent = topNode.chars.join("")
-
-        const phase2Anim = this.animateHorizontalCollapse(
-          topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO
-        )
-
-        phase2Anim.onfinish = () => {
-          for (const node of lineNodes) this.removeNode(node.id)
-          this.removeNode(menuBox.panelId)
-          this.menuBoxes.delete(id)
-        }
-      }
-    })
-  }
-
-  animatedMenuBoxOpening(
-    x: number, y: number, w: number, h: number,
-    duration = 500, content?: HTMLDivElement
-  ): Promise<number> {
-    const midY = y + h / 2
-
-    const leftId            = this.drawVLine(x,         y, h)
-    const rightId           = this.drawVLine(x + w - 1, y, h)
-    const topId             = this.drawHLine(x,         y, w)
-    const bottomId          = this.drawHLine(x, y + h - 1, w)
-    const backgroundPanelId = this.drawPanel(x + 1, y + 1, w - 2, h - 2, content)
-
-    const leftNode            = this.nodes.get(leftId)!
-    const rightNode           = this.nodes.get(rightId)!
-    const topNode             = this.nodes.get(topId)   as LineNode
-    const bottomNode          = this.nodes.get(bottomId) as LineNode
-    const backgroundPanelNode = this.nodes.get(backgroundPanelId)!
-
-    const menuBox: UIMenuBox = {
-      id: this.nextId++,
-      topId,
-      bottomId,
-      leftId,
-      rightId,
-      panelId: backgroundPanelId,
-    }
-    this.menuBoxes.set(menuBox.id, menuBox)
-
-    for (const node of [leftNode, rightNode, backgroundPanelNode]) {
-      node.el.style.transformOrigin = "50% 50%"
-      node.el.style.clipPath = "inset(50% 0 50% 0)"
-    }
-
-    topNode.el.style.clipPath = "inset(0 50% 0 50%)"
-    bottomNode.el.style.display = "none"
-    topNode.chars[0] = "╠"
-    topNode.chars[topNode.chars.length - 1] = "╣"
-    topNode.el.textContent = topNode.chars.join("")
-
-    const topAnim = this.animateHorizontalExpand(
-      topNode.el, x, midY, duration * RendererUI.PHASE2_RATIO
-    )
-
-    return new Promise(resolve => {
-      topAnim.onfinish = () => {
-        this.reconcileAt(x,         y)
-        this.reconcileAt(x + w - 1, y)
-
-        backgroundPanelNode.el.style.setProperty("z-index", "-1")
-
-        this.animateVerticalSlide(topNode.el,    x, midY, y,         duration * RendererUI.PHASE1_RATIO)
-        bottomNode.el.style.display = "block"
-        this.animateVerticalSlide(bottomNode.el, x, midY, y + h - 1, duration * RendererUI.PHASE1_RATIO)
-
-        const phase2Anims = [leftNode, rightNode, backgroundPanelNode].map(node => {
-          node.el.style.transformOrigin = "50% 50%"
-          node.el.style.clipPath = "inset(50% 0 50% 0)"
-          return this.animateVerticalClipReveal(
-            node.el, node.x, node.y, duration * RendererUI.PHASE1_RATIO
-          )
-        })
-
-        Promise.all(phase2Anims.map(a => a.finished)).then(() => resolve(menuBox.id))
-      }
-    })
   }
 
   // ---------- primitive draw calls ------------------------------------------
@@ -181,7 +44,7 @@ export class RendererUI {
 
   drawHLine(x: number, y: number, w: number): number {
     const node = this.buildHLine(x, y, w)
-    this.registerLine(node)
+    this.registerLineLike(node)
     this.reconcileFootprint(node)
     this.reconcileNeighborsOf(node)
     return node.id
@@ -189,35 +52,28 @@ export class RendererUI {
 
   drawVLine(x: number, y: number, h: number): number {
     const node = this.buildVLine(x, y, h)
-    this.registerLine(node)
+    this.registerLineLike(node)
     this.reconcileFootprint(node)
     this.reconcileNeighborsOf(node)
     return node.id
   }
 
-  drawPanel(x: number, y: number, w: number, h: number, content?: HTMLDivElement): number {
-    const node = this.createNode("panel", x, y, w, h, [])
-
-    node.el.className = "ui ui-panel"
-    node.el.style.width  = `${w * TileMetrics.w}px`
-    node.el.style.height = `${h * TileMetrics.h}px`
-
-    if (content) node.el.appendChild(content)
-
-    this.pushCellsRect(node)
-
-    // Recompute lineCells for every cell this panel covers, then reconcile
-    // any line glyphs whose neighbor mask may have changed because lines
-    // beneath the panel are now hidden.
-    for (const [px, py] of this.footprintCoords(node)) {
-      this.recomputeLineCells(this.key(px, py))
-      this.reconcileAt(px - 1, py)
-      this.reconcileAt(px + 1, py)
-      this.reconcileAt(px,     py - 1)
-      this.reconcileAt(px,     py + 1)
-    }
-
-    return node.id
+  drawPanel(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    content?: HTMLDivElement,
+    duration?: number,
+    reservedId?: number,
+  ): UIPanel {
+    const panel = this.buildPanel(x, y, w, h, reservedId)
+    this.registerLineLike(panel)
+    this.reconcileFootprint(panel)
+    this.reconcileNeighborsPanelBorder(panel)
+    this.pushInteriorCells(panel)
+    panel.open(duration, content)
+    return panel
   }
 
   // ---------- manipulation --------------------------------------------------
@@ -226,10 +82,10 @@ export class RendererUI {
     const node = this.nodes.get(id)
     if (!node) return
 
-    if (node instanceof LineNode) {
-      this.unregisterLine(node)
+    if (isLineLike(node)) {
+      this.unregisterLineLike(node)
       this.reconcileFootprint(node)
-      this.reconcileNeighborsOf(node)
+      this.reconcileNeighborsGeneric(node)
     }
 
     this.popCells(node)
@@ -240,10 +96,10 @@ export class RendererUI {
 
     this.pushCells(node)
 
-    if (node instanceof LineNode) {
-      this.registerLine(node)
+    if (isLineLike(node)) {
+      this.registerLineLike(node)
       this.reconcileFootprint(node)
-      this.reconcileNeighborsOf(node)
+      this.reconcileNeighborsGeneric(node)
     }
   }
 
@@ -251,8 +107,8 @@ export class RendererUI {
     const node = this.nodes.get(id)
     if (!node) return
 
-    if (node instanceof LineNode) {
-      this.unregisterLine(node)
+    if (isLineLike(node)) {
+      this.unregisterLineLike(node)
     }
 
     const footprint = this.footprintCoords(node)
@@ -261,17 +117,13 @@ export class RendererUI {
     node.el.remove()
     this.nodes.delete(id)
 
-    if (node instanceof LineNode) {
-      // Recompute lineCells for the line's own cells (now vacated or re-topped
-      // by whatever was underneath), then reconcile footprint and neighbors.
+    if (isLineLike(node)) {
       for (const [x, y] of footprint) {
         this.recomputeLineCells(this.key(x, y))
       }
-      this.reconcileFootprint(node)
-      this.reconcileNeighborsOf(node)
+      this.reconcileFootprintCoords(footprint)
+      this.reconcileNeighborsGeneric(node)
     } else if (node.kind === "panel") {
-      // Recompute lineCells for every cell this panel covered — lines that
-      // were hidden beneath it may now be the topmost entry again.
       for (const [x, y] of footprint) {
         this.recomputeLineCells(this.key(x, y))
         this.reconcileAt(x, y)
@@ -290,13 +142,12 @@ export class RendererUI {
 
     for (let i = stack.length - 1; i >= 0; i--) {
       const node = this.nodes.get(stack[i])
-      if (!(node instanceof LineNode)) continue
+      if (!node || !isLineLike(node)) continue
 
-      const idx = this.charIndexFor(node, x, y)
+      const idx = node.charIndexFor(x, y)
       if (idx === -1) continue
 
-      node.chars[idx] = glyph
-      node.refresh()
+      node.setCharAt(x, y, glyph)
       return true
     }
 
@@ -336,12 +187,6 @@ export class RendererUI {
   // LINE CELL REGISTRATION
   // ==========================================================================
 
-  /**
-   * Recompute whether cell `key` should be in lineCells.
-   * A cell is present if and only if its topmost cellStack entry is a LineNode
-   * (i.e. no panel is sitting on top of it).
-   * Called whenever the stack at a cell changes.
-   */
   private recomputeLineCells(key: string) {
     const stack = this.cellStack.get(key)
     if (!stack || stack.length === 0) {
@@ -349,50 +194,36 @@ export class RendererUI {
       return
     }
     const top = this.nodes.get(stack[stack.length - 1])
-    if (top instanceof LineNode) {
+    if (top && isLineLike(top)) {
       this.lineCells.set(key, true)
     } else {
       this.lineCells.delete(key)
     }
   }
 
-  /** Register a LineNode into lineCells and reconcile its cells' neighbors. */
-  private registerLine(node: LineNode) {
+  private registerLineLike(node: UINode) {
+    if (!isLineLike(node)) return
     for (const [x, y] of node.cellCoords()) {
       this.recomputeLineCells(this.key(x, y))
     }
   }
 
-  /**
-   * Remove a LineNode from lineCells and reconcile its former neighbors.
-   * Used both by remove() and as an early-exit before closing animations,
-   * so that neighboring lines revert to non-intersection glyphs immediately.
-   *
-   * Note: the node is still in cellStack at this point — we force-delete from
-   * lineCells directly rather than recomputing from the stack, because the
-   * stack hasn't been updated yet.
-   */
-  private unregisterLine(node: LineNode) {
+  private unregisterLineLike(node: UINode) {
+    if (!isLineLike(node)) return
     for (const [x, y] of node.cellCoords()) {
       this.lineCells.delete(this.key(x, y))
     }
-    const toReconcile = this.borderNeighborCells([node])
+    const toReconcile = this.borderNeighborCells(node)
     for (const [x, y] of toReconcile) {
       this.reconcileAt(x, y)
     }
   }
 
-  /**
-   * Early-unregister a panel before its closing animation runs.
-   * Pops the panel from the cellStack, recomputes lineCells for every cell it
-   * covered (restoring any hidden lines to the mask), and reconciles the
-   * surrounding glyphs. removeNode() called later will find nothing to pop
-   * and is safe to call without double-reconciling.
-   */
-  private unregisterPanel(node: UINode) {
-    const footprint = this.footprintCoords(node)
-    this.popCells(node)
-    for (const [x, y] of footprint) {
+  unregisterPanelEarly(panel: UIPanel) {
+    this.unregisterLineLike(panel)
+    const interior = panel.interiorCoords()
+    this.popCoordsFromStack(panel.id, interior)
+    for (const [x, y] of interior) {
       this.recomputeLineCells(this.key(x, y))
       this.reconcileAt(x, y)
       this.reconcileAt(x - 1, y)
@@ -402,15 +233,27 @@ export class RendererUI {
     }
   }
 
+  removePanel(panel: UIPanel) {
+    this.unregisterPanelEarly(panel)
+    const footprint = this.footprintCoords(panel)
+    this.popCells(panel)
+    this.nodes.delete(panel.id)
+    for (const [x, y] of footprint) {
+      this.recomputeLineCells(this.key(x, y))
+      this.reconcileAt(x, y)
+    }
+  }
+
   // ==========================================================================
   // CELL STACK MANAGEMENT
   // ==========================================================================
 
   private pushCells(node: UINode) {
-    if (node instanceof LineNode) {
+    if (node instanceof UIPanel) {
+      this.pushBorderCells(node)
+      this.pushInteriorCells(node)
+    } else if (node instanceof LineNode) {
       this.pushCellsLine(node)
-    } else if (node.kind === "panel") {
-      this.pushCellsRect(node)
     } else {
       this.pushCellsHorizontal(node)
     }
@@ -418,11 +261,15 @@ export class RendererUI {
 
   private popCells(node: UINode) {
     const coords = this.footprintCoords(node)
+    this.popCoordsFromStack(node.id, coords)
+  }
+
+  private popCoordsFromStack(id: number, coords: Array<[number, number]>) {
     for (const [x, y] of coords) {
       const key   = this.key(x, y)
       const stack = this.cellStack.get(key)
       if (!stack) continue
-      const idx = stack.indexOf(node.id)
+      const idx = stack.indexOf(id)
       if (idx !== -1) {
         stack.splice(idx, 1)
         this.recomputeLineCells(key)
@@ -449,11 +296,15 @@ export class RendererUI {
     }
   }
 
-  private pushCellsRect(node: UINode) {
-    for (let yy = 0; yy < node.h; yy++) {
-      for (let xx = 0; xx < node.w; xx++) {
-        this.pushToStack(this.key(node.x + xx, node.y + yy), node.id)
-      }
+  private pushBorderCells(panel: UIPanel) {
+    for (const [x, y] of panel.cellCoords()) {
+      this.pushToStack(this.key(x, y), panel.id)
+    }
+  }
+
+  pushInteriorCells(panel: UIPanel) {
+    for (const [x, y] of panel.interiorCoords()) {
+      this.pushToStack(this.key(x, y), panel.id)
     }
   }
 
@@ -473,48 +324,30 @@ export class RendererUI {
   // RECONCILIATION
   // ==========================================================================
 
-  /**
-   * Recompute and write the correct glyph for the LineNode at (x, y).
-   *
-   * Three-step sequence:
-   *   1. Find the topmost LineNode in the cellStack at this cell.
-   *   2. Build a direction bitmask from lineCells neighbors (neighborMask).
-   *   3. Write the resolved glyph to that node's chars[], blank all others.
-   */
   private reconcileAt(x: number, y: number) {
-    if (!this.lineCells.has(this.key(x,y))) return
+    if (!this.lineCells.has(this.key(x, y))) return
 
     const stack = this.cellStack.get(this.key(x, y))
     if (!stack || stack.length === 0) return
 
-    let topLine: LineNode | null = null
+    let topLineLike: (UINode & { charIndexFor(x: number, y: number): number; setCharAt(x: number, y: number, g: string): void }) | null = null
     for (let i = stack.length - 1; i >= 0; i--) {
       const n = this.nodes.get(stack[i])
-      if (n instanceof LineNode) { topLine = n; break }
+      if (n && isLineLike(n)) { topLineLike = n; break }
     }
-    if (!topLine) return
+    if (!topLineLike) return
 
     const glyph = maskToGlyph(this.neighborMask(x, y))
 
     for (const id of stack) {
       const node = this.nodes.get(id)
-      if (!(node instanceof LineNode)) continue
-      const idx = this.charIndexFor(node, x, y)
+      if (!node || !isLineLike(node)) continue
+      const idx = node.charIndexFor(x, y)
       if (idx === -1) continue
-      node.chars[idx] = node === topLine ? glyph : " "
-      node.el.textContent = node.kind === "vline"
-        ? node.chars.join("\n")
-        : node.chars.join("")
+      node.setCharAt(x, y, node === topLineLike ? glyph : " ")
     }
   }
 
-  /**
-   * Build the direction bitmask at (x, y) by checking the four orthogonal
-   * neighbors in lineCells.
-   *
-   * Note: DOUBLE is always forced on — single-line glyphs are not yet wired up.
-   * See LINE_GLYPHS in LineNode.ts for the corresponding TODO.
-   */
   private neighborMask(x: number, y: number): number {
     let mask = DOUBLE
     if (this.lineCells.get(this.key(x,     y - 1))) mask |= TOP
@@ -525,9 +358,11 @@ export class RendererUI {
   }
 
   private reconcileFootprint(node: UINode) {
-    for (const [x, y] of this.footprintCoords(node)) {
-      this.reconcileAt(x, y)
-    }
+    this.reconcileFootprintCoords(this.footprintCoords(node))
+  }
+
+  private reconcileFootprintCoords(coords: Array<[number, number]>) {
+    for (const [x, y] of coords) this.reconcileAt(x, y)
   }
 
   private reconcileNeighborsOf(node: LineNode) {
@@ -548,43 +383,68 @@ export class RendererUI {
     }
   }
 
-  /**
-   * Collect all cells orthogonally neighboring the given LineNodes that are
-   * NOT part of those nodes' own footprint.
-   *
-   * Used by unregisterLine() so that cells which were previously intersections
-   * with the departing line get reconciled and revert to the correct glyph.
-   */
-  private borderNeighborCells(lineNodes: LineNode[]): Array<[number, number]> {
+  private reconcileNeighborsPanelBorder(panel: UIPanel) {
+    // Reconcile one cell outside each edge of the panel border
+    for (let i = 0; i < panel.w; i++) {
+      this.reconcileAt(panel.x + i, panel.y - 1)
+      this.reconcileAt(panel.x + i, panel.y + panel.h)
+    }
+    for (let i = 0; i < panel.h; i++) {
+      this.reconcileAt(panel.x - 1,          panel.y + i)
+      this.reconcileAt(panel.x + panel.w, panel.y + i)
+    }
+  }
+
+  private reconcileNeighborsGeneric(node: UINode) {
+    if (node instanceof UIPanel) {
+      this.reconcileNeighborsPanelBorder(node)
+    } else if (node instanceof LineNode) {
+      this.reconcileNeighborsOf(node)
+    }
+  }
+
+  private borderNeighborCells(node: UINode): Array<[number, number]> {
+    if (node instanceof UIPanel) return this.panelBorderNeighborCells(node)
+    if (node instanceof LineNode) return this.lineNeighborCells(node)
+    return []
+  }
+
+  private lineNeighborCells(node: LineNode): Array<[number, number]> {
     const own   = new Set<string>()
     const outer = new Map<string, [number, number]>()
 
-    for (const node of lineNodes) {
-      if (node.kind === "hline") {
-        for (let i = 0; i < node.w; i++) own.add(this.key(node.x + i, node.y))
-      } else {
-        for (let i = 0; i < node.h; i++) own.add(this.key(node.x, node.y + i))
+    if (node.kind === "hline") {
+      for (let i = 0; i < node.w; i++) own.add(this.key(node.x + i, node.y))
+      for (let i = 0; i < node.w; i++) {
+        this.addIfNotOwn(node.x + i, node.y - 1, own, outer)
+        this.addIfNotOwn(node.x + i, node.y + 1, own, outer)
       }
+      this.addIfNotOwn(node.x - 1,      node.y, own, outer)
+      this.addIfNotOwn(node.x + node.w, node.y, own, outer)
+    } else {
+      for (let i = 0; i < node.h; i++) own.add(this.key(node.x, node.y + i))
+      for (let i = 0; i < node.h; i++) {
+        this.addIfNotOwn(node.x - 1, node.y + i, own, outer)
+        this.addIfNotOwn(node.x + 1, node.y + i, own, outer)
+      }
+      this.addIfNotOwn(node.x, node.y - 1,      own, outer)
+      this.addIfNotOwn(node.x, node.y + node.h, own, outer)
     }
 
-    for (const node of lineNodes) {
-      if (node.kind === "hline") {
-        for (let i = 0; i < node.w; i++) {
-          this.addIfNotOwn(node.x + i, node.y - 1, own, outer)
-          this.addIfNotOwn(node.x + i, node.y + 1, own, outer)
-        }
-        this.addIfNotOwn(node.x - 1,      node.y, own, outer)
-        this.addIfNotOwn(node.x + node.w, node.y, own, outer)
-      } else {
-        for (let i = 0; i < node.h; i++) {
-          this.addIfNotOwn(node.x - 1, node.y + i, own, outer)
-          this.addIfNotOwn(node.x + 1, node.y + i, own, outer)
-        }
-        this.addIfNotOwn(node.x, node.y - 1,      own, outer)
-        this.addIfNotOwn(node.x, node.y + node.h, own, outer)
-      }
-    }
+    return [...outer.values()]
+  }
 
+  private panelBorderNeighborCells(panel: UIPanel): Array<[number, number]> {
+    const own   = new Set(panel.cellCoords().map(([x, y]) => this.key(x, y)))
+    const outer = new Map<string, [number, number]>()
+    for (let i = 0; i < panel.w; i++) {
+      this.addIfNotOwn(panel.x + i, panel.y - 1,          own, outer)
+      this.addIfNotOwn(panel.x + i, panel.y + panel.h,    own, outer)
+    }
+    for (let i = 0; i < panel.h; i++) {
+      this.addIfNotOwn(panel.x - 1,         panel.y + i, own, outer)
+      this.addIfNotOwn(panel.x + panel.w,   panel.y + i, own, outer)
+    }
     return [...outer.values()]
   }
 
@@ -611,9 +471,7 @@ export class RendererUI {
     const node = new LineNode(this.nextId++, "hline", el, x, y, w, 1)
     node.applyTransform()
 
-    for (let i = 0; i < w; i++) {
-      node.chars[i] = "═"
-    }
+    for (let i = 0; i < w; i++) node.chars[i] = "═"
     node.refresh()
 
     this.root.appendChild(el)
@@ -634,9 +492,7 @@ export class RendererUI {
     node.applyTransform()
     node.applyVerticalStyle()
 
-    for (let i = 0; i < h; i++) {
-      node.chars[i] = "║"
-    }
+    for (let i = 0; i < h; i++) node.chars[i] = "║"
     node.refresh()
 
     this.root.appendChild(el)
@@ -644,6 +500,24 @@ export class RendererUI {
     this.pushCellsLine(node)
 
     return node
+  }
+
+  private buildPanel(x: number, y: number, w: number, h: number, reservedId?: number): UIPanel {
+    const containerEl = document.createElement("div")
+    containerEl.className = "ui-panel-container"
+    containerEl.style.position = "absolute"
+    containerEl.style.inset    = "0"
+    this.root.appendChild(containerEl)
+
+    // el is a no-op placeholder — UIPanel manages its own border divs
+    const el = document.createElement("div")
+    const id = reservedId ?? this.nextId++
+    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.inputManager)
+
+    this.nodes.set(panel.id, panel)
+    this.pushBorderCells(panel)
+
+    return panel
   }
 
   // ==========================================================================
@@ -682,33 +556,15 @@ export class RendererUI {
     return node
   }
 
-  /**
-   * Internal removal used by the closing animation, after unregisterLine /
-   * unregisterPanel have already run. popCells() is idempotent — if the node
-   * was already removed from the stack, indexOf returns -1 and nothing happens.
-   */
-  private removeNode(id: number) {
-    const node = this.nodes.get(id)
-    if (!node) return
-    this.popCells(node)
-    node.el.remove()
-    this.nodes.delete(id)
-  }
-
   // ==========================================================================
   // UTILITIES
   // ==========================================================================
 
-  private charIndexFor(node: UINode, x: number, y: number): number {
-    if (node.kind === "vline") {
-      const i = y - node.y
-      return i >= 0 && i < node.h ? i : -1
-    }
-    const i = x - node.x
-    return i >= 0 && i < node.w ? i : -1
-  }
-
   private footprintCoords(node: UINode): Array<[number, number]> {
+    // For UIPanel, footprint is border + interior
+    if (node instanceof UIPanel) {
+      return [...node.cellCoords(), ...node.interiorCoords()]
+    }
     const coords: Array<[number, number]> = []
     for (let yy = node.y; yy < node.y + node.h; yy++) {
       for (let xx = node.x; xx < node.x + node.w; xx++) {
@@ -720,62 +576,5 @@ export class RendererUI {
 
   private key(x: number, y: number): string {
     return `${x},${y}`
-  }
-
-  // ==========================================================================
-  // ANIMATION HELPERS
-  // ==========================================================================
-
-  private animateHorizontalExpand(el: HTMLElement, x: number, midY: number, duration: number): Animation {
-    return el.animate(
-      [
-        { transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`, clipPath: "inset(0 50% 0 50%)" },
-        { transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`, clipPath: "inset(0 0 0 0)" },
-      ],
-      { duration, easing: "ease-out", fill: "forwards" }
-    )
-  }
-
-  private animateVerticalSlide(
-    el: HTMLElement, x: number, fromY: number, toY: number,
-    duration: number, easing = "ease-out"
-  ): Animation {
-    return el.animate(
-      [
-        { transform: `translate(${x * TileMetrics.w}px, ${fromY * TileMetrics.h}px)` },
-        { transform: `translate(${x * TileMetrics.w}px, ${toY   * TileMetrics.h}px)` },
-      ],
-      { duration, easing, fill: "forwards" }
-    )
-  }
-
-  private animateVerticalClipReveal(el: HTMLElement, x: number, y: number, duration: number): Animation {
-    return el.animate(
-      [
-        { transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`, clipPath: "inset(50% 0 50% 0)" },
-        { transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`, clipPath: "inset(0 0 0 0)" },
-      ],
-      { duration, easing: "ease-out", fill: "forwards" }
-    )
-  }
-
-  private animateVerticalClipCollapse(el: HTMLElement, x: number, y: number, duration: number): Animation {
-    return el.animate(
-      [
-        { transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`, clipPath: "inset(0 0 0 0)" },
-        { transform: `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`, clipPath: "inset(50% 0 50% 0)" },
-      ],
-      { duration, easing: "ease-in", fill: "forwards" }
-    )
-  }
-
-  private animateHorizontalCollapse(el: HTMLElement, x: number, midY: number, duration: number): Animation {
-    return el.animate(
-      [
-        { transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`, clipPath: "inset(0 0 0 0)" },
-        { transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`, clipPath: "inset(0 50% 0 50%)" },
-      ],
-      { duration, easing: "ease-in", fill: "forwards" }
-    )
   }
 }

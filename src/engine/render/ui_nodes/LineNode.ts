@@ -1,5 +1,5 @@
 import { TileMetrics } from "../TileMetrics"
-import { UINode } from "./UINode"
+import { UINode, type ILineLike } from "./UINode"
 
 export const LINE_GLYPHS: Record<number, string> = {
   0b00000: " ",
@@ -62,7 +62,7 @@ export function maskToGlyph(mask: number): string {
   return LINE_GLYPHS[mask] ?? "?"
 }
 
-export class LineNode extends UINode {
+export class LineNode extends UINode implements ILineLike {
 
   constructor(
     id: number,
@@ -76,13 +76,28 @@ export class LineNode extends UINode {
     super(id, kind, el, x, y, w, h, [])
   }
 
-  /** The grid coordinates this node occupies. Used by RendererUI to update lineCells. */
   cellCoords(): Array<[number, number]> {
     if (this.kind === "vline") {
       return Array.from({ length: this.h }, (_, i): [number, number] => [this.x, this.y + i])
     } else {
       return Array.from({ length: this.w }, (_, i): [number, number] => [this.x + i, this.y])
     }
+  }
+
+  charIndexFor(x: number, y: number): number {
+    if (this.kind === "vline") {
+      const i = y - this.y
+      return i >= 0 && i < this.h ? i : -1
+    }
+    const i = x - this.x
+    return i >= 0 && i < this.w ? i : -1
+  }
+
+  setCharAt(x: number, y: number, glyph: string): void {
+    const idx = this.charIndexFor(x, y)
+    if (idx === -1) return
+    this.chars[idx] = glyph
+    this.refresh()
   }
 
   refresh() {

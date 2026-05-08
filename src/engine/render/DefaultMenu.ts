@@ -24,9 +24,9 @@ export class DefaultMenu {
     })
 
     // TODO remove me (overlap test)
-    setTimeout(()=>{
+    /*setTimeout(()=>{
       this.renderer.uiLayer.showSelectMenu(13, 13, options)
-    }, 1000)
+    }, 1000)*/
   }
 
   private openPaletteMenu() {
