@@ -1,6 +1,18 @@
 .ascii-engine-host {
   position: fixed !important;
-  inset: 0px ! important;
+  inset: 0px !important;
+}
+
+@property --color-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #222;
+}
+
+@property --color-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #bbb;
 }
 
 .ascii-engine {
@@ -32,6 +44,10 @@
   line-height: var(--line-height);
   letter-spacing: 0 !important;
   text-align: left;
+
+  transition:
+    --color-bg 250ms ease,
+    --color-text 250ms ease;
 }
 
 .ascii-engine.default {
