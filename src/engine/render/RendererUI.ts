@@ -30,9 +30,10 @@ export class RendererUI {
   // Used to find which node should render the reconciled glyph at a given cell.
   cellStack = new Map<string, number[]>()
 
-  // Tracks which cells are occupied by a LineNode. Used exclusively by
-  // neighborMask() during reconciliation to determine which directions have
-  // a connecting line.
+  // Tracks which cells have a LineNode as their topmost entry in cellStack.
+  // A panel on top of a line removes that cell from lineCells, hiding it from
+  // neighbor detection. Derived from cellStack — updated by recomputeLineCells()
+  // whenever the stack at a cell changes. Used exclusively by neighborMask().
   private lineCells = new Map<string, boolean>()
 
   constructor(root: HTMLDivElement, inputManager: InputManager) {
@@ -67,14 +68,7 @@ export class RendererUI {
     for (const node of lineNodes) {
       this.unregisterLine(node)
     }
-
-    // After unregistering, reconcile cells that were adjacent to this box's
-    // border — they may have been rendering as intersections and now need to
-    // revert to plain line glyphs.
-    const toReconcile = this.borderNeighborCells(lineNodes)
-    for (const [x, y] of toReconcile) {
-      this.reconcileAt(x, y)
-    }
+    this.unregisterPanel(panelNode)
 
     const midY = topNode.y + (bottomNode.y - topNode.y) / 2
     const x    = topNode.x
@@ -211,6 +205,18 @@ export class RendererUI {
     if (content) node.el.appendChild(content)
 
     this.pushCellsRect(node)
+
+    // Recompute lineCells for every cell this panel covers, then reconcile
+    // any line glyphs whose neighbor mask may have changed because lines
+    // beneath the panel are now hidden.
+    for (const [px, py] of this.footprintCoords(node)) {
+      this.recomputeLineCells(this.key(px, py))
+      this.reconcileAt(px - 1, py)
+      this.reconcileAt(px + 1, py)
+      this.reconcileAt(px,     py - 1)
+      this.reconcileAt(px,     py + 1)
+    }
+
     return node.id
   }
 
@@ -249,14 +255,31 @@ export class RendererUI {
       this.unregisterLine(node)
     }
 
+    const footprint = this.footprintCoords(node)
+
     this.popCells(node)
     node.el.remove()
     this.nodes.delete(id)
 
-    this.reconcileFootprint(node)
-
     if (node instanceof LineNode) {
+      // Recompute lineCells for the line's own cells (now vacated or re-topped
+      // by whatever was underneath), then reconcile footprint and neighbors.
+      for (const [x, y] of footprint) {
+        this.recomputeLineCells(this.key(x, y))
+      }
+      this.reconcileFootprint(node)
       this.reconcileNeighborsOf(node)
+    } else if (node.kind === "panel") {
+      // Recompute lineCells for every cell this panel covered — lines that
+      // were hidden beneath it may now be the topmost entry again.
+      for (const [x, y] of footprint) {
+        this.recomputeLineCells(this.key(x, y))
+        this.reconcileAt(x, y)
+        this.reconcileAt(x - 1, y)
+        this.reconcileAt(x + 1, y)
+        this.reconcileAt(x,     y - 1)
+        this.reconcileAt(x,     y + 1)
+      }
     }
   }
 
@@ -313,17 +336,69 @@ export class RendererUI {
   // LINE CELL REGISTRATION
   // ==========================================================================
 
-  /** Mark all cells occupied by a LineNode as present in lineCells. */
-  private registerLine(node: LineNode) {
-    for (const [x, y] of node.cellCoords()) {
-      this.lineCells.set(this.key(x, y), true)
+  /**
+   * Recompute whether cell `key` should be in lineCells.
+   * A cell is present if and only if its topmost cellStack entry is a LineNode
+   * (i.e. no panel is sitting on top of it).
+   * Called whenever the stack at a cell changes.
+   */
+  private recomputeLineCells(key: string) {
+    const stack = this.cellStack.get(key)
+    if (!stack || stack.length === 0) {
+      this.lineCells.delete(key)
+      return
+    }
+    const top = this.nodes.get(stack[stack.length - 1])
+    if (top instanceof LineNode) {
+      this.lineCells.set(key, true)
+    } else {
+      this.lineCells.delete(key)
     }
   }
 
-  /** Remove all cells occupied by a LineNode from lineCells. */
+  /** Register a LineNode into lineCells and reconcile its cells' neighbors. */
+  private registerLine(node: LineNode) {
+    for (const [x, y] of node.cellCoords()) {
+      this.recomputeLineCells(this.key(x, y))
+    }
+  }
+
+  /**
+   * Remove a LineNode from lineCells and reconcile its former neighbors.
+   * Used both by remove() and as an early-exit before closing animations,
+   * so that neighboring lines revert to non-intersection glyphs immediately.
+   *
+   * Note: the node is still in cellStack at this point — we force-delete from
+   * lineCells directly rather than recomputing from the stack, because the
+   * stack hasn't been updated yet.
+   */
   private unregisterLine(node: LineNode) {
     for (const [x, y] of node.cellCoords()) {
       this.lineCells.delete(this.key(x, y))
+    }
+    const toReconcile = this.borderNeighborCells([node])
+    for (const [x, y] of toReconcile) {
+      this.reconcileAt(x, y)
+    }
+  }
+
+  /**
+   * Early-unregister a panel before its closing animation runs.
+   * Pops the panel from the cellStack, recomputes lineCells for every cell it
+   * covered (restoring any hidden lines to the mask), and reconciles the
+   * surrounding glyphs. removeNode() called later will find nothing to pop
+   * and is safe to call without double-reconciling.
+   */
+  private unregisterPanel(node: UINode) {
+    const footprint = this.footprintCoords(node)
+    this.popCells(node)
+    for (const [x, y] of footprint) {
+      this.recomputeLineCells(this.key(x, y))
+      this.reconcileAt(x, y)
+      this.reconcileAt(x - 1, y)
+      this.reconcileAt(x + 1, y)
+      this.reconcileAt(x,     y - 1)
+      this.reconcileAt(x,     y + 1)
     }
   }
 
@@ -348,7 +423,10 @@ export class RendererUI {
       const stack = this.cellStack.get(key)
       if (!stack) continue
       const idx = stack.indexOf(node.id)
-      if (idx !== -1) stack.splice(idx, 1)
+      if (idx !== -1) {
+        stack.splice(idx, 1)
+        this.recomputeLineCells(key)
+      }
       if (stack.length === 0) this.cellStack.delete(key)
     }
   }
@@ -385,7 +463,10 @@ export class RendererUI {
       stack = []
       this.cellStack.set(key, stack)
     }
-    if (!stack.includes(id)) stack.push(id)
+    if (!stack.includes(id)) {
+      stack.push(id)
+      this.recomputeLineCells(key)
+    }
   }
 
   // ==========================================================================
@@ -394,9 +475,15 @@ export class RendererUI {
 
   /**
    * Recompute and write the correct glyph for the LineNode at (x, y).
+   *
+   * Three-step sequence:
+   *   1. Find the topmost LineNode in the cellStack at this cell.
+   *   2. Build a direction bitmask from lineCells neighbors (neighborMask).
+   *   3. Write the resolved glyph to that node's chars[], blank all others.
    */
   private reconcileAt(x: number, y: number) {
-    // Find the topmost LineNode in the cellStack at this cell.
+    if (!this.lineCells.has(this.key(x,y))) return
+
     const stack = this.cellStack.get(this.key(x, y))
     if (!stack || stack.length === 0) return
 
@@ -407,10 +494,8 @@ export class RendererUI {
     }
     if (!topLine) return
 
-    // Build a direction bitmask from lineCells neighbors (neighborMask).
     const glyph = maskToGlyph(this.neighborMask(x, y))
 
-    // Write the resolved glyph to that node's chars[], blank all others.
     for (const id of stack) {
       const node = this.nodes.get(id)
       if (!(node instanceof LineNode)) continue
@@ -467,10 +552,8 @@ export class RendererUI {
    * Collect all cells orthogonally neighboring the given LineNodes that are
    * NOT part of those nodes' own footprint.
    *
-   * Used during box-closing animations: because lines are unregistered from
-   * lineCells before the closing animation runs, any cell that was previously
-   * an intersection (e.g. where this box's border met another line) needs to
-   * be reconciled so it reverts to the correct non-intersecting glyph.
+   * Used by unregisterLine() so that cells which were previously intersections
+   * with the departing line get reconciled and revert to the correct glyph.
    */
   private borderNeighborCells(lineNodes: LineNode[]): Array<[number, number]> {
     const own   = new Set<string>()
@@ -600,8 +683,9 @@ export class RendererUI {
   }
 
   /**
-   * Internal removal used by the closing animation, after unregister/reconcile
-   * have already been done. Skips the lineCells and reconcile steps.
+   * Internal removal used by the closing animation, after unregisterLine /
+   * unregisterPanel have already run. popCells() is idempotent — if the node
+   * was already removed from the stack, indexOf returns -1 and nothing happens.
    */
   private removeNode(id: number) {
     const node = this.nodes.get(id)

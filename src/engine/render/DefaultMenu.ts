@@ -22,6 +22,11 @@ export class DefaultMenu {
     this.renderer.uiLayer.showSelectMenu(10, 10, options).then((selected: number) => {
       if (options[selected] === "Palette") this.openPaletteMenu()
     })
+
+    // TODO remove me (overlap test)
+    setTimeout(()=>{
+      this.renderer.uiLayer.showSelectMenu(13, 13, options)
+    }, 1000)
   }
 
   private openPaletteMenu() {
