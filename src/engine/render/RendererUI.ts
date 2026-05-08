@@ -1,5 +1,4 @@
 import type { InputManager } from "../core/InputManager"
-import { TileMetrics } from "./TileMetrics"
 import { UINode, type UIKind, isLineLike } from "./ui_nodes/UINode"
 import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from "./ui_nodes/LineNode"
 import { UIPanel } from "./ui_nodes/UIPanel"

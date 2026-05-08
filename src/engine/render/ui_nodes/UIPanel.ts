@@ -1,7 +1,6 @@
 import type { InputManager } from "../../core/InputManager"
 import { TileMetrics } from "../TileMetrics"
 import { UINode, type ILineLike } from "./UINode"
-import { maskToGlyph } from "./LineNode"
 
 // Border cell layout for a panel at (x, y) with size (w, h):
 //

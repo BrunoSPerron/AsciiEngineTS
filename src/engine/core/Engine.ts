@@ -4,7 +4,6 @@ import { PlayerUnit } from "../world/entities/PlayerUnit"
 import { GlobalWorld } from "../world/GlobalWorld"
 import { InputManager } from "./InputManager"
 import { Renderer } from "../render/Renderer"
-import { TileMetrics } from "../render/TileMetrics"
 import { DefaultMenu } from "../render/DefaultMenu"
 
 export const STEP = 1000 / 32
@@ -62,36 +61,6 @@ export class AsciiEngine {
 
       this.resume()
     }.bind(this))
-  }
-
-  displayImageTest(x: number, y: number, w: number, h: number, closeDelay = 1000) {
-    const uiLayer = this.renderer.uiLayer;
-
-    const url = `https://picsum.photos/${Math.ceil(w * TileMetrics.w)}/${Math.ceil(h * TileMetrics.h)}`;
-
-    const img = new Image();
-
-    img.onload = () => {
-      const div: HTMLDivElement = document.createElement('div');
-      div.style.width = '100%';
-      div.style.height = '100%';
-      div.style.backgroundImage = `url("${url}")`;
-      div.style.backgroundSize = '100%';
-
-      uiLayer.animatedMenuBoxOpening(
-        x, y, w, h, 1000, div
-      ).then((menuBoxId: number) => {
-        setTimeout(() => {
-          uiLayer.animatedMenuBoxClosing(menuBoxId);
-        }, closeDelay);
-      });
-    };
-
-    img.onerror = () => {
-      console.error('Image failed to load:', url);
-    };
-
-    img.src = url;
   }
 
   destroy() {
@@ -194,8 +163,8 @@ export class AsciiEngine {
 
     for (const entityId of removedEntitiesIds) {
       const entity = this.localWorld.extractEntity(entityId)
-      if (entity !== null) {
-        this.globalWorld //TODO move extracted unit/chunk to global world
+      if (entity) {
+        //TODO move extracted unit/chunk to this.globalWorld
         entity.OnUnload()
       }
       delete this.localWorld.entities[entityId]
