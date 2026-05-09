@@ -15,17 +15,41 @@
   initial-value: #bbb;
 }
 
-.ascii-engine {
+@property --selected-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #bbb;
+}
 
+@property --selected-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #222;
+}
+
+@property --actor-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #222;
+}
+
+@property --actor-text {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #bbb;
+}
+
+.ascii-engine {
   --ui-bg: var(--color-bg);
   --ui-text: var(--color-text);
 
-  --selected-bg: var(--color-text);
-  --selected-text: var(--color-bg);
+  --selected-bg: var(--ui-text);
+  --selected-text: var(--ui-bg);
 
   --actor-bg: var(--color-bg);
   --actor-text: var(--color-text);
 
+  /* TODO refresh visual on theme change to handle glyph resize */
   --font-size: 18px;
   --line-height: var(--font-size);
 
@@ -45,7 +69,11 @@
 
   transition:
     --color-bg 250ms ease,
-    --color-text 250ms ease;
+    --color-text 250ms ease,
+    --selected-bg 250ms ease,
+    --selected-text 250ms ease,
+    --actor-bg 250ms ease,
+    --actor-text 250ms ease;
 }
 
 .ascii-engine.default {

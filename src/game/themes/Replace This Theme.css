@@ -1,6 +1,7 @@
 /*
 This css file is loaded when the style is selected
-Note that it'll affect the whole page so all css here should start with '.ascii-engine' unless you want the style to affect non-engine elements
+Note: These changes affect the whole page. All css here should start with '.ascii-engine'
+      unless you want the style to affect non-engine elements
 This'll extend and overrides the css defined in ./engine/render/css/base.css
 */
 
@@ -8,12 +9,15 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
   --color-bg: #0A174E;
   --color-text: #F5D042;
 
-  /*
-  --ui-bg: var(--color-bg);
-  --ui-text: var(--color-text);
+  --actor-bg: #000000;
+  --actor-text: #ffffff;
 
-  --selected-bg: var(--color-text);
-  --selected-text: var(--color-bg);
+  --ui-bg: #12352a;
+  --ui-text: #f04f4f;
+
+  /*
+  --selected-bg: var(--ui-text);
+  --selected-text: var(--ui-bg);
   */
 }
 
