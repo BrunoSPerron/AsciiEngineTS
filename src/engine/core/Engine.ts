@@ -11,14 +11,13 @@ export class AsciiEngine {
   globalWorld = new GlobalWorld()
 
   // Rendered and fully simulated part of the world
-  localWorld = new LocalWorld()
+  localWorld: LocalWorld
 
   inputManager: InputManager
   renderer: Renderer
 
   running = false
   paused = false
-  rafId = 0
 
   private environmentReady = false
 
@@ -28,9 +27,9 @@ export class AsciiEngine {
     gameContainer.classList.add('ascii-engine')
     root.appendChild(gameContainer)
 
-    this.localWorld.bind(this)
+    this.localWorld = new LocalWorld(this)
 
-    const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit('☺', 8, 8, 250))
+    const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit('☺', 20, 20, 250))
     const camera = new Camera(gameContainer, cameraTarget)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
@@ -47,7 +46,7 @@ export class AsciiEngine {
 
     this.renderer.setTileHAndW()
     this.environmentReady = true
-    this.renderer.camera.jumpToTarget(performance.now())
+    this.renderer.camera.jumpToTarget()
 
     new DefaultMenu(this.inputManager, this.renderer)
 
@@ -77,17 +76,17 @@ export class AsciiEngine {
   suspend = () => {
     if (!this.running) return
     this.running = false
-    cancelAnimationFrame(this.rafId)
-    this.rafId = 0
+    this.renderer.camera.suspend()
     this.localWorld.entities.forEach((e) => e.unschedule())
   }
 
   resume = () => {
     if (this.running) return
     if (document.hidden) return
+    if (!this.environmentReady) return
     this.running = true
+    this.renderer.camera.resume()
     if (!this.paused) this.localWorld.entities.forEach((e) => e.scheduleFirst(this))
-    this.rafId = requestAnimationFrame(this.frame)
   }
 
   handleWindowState = () => {
@@ -105,13 +104,5 @@ export class AsciiEngine {
     } else {
       this.resume()
     }
-  }
-
-  frame = (now: number) => {
-    if (!this.running) return
-    if (!this.environmentReady) return
-
-    this.renderer.render(this.localWorld, now)
-    this.rafId = requestAnimationFrame(this.frame)
   }
 }

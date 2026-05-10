@@ -14,6 +14,10 @@ export class LocalWorld {
   private _spawnListeners: Set<EntityHandler> = new Set()
   private _despawnListeners: Set<EntityHandler> = new Set()
 
+  constructor(engine: AsciiEngine) {
+    this.engine = engine
+  }
+
   onSpawn(handler: EntityHandler): () => void {
     this._spawnListeners.add(handler)
     return () => this._spawnListeners.delete(handler)
@@ -22,14 +26,6 @@ export class LocalWorld {
   onDespawn(handler: EntityHandler): () => void {
     this._despawnListeners.add(handler)
     return () => this._despawnListeners.delete(handler)
-  }
-
-  /**
-   * Called once by the engine after construction so entities can
-   * self-schedule without a circular constructor dependency.
-   */
-  bind(engine: AsciiEngine) {
-    this.engine = engine
   }
 
   extractEntity(id: number): Entity | undefined {
