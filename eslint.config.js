@@ -2,36 +2,27 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 
 export default [
-  // Ignore output folders
   {
     ignores: ['dist/**', 'build/**', 'coverage/**', 'node_modules/**'],
   },
 
-  // Base JS rules
   js.configs.recommended,
 
-  // TypeScript recommended rules
   ...tseslint.configs.recommendedTypeChecked,
 
-  // Your project rules
   {
-    files: ['**/*.ts'],
-
+    files: ['packages/engine/**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: './tsconfig.json',
+        project: './packages/engine/tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
-
     rules: {
-      // Correctness
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
-
-      // Cleanliness
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -39,19 +30,42 @@ export default [
           varsIgnorePattern: '^_',
         },
       ],
-
-      // Discipline
       eqeqeq: ['error', 'always'],
       curly: ['error', 'multi-line'],
       'brace-style': ['error', '1tbs'],
-
-      // Practical
       'no-console': 'warn',
       'no-undef': 'off',
     },
   },
 
-  // Disable type-aware linting for JS config files
+  {
+    files: ['packages/example/**/*.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        project: './packages/example/tsconfig.json',
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'multi-line'],
+      'brace-style': ['error', '1tbs'],
+      'no-console': 'warn',
+      'no-undef': 'off',
+    },
+  },
+
   {
     files: ['**/*.js'],
     ...tseslint.configs.disableTypeChecked,

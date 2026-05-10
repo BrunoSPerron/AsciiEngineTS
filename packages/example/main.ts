@@ -1,4 +1,4 @@
-import { AsciiEngine } from './engine/core/Engine'
+import { AsciiEngine } from 'ascii-engine'
 import './style.css'
 
 const root = document.querySelector<HTMLDivElement>('#asciiEngine')!
