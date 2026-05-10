@@ -20,7 +20,6 @@ export class ThemeManager {
 
     this.registerAllThemes()
     this.preloadAllThemes()
-    this.set('Copper')
   }
 
   register(name: string, path: string) {

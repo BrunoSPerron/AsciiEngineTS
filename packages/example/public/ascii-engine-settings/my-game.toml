@@ -1,0 +1,11 @@
+# ascii engine settings
+# Place this file in your project's public folder (packages/example/public/).
+# All fields are optional — omitted fields fall back to engine defaults.
+# File name must match the name given to the engine
+
+[game]
+title = "My Ascii Game"
+start_theme = "Flamingo"
+
+[world]
+seed = 12345

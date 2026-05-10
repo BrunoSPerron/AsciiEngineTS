@@ -5,6 +5,8 @@ import { GlobalWorld } from '../world/GlobalWorld'
 import { InputManager } from './InputManager'
 import { Renderer } from '../render/Renderer'
 import { DefaultMenu } from '../render/DefaultMenu'
+import { loadConfig } from './Config'
+import type { EngineConfig } from './Config'
 
 export class AsciiEngine {
   // Unloaded world data, world simulation called at interval
@@ -16,12 +18,16 @@ export class AsciiEngine {
   inputManager: InputManager
   renderer: Renderer
 
+  config!: EngineConfig
+  gameName: string
+
   running = false
   paused = false
 
   private environmentReady = false
 
-  constructor(root: HTMLDivElement) {
+  constructor(root: HTMLDivElement, gameName: string) {
+    this.gameName = gameName
     root.classList.add('ascii-engine-host')
     const gameContainer = document.createElement('div')
     gameContainer.classList.add('ascii-engine')
@@ -41,6 +47,11 @@ export class AsciiEngine {
   }
 
   async start() {
+    this.config = await loadConfig(this.gameName)
+
+    document.title = this.config.game.title
+    this.renderer.themeManager.set(this.config.game.start_theme)
+
     await document.fonts.ready
 
     this.renderer.setTileHAndW()
