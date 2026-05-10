@@ -4,37 +4,37 @@
 }
 
 @property --color-bg {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #222;
 }
 
 @property --color-text {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #bbb;
 }
 
 @property --selected-bg {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #bbb;
 }
 
 @property --selected-text {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #222;
 }
 
 @property --actor-bg {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #222;
 }
 
 @property --actor-text {
-  syntax: "<color>";
+  syntax: '<color>';
   inherits: true;
   initial-value: #bbb;
 }
@@ -93,7 +93,9 @@
 }
 
 .ascii-engine .ui .selectable {
-  transition: background-color 0.12s, color 0.12s;
+  transition:
+    background-color 0.12s,
+    color 0.12s;
 }
 
 .ascii-engine {
@@ -106,7 +108,7 @@
   /*
   TODO make ui works with and use for zoom
   */
-  transform: scale(1)
+  transform: scale(1);
 }
 
 .ascii-engine .chunk {
@@ -133,7 +135,7 @@
 .ascii-engine .ui-panel {
   padding: 4px;
   inset: -4px;
-  z-index: -1
+  z-index: -1;
 }
 
 .ascii-engine .ui-panel-container {

@@ -22,13 +22,13 @@ export class InputManager {
   }
 
   constructor(target: Window = window) {
-    this.pushContext("root_context")
-    target.addEventListener("keydown", this.boundKeyDown)
-    target.addEventListener("keyup", this.boundKeyUp)
+    this.pushContext('root_context')
+    target.addEventListener('keydown', this.boundKeyDown)
+    target.addEventListener('keyup', this.boundKeyUp)
     this.target = target
 
-    window.addEventListener("blur", this.resetKeys)
-    document.addEventListener("visibilitychange", this.handleVisibility)
+    window.addEventListener('blur', this.resetKeys)
+    document.addEventListener('visibilitychange', this.handleVisibility)
   }
 
   // ---------- Public API ----------
@@ -41,7 +41,7 @@ export class InputManager {
   }
 
   popContext(name: string): void {
-    const i = this.contextStack.findLastIndex(c => c.name === name)
+    const i = this.contextStack.findLastIndex((c) => c.name === name)
     if (i === -1) return
     this.contextStack[i].ctx.keyDownListeners.clear()
     this.contextStack[i].ctx.keyUpListeners.clear()
@@ -70,7 +70,7 @@ export class InputManager {
   // ---------- Internals ----------
 
   private activeCtx(): InputContext {
-    if (this.contextStack.length === 0) throw new Error("No active input context")
+    if (this.contextStack.length === 0) throw new Error('No active input context')
     return this.contextStack[this.contextStack.length - 1].ctx
   }
 
@@ -85,14 +85,14 @@ export class InputManager {
   }
 
   private handleVisibility = () => {
-    if (document.visibilityState === "hidden") {
+    if (document.visibilityState === 'hidden') {
       this.resetKeys()
     }
   }
 
   private resetKeys = () => {
     for (const key of this.keyDownState) {
-      this.emit(this.activeCtx().keyUpListeners, new KeyboardEvent("keyup", { key }))
+      this.emit(this.activeCtx().keyUpListeners, new KeyboardEvent('keyup', { key }))
     }
     this.keyDownState.clear()
   }
@@ -100,8 +100,8 @@ export class InputManager {
   // ---------- Cleanup ----------
 
   destroy() {
-    this.target.removeEventListener("keydown", this.boundKeyDown)
-    this.target.removeEventListener("keyup", this.boundKeyUp)
+    this.target.removeEventListener('keydown', this.boundKeyDown)
+    this.target.removeEventListener('keyup', this.boundKeyUp)
     for (const stackElement of this.contextStack) {
       stackElement.ctx.keyDownListeners.clear()
       stackElement.ctx.keyUpListeners.clear()

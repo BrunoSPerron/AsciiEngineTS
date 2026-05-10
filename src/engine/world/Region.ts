@@ -1,8 +1,7 @@
-import type { ChunkRecord } from "./ChunkRecord";
+import type { ChunkRecord } from './ChunkRecord'
 
 export class Region {
-  chunksRecords = new Map<string, ChunkRecord>
+  chunksRecords = new Map<string, ChunkRecord>()
 
   //TODO
-
 }

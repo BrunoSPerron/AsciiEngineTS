@@ -1,8 +1,7 @@
-import { AsciiEngine } from "../../core/Engine"
-import { Entity } from "./Entity"
+import type { AsciiEngine } from '../../core/Engine'
+import { Entity } from './Entity'
 
 export class PlayerUnit extends Entity {
-
   constructor(glyph: string, x: number, y: number, moveSpeed: number) {
     super(glyph, x, y, moveSpeed)
   }

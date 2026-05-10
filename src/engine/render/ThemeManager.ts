@@ -7,20 +7,20 @@ export class ThemeManager {
   private themes = new Map<string, ThemeDef>()
   private link: HTMLLinkElement
 
-  private _current: string = ""
+  private _current: string = ''
 
   get current(): string {
     return this._current
   }
 
   constructor() {
-    this.link = document.createElement("link")
-    this.link.rel = "stylesheet"
+    this.link = document.createElement('link')
+    this.link.rel = 'stylesheet'
     document.head.appendChild(this.link)
 
     this.registerAllThemes()
     this.preloadAllThemes()
-    this.set("Copper")
+    this.set('Copper')
   }
 
   register(name: string, path: string) {
@@ -36,35 +36,31 @@ export class ThemeManager {
   }
 
   getThemeNames(): string[] {
-    return [...this.themes.values()].map(t => t.name)
+    return [...this.themes.values()].map((t) => t.name)
   }
 
   private preloadAllThemes() {
     for (const def of this.themes.values()) {
-      fetch(def.path)
+      void fetch(def.path)
     }
   }
 
   private registerAllThemes() {
-    const engineThemeFiles = import.meta.glob(
-      "./css/themes/*.css",
-      { query: "?url", eager: true }
-    )
-    const gameThemeFiles = import.meta.glob(
-      "../../game/themes/*.css",
-      { query: "?url", eager: true }
-    )
-    for (const path in engineThemeFiles)
-      this.registerFile(path, engineThemeFiles[path]["default"] as string)
-    for (const path in gameThemeFiles)
-      this.registerFile(path, gameThemeFiles[path]["default"] as string)
+    const engineThemeFiles = import.meta.glob('./css/themes/*.css', { query: '?url', eager: true })
+    const gameThemeFiles = import.meta.glob('../../game/themes/*.css', {
+      query: '?url',
+      eager: true,
+    })
+    for (const path in engineThemeFiles) {
+      this.registerFile(path, engineThemeFiles[path]['default'] as string)
+    }
+    for (const path in gameThemeFiles) {
+      this.registerFile(path, gameThemeFiles[path]['default'] as string)
+    }
   }
 
   private registerFile(path: string, url: string) {
-    const name = path
-      .split("/")
-      .pop()!
-      .replace(".css", "")
+    const name = path.split('/').pop()!.replace('.css', '')
 
     this.register(name, url)
   }

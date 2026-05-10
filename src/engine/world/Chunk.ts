@@ -1,4 +1,4 @@
-import type { Tile } from "./Tile"
+import type { Tile } from './Tile'
 
 export const CHUNK_SIZE = 32
 
@@ -11,21 +11,17 @@ export class Chunk {
   constructor(cx: number, cy: number) {
     this.cx = cx
     this.cy = cy
-    this.tiles = new Array(CHUNK_SIZE * CHUNK_SIZE)
+    this.tiles = new Array<Tile>(CHUNK_SIZE * CHUNK_SIZE)
 
     for (let y = 0; y < CHUNK_SIZE; y++) {
       for (let x = 0; x < CHUNK_SIZE; x++) {
         const i = y * CHUNK_SIZE + x
 
-        const edge =
-          x < 2 ||
-          y < 2 ||
-          x > CHUNK_SIZE - 3 ||
-          y > CHUNK_SIZE - 3
+        const edge = x < 2 || y < 2 || x > CHUNK_SIZE - 3 || y > CHUNK_SIZE - 3
 
         this.tiles[i] = {
-          glyph: edge ? "#" : " ",
-          solid: edge
+          glyph: edge ? '#' : ' ',
+          solid: edge,
         }
       }
     }

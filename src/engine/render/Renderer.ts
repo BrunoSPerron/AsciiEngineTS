@@ -1,13 +1,13 @@
-import type { InputManager } from "../core/InputManager"
-import type { Entity } from "../world/entities/Entity"
-import { CHUNK_SIZE } from "../world/Chunk"
-import { LocalWorld } from "../world/LocalWorld"
-import { Camera } from "./Camera"
-import { RendererUI } from "./RendererUI"
-import { ThemeManager } from "./ThemeManager"
-import { TileMetrics } from "./tileMetrics.ts"
+import type { InputManager } from '../core/InputManager'
+import type { Entity } from '../world/entities/Entity'
+import { CHUNK_SIZE } from '../world/Chunk'
+import type { LocalWorld } from '../world/LocalWorld'
+import type { Camera } from './Camera'
+import { RendererUI } from './RendererUI'
+import { ThemeManager } from './ThemeManager'
+import { TileMetrics } from './tileMetrics.ts'
 
-import baseCssUrl from "./css/base.css?url"
+import baseCssUrl from './css/base.css?url'
 
 export class Renderer {
   root: HTMLElement
@@ -28,9 +28,9 @@ export class Renderer {
 
   constructor(root: HTMLElement, camera: Camera, inputManager: InputManager) {
     this.root = root
-    this.root.classList.add("default")
-    const link = document.createElement("link")
-    link.rel = "stylesheet"
+    this.root.classList.add('default')
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
     link.href = baseCssUrl
     document.head.appendChild(link)
 
@@ -39,24 +39,24 @@ export class Renderer {
 
     this.camera = camera
 
-    this.bg = this.makeLayer("layer-background")
-    this.actors = this.makeLayer("layer-actor")
-    this.uiLayer = new RendererUI(this.makeLayer("layer-ui"), this.inputManager)
+    this.bg = this.makeLayer('layer-background')
+    this.actors = this.makeLayer('layer-actor')
+    this.uiLayer = new RendererUI(this.makeLayer('layer-ui'), this.inputManager)
   }
 
   setTileHAndW() {
-    const span = document.createElement("span")
-    span.style.visibility = "hidden"
-    span.style.whiteSpace = "pre"
-    span.style.position = "absolute"
-    span.style.left = "0"
-    span.style.top = "0"
-    span.style.padding = "0"
-    span.style.border = "0"
-    span.style.margin = "0"
-    span.style.transform = "none"
-    span.style.scale = "1"
-    span.textContent = "M"
+    const span = document.createElement('span')
+    span.style.visibility = 'hidden'
+    span.style.whiteSpace = 'pre'
+    span.style.position = 'absolute'
+    span.style.left = '0'
+    span.style.top = '0'
+    span.style.padding = '0'
+    span.style.border = '0'
+    span.style.margin = '0'
+    span.style.transform = 'none'
+    span.style.scale = '1'
+    span.textContent = 'M'
 
     this.root.appendChild(span)
 
@@ -73,8 +73,8 @@ export class Renderer {
 
   /** Called by Engine to wire spawn/despawn events from a LocalWorld. */
   bindWorld(world: LocalWorld) {
-    world.onSpawn(entity => this._registerActor(entity))
-    world.onDespawn(entity => this._unregisterActor(entity))
+    world.onSpawn((entity) => this._registerActor(entity))
+    world.onDespawn((entity) => this._unregisterActor(entity))
     // Register entities that were spawned before the renderer was ready
     for (const entity of world.entities.values()) {
       this._registerActor(entity)
@@ -82,13 +82,13 @@ export class Renderer {
   }
 
   private _registerActor(entity: Entity) {
-    const el = document.createElement("div")
-    el.className = "actor"
+    const el = document.createElement('div')
+    el.className = 'actor'
     el.textContent = entity.glyph
     this.actors.appendChild(el)
     this.actorEls.set(entity.uid, el)
 
-    const unlisten = entity.onMove(e => this.renderActor(e))
+    const unlisten = entity.onMove((e) => this.renderActor(e))
     this._unlistenFns.set(entity.uid, unlisten)
   }
 
@@ -114,8 +114,8 @@ export class Renderer {
   }
 
   private makeLayer(css: string) {
-    const el = document.createElement("div")
-    el.className = "layer"
+    const el = document.createElement('div')
+    el.className = 'layer'
     el.classList.add(css)
     this.root.appendChild(el)
     return el
@@ -149,22 +149,22 @@ export class Renderer {
         let el = this.chunkEls.get(key)
 
         if (!el) {
-          el = document.createElement("pre")
-          el.className = "chunk"
+          el = document.createElement('pre')
+          el.className = 'chunk'
           this.bg.appendChild(el)
           this.chunkEls.set(key, el)
           chunk.dirty = true
         }
 
         if (chunk.dirty) {
-          let text = ""
+          let text = ''
 
           for (let y = 0; y < CHUNK_SIZE; y++) {
             for (let x = 0; x < CHUNK_SIZE; x++) {
               text += chunk.get(x, y).glyph
             }
 
-            text += "\n"
+            text += '\n'
           }
 
           el.textContent = text

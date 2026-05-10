@@ -1,10 +1,6 @@
-import { TileMetrics } from "../tileMetrics"
+import { TileMetrics } from '../tileMetrics'
 
-export type UIKind =
-  | "text"
-  | "hline"
-  | "vline"
-  | "panel"
+export type UIKind = 'text' | 'hline' | 'vline' | 'panel'
 
 export interface ILineLike {
   cellCoords(): Array<[number, number]>
@@ -13,7 +9,7 @@ export interface ILineLike {
 }
 
 export function isLineLike(node: UINode): node is UINode & ILineLike {
-  return node.kind === "hline" || node.kind === "vline" || node.kind === "panel"
+  return node.kind === 'hline' || node.kind === 'vline' || node.kind === 'panel'
 }
 
 export class UINode {
@@ -36,7 +32,7 @@ export class UINode {
     y: number,
     w: number,
     h: number,
-    chars: string[] = []
+    chars: string[] = [],
   ) {
     this.id = id
     this.kind = kind
@@ -49,15 +45,14 @@ export class UINode {
   }
 
   applyTransform() {
-    this.el.style.transform =
-      `translate(${this.x * TileMetrics.w}px, ${this.y * TileMetrics.h}px)`
+    this.el.style.transform = `translate(${this.x * TileMetrics.w}px, ${this.y * TileMetrics.h}px)`
   }
 
   refresh() {
-    if (this.kind === "vline") {
-      this.el.textContent = this.chars.join("\n")
+    if (this.kind === 'vline') {
+      this.el.textContent = this.chars.join('\n')
       return
     }
-    this.el.textContent = this.chars.join("")
+    this.el.textContent = this.chars.join('')
   }
 }

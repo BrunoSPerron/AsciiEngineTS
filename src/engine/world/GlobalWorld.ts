@@ -1,10 +1,10 @@
-import { ChunkRecord } from "./ChunkRecord"
-import { Entity } from "./entities/Entity"
-import type { Region } from "./Region"
+import { ChunkRecord } from './ChunkRecord'
+import { Entity } from './entities/Entity'
+import type { Region } from './Region'
 
 export class GlobalWorld {
   regions = new Map<string, Region>()
-  chunksRecords = new Map<string, ChunkRecord>
+  chunksRecords = new Map<string, ChunkRecord>()
   entities = new Map<number, Entity>()
 
   private nextId = 1
@@ -22,7 +22,6 @@ export class GlobalWorld {
     return chunk
   }
 
-
   spawnBaseEntity(glyph: string, x: number, y: number) {
     const entity = new Entity(glyph, x, y)
     entity.uid = this.nextId++
@@ -31,12 +30,9 @@ export class GlobalWorld {
   }
 
   spawnEntity(entity: Entity) {
-    if (entity.uid === -1)
-      entity.uid = this.nextId++
+    if (entity.uid === -1) entity.uid = this.nextId++
     this.entities.set(entity.uid, entity)
   }
 
-  update() {
-
-  }
+  update() {}
 }

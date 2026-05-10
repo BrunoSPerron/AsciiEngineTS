@@ -1,6 +1,6 @@
-import { lerp } from "../util/math"
-import type { Entity } from "../world/entities/Entity"
-import { TileMetrics } from "./tileMetrics"
+import { lerp } from '../util/math'
+import type { Entity } from '../world/entities/Entity'
+import { TileMetrics } from './tileMetrics'
 
 export class Camera {
   x = 0

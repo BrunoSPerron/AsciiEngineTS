@@ -1,9 +1,9 @@
-import type { InputManager } from "../core/InputManager"
-import { UINode, type UIKind, isLineLike } from "./ui_nodes/UINode"
-import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from "./ui_nodes/LineNode"
-import { UIPanel } from "./ui_nodes/UIPanel"
-import { SelectMenu } from "./ui_nodes/SelectMenu"
-import { RollerMenu } from "./ui_nodes/RollerMenu"
+import type { InputManager } from '../core/InputManager'
+import { UINode, type UIKind, isLineLike } from './ui_nodes/UINode'
+import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './ui_nodes/LineNode'
+import { UIPanel } from './ui_nodes/UIPanel'
+import { SelectMenu } from './ui_nodes/SelectMenu'
+import { RollerMenu } from './ui_nodes/RollerMenu'
 
 export class RendererUI {
   root: HTMLDivElement
@@ -11,7 +11,7 @@ export class RendererUI {
 
   private nextId = 1
 
-  nodes     = new Map<number, UINode>()
+  nodes = new Map<number, UINode>()
 
   // Maps each cell key to the ordered stack of node IDs occupying it (topmost = last).
   cellStack = new Map<string, number[]>()
@@ -29,7 +29,7 @@ export class RendererUI {
   }
 
   clear() {
-    this.root.innerHTML = ""
+    this.root.innerHTML = ''
     this.nodes.clear()
     this.cellStack.clear()
     this.lineCells.clear()
@@ -38,7 +38,7 @@ export class RendererUI {
   // ---------- primitive draw calls ------------------------------------------
 
   drawText(x: number, y: number, text: string): number {
-    return this.createTextNode("text", x, y, text)
+    return this.createTextNode('text', x, y, text)
   }
 
   drawHLine(x: number, y: number, w: number): number {
@@ -57,7 +57,7 @@ export class RendererUI {
     return node.id
   }
 
-  drawPanel(
+  async drawPanel(
     x: number,
     y: number,
     w: number,
@@ -65,13 +65,13 @@ export class RendererUI {
     content?: HTMLDivElement,
     duration?: number,
     reservedId?: number,
-  ): UIPanel {
+  ): Promise<UIPanel> {
     const panel = this.buildPanel(x, y, w, h, reservedId)
     this.registerLineLike(panel)
     this.reconcileFootprint(panel)
     this.reconcileNeighborsPanelBorder(panel)
     this.pushInteriorCells(panel)
-    panel.open(duration, content)
+    await panel.open(duration, content)
     return panel
   }
 
@@ -122,20 +122,20 @@ export class RendererUI {
       }
       this.reconcileFootprintCoords(footprint)
       this.reconcileNeighborsGeneric(node)
-    } else if (node.kind === "panel") {
+    } else if (node.kind === 'panel') {
       for (const [x, y] of footprint) {
         this.recomputeLineCells(this.key(x, y))
         this.reconcileAt(x, y)
         this.reconcileAt(x - 1, y)
         this.reconcileAt(x + 1, y)
-        this.reconcileAt(x,     y - 1)
-        this.reconcileAt(x,     y + 1)
+        this.reconcileAt(x, y - 1)
+        this.reconcileAt(x, y + 1)
       }
     }
   }
 
   setSymbolAt(x: number, y: number, glyph: string): boolean {
-    const key   = this.key(x, y)
+    const key = this.key(x, y)
     const stack = this.cellStack.get(key)
     if (!stack || stack.length === 0) return false
 
@@ -156,26 +156,31 @@ export class RendererUI {
   // ---------- menus ---------------------------------------------------------
 
   showSelectMenu(
-    x: number, y: number,
+    x: number,
+    y: number,
     items: string[],
-    paddingX = 1, paddingY = 0,
-    wraparound = true
+    paddingX = 1,
+    paddingY = 0,
+    wraparound = true,
   ): Promise<number> {
-    const maxLen = Math.max(...items.map(s => s.length))
+    const maxLen = Math.max(...items.map((s) => s.length))
     const w = maxLen + paddingX * 2 + 2
     const h = items.length + paddingY * 2 + 2
 
-    return new SelectMenu(this, this.inputManager)
-      .open(x, y, w, h, items, paddingX, paddingY, wraparound)
+    return new SelectMenu(this, this.inputManager).open(
+      x,
+      y,
+      w,
+      h,
+      items,
+      paddingX,
+      paddingY,
+      wraparound,
+    )
   }
 
-  showRollerMenu(
-    x: number, y: number,
-    items: string[],
-    paddingX = 1
-  ): Promise<number> {
-    return new RollerMenu(this, this.inputManager)
-      .open(x, y, items, paddingX)
+  showRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
+    return new RollerMenu(this, this.inputManager).open(x, y, items, paddingX)
   }
 
   createRollerMenu(): RollerMenu {
@@ -227,8 +232,8 @@ export class RendererUI {
       this.reconcileAt(x, y)
       this.reconcileAt(x - 1, y)
       this.reconcileAt(x + 1, y)
-      this.reconcileAt(x,     y - 1)
-      this.reconcileAt(x,     y + 1)
+      this.reconcileAt(x, y - 1)
+      this.reconcileAt(x, y + 1)
     }
   }
 
@@ -265,7 +270,7 @@ export class RendererUI {
 
   private popCoordsFromStack(id: number, coords: Array<[number, number]>) {
     for (const [x, y] of coords) {
-      const key   = this.key(x, y)
+      const key = this.key(x, y)
       const stack = this.cellStack.get(key)
       if (!stack) continue
       const idx = stack.indexOf(id)
@@ -284,7 +289,7 @@ export class RendererUI {
   }
 
   private pushCellsLine(node: LineNode) {
-    if (node.kind === "vline") {
+    if (node.kind === 'vline') {
       for (let i = 0; i < node.h; i++) {
         this.pushToStack(this.key(node.x, node.y + i), node.id)
       }
@@ -329,10 +334,18 @@ export class RendererUI {
     const stack = this.cellStack.get(this.key(x, y))
     if (!stack || stack.length === 0) return
 
-    let topLineLike: (UINode & { charIndexFor(x: number, y: number): number; setCharAt(x: number, y: number, g: string): void }) | null = null
+    let topLineLike:
+      | (UINode & {
+          charIndexFor(x: number, y: number): number
+          setCharAt(x: number, y: number, g: string): void
+        })
+      | null = null
     for (let i = stack.length - 1; i >= 0; i--) {
       const n = this.nodes.get(stack[i])
-      if (n && isLineLike(n)) { topLineLike = n; break }
+      if (n && isLineLike(n)) {
+        topLineLike = n
+        break
+      }
     }
     if (!topLineLike) return
 
@@ -343,16 +356,16 @@ export class RendererUI {
       if (!node || !isLineLike(node)) continue
       const idx = node.charIndexFor(x, y)
       if (idx === -1) continue
-      node.setCharAt(x, y, node === topLineLike ? glyph : " ")
+      node.setCharAt(x, y, node === topLineLike ? glyph : ' ')
     }
   }
 
   private neighborMask(x: number, y: number): number {
     let mask = DOUBLE
-    if (this.lineCells.get(this.key(x,     y - 1))) mask |= TOP
-    if (this.lineCells.get(this.key(x + 1, y    ))) mask |= RIGHT
-    if (this.lineCells.get(this.key(x,     y + 1))) mask |= BOTTOM
-    if (this.lineCells.get(this.key(x - 1, y    ))) mask |= LEFT
+    if (this.lineCells.get(this.key(x, y - 1))) mask |= TOP
+    if (this.lineCells.get(this.key(x + 1, y))) mask |= RIGHT
+    if (this.lineCells.get(this.key(x, y + 1))) mask |= BOTTOM
+    if (this.lineCells.get(this.key(x - 1, y))) mask |= LEFT
     return mask
   }
 
@@ -365,12 +378,12 @@ export class RendererUI {
   }
 
   private reconcileNeighborsOf(node: LineNode) {
-    if (node.kind === "hline") {
+    if (node.kind === 'hline') {
       for (let i = 0; i < node.w; i++) {
         this.reconcileAt(node.x + i, node.y - 1)
         this.reconcileAt(node.x + i, node.y + 1)
       }
-      this.reconcileAt(node.x - 1,      node.y)
+      this.reconcileAt(node.x - 1, node.y)
       this.reconcileAt(node.x + node.w, node.y)
     } else {
       for (let i = 0; i < node.h; i++) {
@@ -389,7 +402,7 @@ export class RendererUI {
       this.reconcileAt(panel.x + i, panel.y + panel.h)
     }
     for (let i = 0; i < panel.h; i++) {
-      this.reconcileAt(panel.x - 1,          panel.y + i)
+      this.reconcileAt(panel.x - 1, panel.y + i)
       this.reconcileAt(panel.x + panel.w, panel.y + i)
     }
   }
@@ -409,16 +422,16 @@ export class RendererUI {
   }
 
   private lineNeighborCells(node: LineNode): Array<[number, number]> {
-    const own   = new Set<string>()
+    const own = new Set<string>()
     const outer = new Map<string, [number, number]>()
 
-    if (node.kind === "hline") {
+    if (node.kind === 'hline') {
       for (let i = 0; i < node.w; i++) own.add(this.key(node.x + i, node.y))
       for (let i = 0; i < node.w; i++) {
         this.addIfNotOwn(node.x + i, node.y - 1, own, outer)
         this.addIfNotOwn(node.x + i, node.y + 1, own, outer)
       }
-      this.addIfNotOwn(node.x - 1,      node.y, own, outer)
+      this.addIfNotOwn(node.x - 1, node.y, own, outer)
       this.addIfNotOwn(node.x + node.w, node.y, own, outer)
     } else {
       for (let i = 0; i < node.h; i++) own.add(this.key(node.x, node.y + i))
@@ -426,7 +439,7 @@ export class RendererUI {
         this.addIfNotOwn(node.x - 1, node.y + i, own, outer)
         this.addIfNotOwn(node.x + 1, node.y + i, own, outer)
       }
-      this.addIfNotOwn(node.x, node.y - 1,      own, outer)
+      this.addIfNotOwn(node.x, node.y - 1, own, outer)
       this.addIfNotOwn(node.x, node.y + node.h, own, outer)
     }
 
@@ -434,24 +447,20 @@ export class RendererUI {
   }
 
   private panelBorderNeighborCells(panel: UIPanel): Array<[number, number]> {
-    const own   = new Set(panel.cellCoords().map(([x, y]) => this.key(x, y)))
+    const own = new Set(panel.cellCoords().map(([x, y]) => this.key(x, y)))
     const outer = new Map<string, [number, number]>()
     for (let i = 0; i < panel.w; i++) {
-      this.addIfNotOwn(panel.x + i, panel.y - 1,          own, outer)
-      this.addIfNotOwn(panel.x + i, panel.y + panel.h,    own, outer)
+      this.addIfNotOwn(panel.x + i, panel.y - 1, own, outer)
+      this.addIfNotOwn(panel.x + i, panel.y + panel.h, own, outer)
     }
     for (let i = 0; i < panel.h; i++) {
-      this.addIfNotOwn(panel.x - 1,         panel.y + i, own, outer)
-      this.addIfNotOwn(panel.x + panel.w,   panel.y + i, own, outer)
+      this.addIfNotOwn(panel.x - 1, panel.y + i, own, outer)
+      this.addIfNotOwn(panel.x + panel.w, panel.y + i, own, outer)
     }
     return [...outer.values()]
   }
 
-  private addIfNotOwn(
-    x: number, y: number,
-    own: Set<string>,
-    out: Map<string, [number, number]>
-  ) {
+  private addIfNotOwn(x: number, y: number, own: Set<string>, out: Map<string, [number, number]>) {
     const k = this.key(x, y)
     if (!own.has(k)) out.set(k, [x, y])
   }
@@ -461,16 +470,16 @@ export class RendererUI {
   // ==========================================================================
 
   private buildHLine(x: number, y: number, w: number): LineNode {
-    const el = document.createElement("div")
-    el.className = "ui ui-node ui-line"
-    el.style.position   = "absolute"
-    el.style.whiteSpace = "pre"
-    el.style.willChange = "transform, opacity"
+    const el = document.createElement('div')
+    el.className = 'ui ui-node ui-line'
+    el.style.position = 'absolute'
+    el.style.whiteSpace = 'pre'
+    el.style.willChange = 'transform, opacity'
 
-    const node = new LineNode(this.nextId++, "hline", el, x, y, w, 1)
+    const node = new LineNode(this.nextId++, 'hline', el, x, y, w, 1)
     node.applyTransform()
 
-    for (let i = 0; i < w; i++) node.chars[i] = "═"
+    for (let i = 0; i < w; i++) node.chars[i] = '═'
     node.refresh()
 
     this.root.appendChild(el)
@@ -481,17 +490,17 @@ export class RendererUI {
   }
 
   private buildVLine(x: number, y: number, h: number): LineNode {
-    const el = document.createElement("div")
-    el.className = "ui ui-node ui-line"
-    el.style.position   = "absolute"
-    el.style.whiteSpace = "pre"
-    el.style.willChange = "transform, opacity"
+    const el = document.createElement('div')
+    el.className = 'ui ui-node ui-line'
+    el.style.position = 'absolute'
+    el.style.whiteSpace = 'pre'
+    el.style.willChange = 'transform, opacity'
 
-    const node = new LineNode(this.nextId++, "vline", el, x, y, 1, h)
+    const node = new LineNode(this.nextId++, 'vline', el, x, y, 1, h)
     node.applyTransform()
     node.applyVerticalStyle()
 
-    for (let i = 0; i < h; i++) node.chars[i] = "║"
+    for (let i = 0; i < h; i++) node.chars[i] = '║'
     node.refresh()
 
     this.root.appendChild(el)
@@ -502,14 +511,14 @@ export class RendererUI {
   }
 
   private buildPanel(x: number, y: number, w: number, h: number, reservedId?: number): UIPanel {
-    const containerEl = document.createElement("div")
-    containerEl.className = "ui-panel-container"
-    containerEl.style.position = "absolute"
-    containerEl.style.inset    = "0"
+    const containerEl = document.createElement('div')
+    containerEl.className = 'ui-panel-container'
+    containerEl.style.position = 'absolute'
+    containerEl.style.inset = '0'
     this.root.appendChild(containerEl)
 
     // el is a no-op placeholder — UIPanel manages its own border divs
-    const el = document.createElement("div")
+    const el = document.createElement('div')
     const id = reservedId ?? this.nextId++
     const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.inputManager)
 
@@ -525,7 +534,7 @@ export class RendererUI {
 
   private createTextNode(kind: UIKind, x: number, y: number, text: string): number {
     const chars = [...text]
-    const node  = this.createNode(kind, x, y, chars.length, 1, chars)
+    const node = this.createNode(kind, x, y, chars.length, 1, chars)
     node.el.textContent = text
     this.pushCellsHorizontal(node)
     return node.id
@@ -533,19 +542,21 @@ export class RendererUI {
 
   private createNode(
     kind: UIKind,
-    x: number, y: number,
-    w: number, h: number,
-    chars: string[]
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    chars: string[],
   ): UINode {
-    const el = document.createElement("div")
+    const el = document.createElement('div')
 
-    let cls = "ui ui-node"
-    if (kind === "vline" || kind === "hline") cls += " ui-line"
+    let cls = 'ui ui-node'
+    if (kind === 'vline' || kind === 'hline') cls += ' ui-line'
     el.className = cls
 
-    el.style.position   = "absolute"
-    el.style.whiteSpace = "pre"
-    el.style.willChange = "transform, opacity"
+    el.style.position = 'absolute'
+    el.style.whiteSpace = 'pre'
+    el.style.willChange = 'transform, opacity'
 
     const node = new UINode(this.nextId++, kind, el, x, y, w, h, chars)
     node.applyTransform()

@@ -1,24 +1,24 @@
-import type { InputManager } from "../../core/InputManager"
-import type { RendererUI } from "../RendererUI"
-import { TileMetrics } from "../tileMetrics"
-import { UIPanel } from "./UIPanel"
+import type { InputManager } from '../../core/InputManager'
+import type { RendererUI } from '../RendererUI'
+import { TileMetrics } from '../tileMetrics'
+import type { UIPanel } from './UIPanel'
 
 export class SelectMenu {
   private rendererUI: RendererUI
   private inputManager: InputManager
   private itemEls: HTMLDivElement[] = []
   private currentIndex: number = 0
-  private listenerKey: string = ""
+  private listenerKey: string = ''
   private panel: UIPanel | null = null
 
   private resolve!: (index: number) => void
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
-    this.rendererUI  = rendererUI
+    this.rendererUI = rendererUI
     this.inputManager = inputManager
   }
 
-  open(
+  async open(
     x: number,
     y: number,
     w: number,
@@ -28,17 +28,17 @@ export class SelectMenu {
     paddingY: number = 0,
     wraparound: boolean = true,
   ): Promise<number> {
-    const container = document.createElement("div")
-    container.style.position = "relative"
-    const pad = " ".repeat(paddingX)
+    const container = document.createElement('div')
+    container.style.position = 'relative'
+    const pad = ' '.repeat(paddingX)
 
     this.itemEls = items.map((text, i) => {
-      const el = document.createElement("div")
-      el.className = "selectable"
-      el.textContent = `${pad}${text}${pad}` + " ".repeat(w - text.length)
-      el.style.position   = "absolute"
-      el.style.top        = `${(paddingY + i) * TileMetrics.h}px`
-      el.style.whiteSpace = "pre"
+      const el = document.createElement('div')
+      el.className = 'selectable'
+      el.textContent = `${pad}${text}${pad}` + ' '.repeat(w - text.length)
+      el.style.position = 'absolute'
+      el.style.top = `${(paddingY + i) * TileMetrics.h}px`
+      el.style.whiteSpace = 'pre'
       container.appendChild(el)
       return el
     })
@@ -47,17 +47,17 @@ export class SelectMenu {
 
     const panelId = this.rendererUI.reserveId()
     this.registerKeys(panelId, wraparound)
-    this.panel = this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
+    this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
 
-    return new Promise<number>(resolve => {
+    return new Promise<number>((resolve) => {
       this.resolve = resolve
     })
   }
 
   private setSelected(index: number) {
-    this.itemEls[this.currentIndex]?.classList.remove("selected")
+    this.itemEls[this.currentIndex]?.classList.remove('selected')
     this.currentIndex = index
-    this.itemEls[this.currentIndex]?.classList.add("selected")
+    this.itemEls[this.currentIndex]?.classList.add('selected')
   }
 
   private move(delta: number, wraparound: boolean) {
@@ -75,40 +75,39 @@ export class SelectMenu {
 
   private registerKeys(panelId: number, wraparound: boolean) {
     this.inputManager.pushContext(`select_menu_${panelId}`)
-    this.listenerKey = this.inputManager.onKeyDown(e => {
+    this.listenerKey = this.inputManager.onKeyDown((e) => {
       switch (e.key) {
-        case "ArrowUp":
-        case "w":
+        case 'ArrowUp':
+        case 'w':
           this.move(-1, wraparound)
           break
-        case "ArrowDown":
-        case "s":
+        case 'ArrowDown':
+        case 's':
           this.move(+1, wraparound)
           break
-        case "Enter":
-          this.close(this.currentIndex)
+        case 'Enter':
+          void this.close(this.currentIndex)
           break
-        case "Escape":
-          this.close(-1)
+        case 'Escape':
+          void this.close(-1)
           break
       }
     })
   }
 
-  private close(index: number) {
+  private async close(index: number) {
     this.inputManager.unlisten(this.listenerKey)
-    const ctxName = `select_menu_${this.panel?.id ?? ""}`
+    const ctxName = `select_menu_${this.panel?.id ?? ''}`
     if (!this.panel) {
       this.inputManager.popContext(ctxName)
       this.resolve(index)
       return
     }
     this.rendererUI.unregisterPanelEarly(this.panel)
-    this.panel.close().then(() => {
-      this.rendererUI.removePanel(this.panel!)
-      this.panel = null
-      this.inputManager.popContext(ctxName)
-      this.resolve(index)
-    })
+    await this.panel.close()
+    this.rendererUI.removePanel(this.panel)
+    this.panel = null
+    this.inputManager.popContext(ctxName)
+    this.resolve(index)
   }
 }

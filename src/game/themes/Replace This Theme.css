@@ -6,8 +6,8 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
 */
 
 .ascii-engine {
-  --color-bg: #0A174E;
-  --color-text: #F5D042;
+  --color-bg: #0a174e;
+  --color-text: #f5d042;
 
   --actor-bg: #000000;
   --actor-text: #ffffff;
@@ -22,13 +22,13 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
 }
 
 .ascii-engine .layer-background::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  
+
   background:
-    radial-gradient(circle, #F5D04255 0 1px, transparent 2px) 0 0 / 24px 24px,
-    radial-gradient(circle, #F5D04230 0 1px, transparent 2px) 12px 12px / 24px 24px;
+    radial-gradient(circle, #f5d04255 0 1px, transparent 2px) 0 0 / 24px 24px,
+    radial-gradient(circle, #f5d04230 0 1px, transparent 2px) 12px 12px / 24px 24px;
 
   animation: glitter 1.5s linear infinite;
 }

@@ -1,6 +1,6 @@
-import { AsciiEngine } from "./engine/core/Engine"
-import "./style.css"
+import { AsciiEngine } from './engine/core/Engine'
+import './style.css'
 
-const root = document.querySelector<HTMLDivElement>("#asciiEngine")!
+const root = document.querySelector<HTMLDivElement>('#asciiEngine')!
 const engine = new AsciiEngine(root)
-engine.start()
+await engine.start()

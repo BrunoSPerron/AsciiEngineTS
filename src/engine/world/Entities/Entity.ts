@@ -1,6 +1,6 @@
-import { MIN_ACTION_INTERVAL } from "../../core/constants"
-import { lerp } from "../../util/math"
-import type { AsciiEngine } from "../../core/Engine"
+import { MIN_ACTION_INTERVAL } from '../../core/constants'
+import { lerp } from '../../util/math'
+import type { AsciiEngine } from '../../core/Engine'
 
 type MoveHandler = (entity: Entity) => void
 
@@ -14,19 +14,14 @@ export class Entity {
   prevX: number
   prevY: number
 
-  private _moveSpeed: number
+  private _moveSpeed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
   private _lastActTime: number = performance.now()
   private _nextActDelay: number = 0
 
   private _moveListeners: Set<MoveHandler> = new Set()
 
-  constructor(
-    glyph: string,
-    x: number,
-    y: number,
-    moveSpeed: number = 0,
-  ) {
+  constructor(glyph: string, x: number, y: number, moveSpeed: number = 0) {
     this.glyph = glyph
 
     this.x = x
@@ -51,10 +46,7 @@ export class Entity {
   public visualPosition(now: number): [number, number] {
     const elapsed = now - this._lastActTime
     const alpha = Math.min(elapsed / this._nextActDelay, 1)
-    return [
-      lerp(this.prevX, this.x, alpha),
-      lerp(this.prevY, this.y, alpha),
-    ]
+    return [lerp(this.prevX, this.x, alpha), lerp(this.prevY, this.y, alpha)]
   }
 
   public onMove(handler: MoveHandler): () => void {

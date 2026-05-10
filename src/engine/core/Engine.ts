@@ -1,10 +1,10 @@
-import { LocalWorld } from "../world/LocalWorld"
-import { Camera } from "../render/Camera"
-import { PlayerUnit } from "../world/entities/PlayerUnit"
-import { GlobalWorld } from "../world/GlobalWorld"
-import { InputManager } from "./InputManager"
-import { Renderer } from "../render/Renderer"
-import { DefaultMenu } from "../render/DefaultMenu"
+import { LocalWorld } from '../world/LocalWorld'
+import { Camera } from '../render/Camera'
+import { PlayerUnit } from '../world/entities/PlayerUnit'
+import { GlobalWorld } from '../world/GlobalWorld'
+import { InputManager } from './InputManager'
+import { Renderer } from '../render/Renderer'
+import { DefaultMenu } from '../render/DefaultMenu'
 
 export class AsciiEngine {
   // Unloaded world data, world simulation called at interval
@@ -23,14 +23,14 @@ export class AsciiEngine {
   private environmentReady = false
 
   constructor(root: HTMLDivElement) {
-    root.classList.add("ascii-engine-host")
-    const gameContainer = document.createElement("div")
-    gameContainer.classList.add("ascii-engine")
+    root.classList.add('ascii-engine-host')
+    const gameContainer = document.createElement('div')
+    gameContainer.classList.add('ascii-engine')
     root.appendChild(gameContainer)
 
     this.localWorld.bind(this)
 
-    const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit("☺", 8, 8, 250))
+    const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit('☺', 8, 8, 250))
     const camera = new Camera(gameContainer, cameraTarget)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
@@ -38,40 +38,40 @@ export class AsciiEngine {
     this.renderer = new Renderer(gameContainer, camera, this.inputManager)
     this.renderer.bindWorld(this.localWorld)
 
-    document.addEventListener("visibilitychange", this.handleVisibility)
-    window.addEventListener("resize", this.handleWindowState)
+    document.addEventListener('visibilitychange', this.handleVisibility)
+    window.addEventListener('resize', this.handleWindowState)
   }
 
-  start() {
-    document.fonts.ready.then(function(this: AsciiEngine) {
-      this.renderer.setTileHAndW()
-      this.environmentReady = true
-      this.renderer.camera.jumpToTarget(performance.now())
+  async start() {
+    await document.fonts.ready
 
-      new DefaultMenu(this.inputManager, this.renderer)
+    this.renderer.setTileHAndW()
+    this.environmentReady = true
+    this.renderer.camera.jumpToTarget(performance.now())
 
-      this.resume()
-    }.bind(this))
+    new DefaultMenu(this.inputManager, this.renderer)
+
+    this.resume()
   }
 
   destroy() {
     this.suspend()
-    this.localWorld.entities.forEach(e => e.unschedule())
+    this.localWorld.entities.forEach((e) => e.unschedule())
 
-    document.removeEventListener("visibilitychange", this.handleVisibility)
-    window.removeEventListener("resize", this.handleWindowState)
+    document.removeEventListener('visibilitychange', this.handleVisibility)
+    window.removeEventListener('resize', this.handleWindowState)
   }
 
   pause() {
     if (this.paused) return
     this.paused = true
-    this.localWorld.entities.forEach(e => e.unschedule())
+    this.localWorld.entities.forEach((e) => e.unschedule())
   }
 
   unpause() {
     if (!this.paused) return
     this.paused = false
-    this.localWorld.entities.forEach(e => e.scheduleFirst(this))
+    this.localWorld.entities.forEach((e) => e.scheduleFirst(this))
   }
 
   suspend = () => {
@@ -79,15 +79,14 @@ export class AsciiEngine {
     this.running = false
     cancelAnimationFrame(this.rafId)
     this.rafId = 0
-    this.localWorld.entities.forEach(e => e.unschedule())
+    this.localWorld.entities.forEach((e) => e.unschedule())
   }
 
   resume = () => {
     if (this.running) return
     if (document.hidden) return
     this.running = true
-    if (!this.paused)
-      this.localWorld.entities.forEach(e => e.scheduleFirst(this))
+    if (!this.paused) this.localWorld.entities.forEach((e) => e.scheduleFirst(this))
     this.rafId = requestAnimationFrame(this.frame)
   }
 

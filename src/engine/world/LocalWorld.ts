@@ -1,6 +1,6 @@
-import type { AsciiEngine } from "../core/Engine"
-import { Chunk, CHUNK_SIZE } from "./Chunk"
-import { Entity } from "./entities/Entity"
+import type { AsciiEngine } from '../core/Engine'
+import { Chunk, CHUNK_SIZE } from './Chunk'
+import { Entity } from './entities/Entity'
 
 type EntityHandler = (entity: Entity) => void
 
@@ -70,8 +70,7 @@ export class LocalWorld {
   }
 
   spawnEntity<T extends Entity>(entity: T): T {
-    if (entity.uid === -1)
-      entity.uid = this.nextId++
+    if (entity.uid === -1) entity.uid = this.nextId++
     this.entities.set(entity.uid, entity)
     entity.OnLoad()
     for (const fn of this._spawnListeners) fn(entity)
