@@ -45,16 +45,19 @@ export class ThemeManager {
   }
 
   private registerAllThemes() {
-    const engineThemeFiles = import.meta.glob('./css/themes/*.css', { query: '?url', eager: true })
-    const gameThemeFiles = import.meta.glob('../../game/themes/*.css', {
+    const engineThemeFiles = import.meta.glob<{ default: string }>('./css/themes/*.css', {
+      query: '?url',
+      eager: true,
+    })
+    const gameThemeFiles = import.meta.glob<{ default: string }>('../../game/themes/*.css', {
       query: '?url',
       eager: true,
     })
     for (const path in engineThemeFiles) {
-      this.registerFile(path, engineThemeFiles[path]['default'] as string)
+      this.registerFile(path, engineThemeFiles[path].default)
     }
     for (const path in gameThemeFiles) {
-      this.registerFile(path, gameThemeFiles[path]['default'] as string)
+      this.registerFile(path, gameThemeFiles[path].default)
     }
   }
 
