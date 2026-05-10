@@ -83,7 +83,7 @@ export class Renderer {
     this._world = world
     world.onSpawn((entity) => this._registerActor(entity))
     world.onDespawn((entity) => this._unregisterActor(entity))
-    // Register entities that were spawned before the renderer was ready
+    // Register existing entities
     for (const entity of world.entities.values()) {
       this._registerActor(entity)
     }

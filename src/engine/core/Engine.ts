@@ -35,7 +35,6 @@ export class AsciiEngine {
 
     this.inputManager = new InputManager()
     this.renderer = new Renderer(gameContainer, camera, this.inputManager)
-    this.renderer.bindWorld(this.localWorld)
 
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleWindowState)
@@ -46,6 +45,7 @@ export class AsciiEngine {
 
     this.renderer.setTileHAndW()
     this.environmentReady = true
+    this.renderer.bindWorld(this.localWorld)
     this.renderer.camera.jumpToTarget()
 
     new DefaultMenu(this.inputManager, this.renderer)
