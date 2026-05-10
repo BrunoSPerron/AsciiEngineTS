@@ -29,11 +29,11 @@ export class AsciiEngine {
 
     this.localWorld = new LocalWorld(this)
 
+    this.inputManager = new InputManager()
     const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit('☺', 20, 20, 250))
     const camera = new Camera(gameContainer, cameraTarget)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
-    this.inputManager = new InputManager()
     this.renderer = new Renderer(gameContainer, camera, this.inputManager)
 
     document.addEventListener('visibilitychange', this.handleVisibility)

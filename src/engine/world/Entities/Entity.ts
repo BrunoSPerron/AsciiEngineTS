@@ -14,6 +14,8 @@ export class Entity {
   prevX: number
   prevY: number
 
+  protected engine!: AsciiEngine
+
   private _moveSpeed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
   private _lastActTime: number = performance.now()
@@ -64,23 +66,21 @@ export class Entity {
     this.unschedule()
   }
 
-  /**
-   * Called by LocalWorld when the entity is spawned.
-   */
   scheduleFirst(engine: AsciiEngine) {
-    this._schedule(engine, this._moveSpeed)
+    this.engine = engine
+    this._schedule(this._moveSpeed)
   }
 
-  private _schedule(engine: AsciiEngine, delay: number) {
+  private _schedule(delay: number) {
     this._nextActDelay = delay
     this._timeoutId = setTimeout(() => {
       this._lastActTime = performance.now()
       this.prevX = this.x
       this.prevY = this.y
 
-      const next = this.act(engine)
+      const next = this.act()
 
-      this._schedule(engine, Math.max(next, MIN_ACTION_INTERVAL))
+      this._schedule(Math.max(next, MIN_ACTION_INTERVAL))
     }, delay)
   }
 
@@ -94,7 +94,7 @@ export class Entity {
   /**
    * @returns delay until next action, in milliseconds
    */
-  act(_engine: AsciiEngine): number {
+  act(): number {
     return this._moveSpeed
   }
 }

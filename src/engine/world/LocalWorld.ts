@@ -9,7 +9,7 @@ export class LocalWorld {
   entities = new Map<number, Entity>()
 
   private nextId = 1
-  private engine: AsciiEngine | null = null
+  private engine: AsciiEngine
 
   private _spawnListeners: Set<EntityHandler> = new Set()
   private _despawnListeners: Set<EntityHandler> = new Set()
@@ -70,7 +70,7 @@ export class LocalWorld {
     this.entities.set(entity.uid, entity)
     entity.OnLoad()
     for (const fn of this._spawnListeners) fn(entity)
-    if (this.engine) entity.scheduleFirst(this.engine)
+    entity.scheduleFirst(this.engine)
     return entity
   }
 }
