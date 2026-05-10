@@ -1,4 +1,4 @@
-import type { LocalWorld } from "../LocalWorld"
+import { AsciiEngine } from "../../core/Engine"
 import { Entity } from "./Entity"
 
 export class PlayerUnit extends Entity {
@@ -7,10 +7,10 @@ export class PlayerUnit extends Entity {
     super(glyph, x, y, moveSpeed)
   }
 
-  act(world: LocalWorld) {
-    super.act(world)
-    this.x ++
-    this.y ++
+  act(_engine: AsciiEngine): number {
+    this.x++
+    this.y++
+    this.emitMove()
     return this.moveSpeed
   }
 }

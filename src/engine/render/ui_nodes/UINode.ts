@@ -1,4 +1,4 @@
-import { TileMetrics } from "../TileMetrics"
+import { TileMetrics } from "../tileMetrics"
 
 export type UIKind =
   | "text"

@@ -1,4 +1,4 @@
-import { TileMetrics } from "../TileMetrics"
+import { TileMetrics } from "../tileMetrics"
 import { UINode, type ILineLike } from "./UINode"
 
 export const LINE_GLYPHS: Record<number, string> = {

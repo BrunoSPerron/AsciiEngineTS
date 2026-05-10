@@ -1,9 +1,11 @@
-import { STEP } from "../../core/Engine"
+import { MIN_ACTION_INTERVAL } from "../../core/constants"
 import { lerp } from "../../util/math"
-import type { LocalWorld } from "../LocalWorld"
+import type { AsciiEngine } from "../../core/Engine"
+
+type MoveHandler = (entity: Entity) => void
 
 export class Entity {
-  uid: number
+  uid = -1
   glyph: string
 
   x: number
@@ -13,62 +15,94 @@ export class Entity {
   prevY: number
 
   private _moveSpeed: number
-  nextAction: number
+  private _timeoutId: ReturnType<typeof setTimeout> | null = null
+  private _lastActTime: number = performance.now()
+  private _nextActDelay: number = 0
+
+  private _moveListeners: Set<MoveHandler> = new Set()
 
   constructor(
-      glyph: string,
-      x: number,
-      y: number,
-      moveSpeed: number = 0,
-    ) {
+    glyph: string,
+    x: number,
+    y: number,
+    moveSpeed: number = 0,
+  ) {
     this.glyph = glyph
-    
+
     this.x = x
     this.y = y
     this.prevX = x
     this.prevY = y
 
     this.moveSpeed = moveSpeed
-    this.nextAction = moveSpeed
   }
 
-  /**
-   * @returns time until next move, in ms
-   */
   public get moveSpeed(): number {
     return this._moveSpeed
   }
 
   public set moveSpeed(value: number) {
-    if (value >= 10) {
-      this._moveSpeed = value
-    } else {
-      this._moveSpeed = STEP
-    }
-  }
-
-  public get visualPosition(): Array<number> {
-    let alpha = 1 - this.nextAction / this.moveSpeed
-    return [
-      lerp(this.prevX, this.x, alpha),
-      lerp(this.prevY, this.y, alpha)
-    ]
-  }
-
-  OnLoad() {
-    
-  }
-
-  OnUnload() {
-    
+    this._moveSpeed = Math.max(value, MIN_ACTION_INTERVAL)
   }
 
   /**
-   * @returns time until the next action, in milliseconds
+   * Interpolated position for smooth rendering, based on wall time.
    */
-  act(_world: LocalWorld): number {
-    this.prevX = this.x
-    this.prevY = this.y
+  public visualPosition(now: number): [number, number] {
+    const elapsed = now - this._lastActTime
+    const alpha = Math.min(elapsed / this._nextActDelay, 1)
+    return [
+      lerp(this.prevX, this.x, alpha),
+      lerp(this.prevY, this.y, alpha),
+    ]
+  }
+
+  public onMove(handler: MoveHandler): () => void {
+    this._moveListeners.add(handler)
+    return () => this._moveListeners.delete(handler)
+  }
+
+  protected emitMove() {
+    for (const fn of this._moveListeners) fn(this)
+  }
+
+  OnLoad() {}
+
+  OnUnload() {
+    this.unschedule()
+  }
+
+  /**
+   * Called by LocalWorld when the entity is spawned.
+   */
+  scheduleFirst(engine: AsciiEngine) {
+    this._schedule(engine, this._moveSpeed)
+  }
+
+  private _schedule(engine: AsciiEngine, delay: number) {
+    this._nextActDelay = delay
+    this._timeoutId = setTimeout(() => {
+      this._lastActTime = performance.now()
+      this.prevX = this.x
+      this.prevY = this.y
+
+      const next = this.act(engine)
+
+      this._schedule(engine, Math.max(next, MIN_ACTION_INTERVAL))
+    }, delay)
+  }
+
+  unschedule() {
+    if (this._timeoutId !== null) {
+      clearTimeout(this._timeoutId)
+      this._timeoutId = null
+    }
+  }
+
+  /**
+   * @returns delay until next action, in milliseconds
+   */
+  act(_engine: AsciiEngine): number {
     return this._moveSpeed
   }
 }

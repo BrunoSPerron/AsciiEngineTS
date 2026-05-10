@@ -1,10 +1,11 @@
 import type { InputManager } from "../core/InputManager"
+import type { Entity } from "../world/entities/Entity"
 import { CHUNK_SIZE } from "../world/Chunk"
 import { LocalWorld } from "../world/LocalWorld"
 import { Camera } from "./Camera"
 import { RendererUI } from "./RendererUI"
 import { ThemeManager } from "./ThemeManager"
-import { TileMetrics } from "./TileMetrics.ts"
+import { TileMetrics } from "./tileMetrics.ts"
 
 import baseCssUrl from "./css/base.css?url"
 
@@ -21,6 +22,9 @@ export class Renderer {
 
   actorEls = new Map<number, HTMLDivElement>()
   chunkEls = new Map<string, HTMLPreElement>()
+
+  private chunksNeedRefresh = true
+  private _unlistenFns = new Map<number, () => void>()
 
   constructor(root: HTMLElement, camera: Camera, inputManager: InputManager) {
     this.root = root
@@ -62,6 +66,53 @@ export class Renderer {
     span.remove()
   }
 
+  /** Called by Camera when its target moves, triggering a chunk visibility refresh. */
+  invalidateChunks() {
+    this.chunksNeedRefresh = true
+  }
+
+  /** Called by Engine to wire spawn/despawn events from a LocalWorld. */
+  bindWorld(world: LocalWorld) {
+    world.onSpawn(entity => this._registerActor(entity))
+    world.onDespawn(entity => this._unregisterActor(entity))
+    // Register entities that were spawned before the renderer was ready
+    for (const entity of world.entities.values()) {
+      this._registerActor(entity)
+    }
+  }
+
+  private _registerActor(entity: Entity) {
+    const el = document.createElement("div")
+    el.className = "actor"
+    el.textContent = entity.glyph
+    this.actors.appendChild(el)
+    this.actorEls.set(entity.uid, el)
+
+    const unlisten = entity.onMove(e => this.renderActor(e))
+    this._unlistenFns.set(entity.uid, unlisten)
+  }
+
+  private _unregisterActor(entity: Entity) {
+    this.actorEls.get(entity.uid)?.remove()
+    this.actorEls.delete(entity.uid)
+    this._unlistenFns.get(entity.uid)?.()
+    this._unlistenFns.delete(entity.uid)
+  }
+
+  renderActor(entity: Entity) {
+    const el = this.actorEls.get(entity.uid)
+    if (!el) return
+
+    const now = performance.now()
+    const pos = entity.visualPosition(now)
+    const camera = this.camera
+
+    el.style.transform = `translate(
+      ${pos[0] * TileMetrics.w - camera.x * TileMetrics.w}px,
+      ${pos[1] * TileMetrics.h - camera.y * TileMetrics.h}px
+    )`
+  }
+
   private makeLayer(css: string) {
     const el = document.createElement("div")
     el.className = "layer"
@@ -70,18 +121,17 @@ export class Renderer {
     return el
   }
 
-  render(world: LocalWorld, deltaTime: number): Array<number> {
-    this.camera.update(deltaTime)
+  render(world: LocalWorld, now: number) {
+    this.camera.update(now)
 
-    const visibleChunks = this.renderChunks(world, this.camera)
-    return this.renderActors(world, this.camera, visibleChunks)
+    if (this.chunksNeedRefresh) {
+      this.renderChunks(world)
+      this.chunksNeedRefresh = false
+    }
   }
 
-  /**
-   * Renders visible chunks and removes stale chunk elements.
-   * Returns visible chunk keys for actor culling.
-   */
-  private renderChunks(world: LocalWorld, camera: Camera): Set<string> {
+  private renderChunks(world: LocalWorld) {
+    const camera = this.camera
     const left = Math.floor(camera.x / CHUNK_SIZE) - 1
     const top = Math.floor(camera.y / CHUNK_SIZE) - 1
     const right = left + 6
@@ -128,78 +178,11 @@ export class Renderer {
       }
     }
 
-    // Remove unmanaged chunk nodes
     for (const [key, el] of this.chunkEls) {
       if (!visible.has(key)) {
         el.remove()
         this.chunkEls.delete(key)
       }
     }
-
-    return visible
-  }
-
-  /**
-   * Renders actors inside visible chunks only.
-   * Removes stale / offscreen actor nodes.
-   *
-   * @returns removed entity ids
-   */
-  private renderActors(
-    world: LocalWorld,
-    camera: Camera,
-    visibleChunks: Set<string>
-  ): Array<number> {
-    const removed: number[] = []
-    const seen = new Set<number>()
-
-    for (const entity of world.entities.values()) {
-      const pos = entity.visualPosition
-
-      const cx = Math.floor(pos[0] / CHUNK_SIZE)
-      const cy = Math.floor(pos[1] / CHUNK_SIZE)
-      const key = `${cx},${cy}`
-
-      if (!visibleChunks.has(key)) {
-        const existing = this.actorEls.get(entity.uid)
-
-        if (existing) {
-          existing.remove()
-          this.actorEls.delete(entity.uid)
-          removed.push(entity.uid)
-        }
-
-        continue
-      }
-
-      seen.add(entity.uid)
-
-      let el = this.actorEls.get(entity.uid)
-
-      if (!el) {
-        el = document.createElement("div")
-        el.className = "actor"
-        el.textContent = entity.glyph
-
-        this.actors.appendChild(el)
-        this.actorEls.set(entity.uid, el)
-      }
-
-      el.style.transform = `translate(
-        ${pos[0] * TileMetrics.w - camera.x * TileMetrics.w}px,
-        ${pos[1] * TileMetrics.h - camera.y * TileMetrics.h}px
-      )`
-    }
-
-    // Remove orphaned actor nodes (entity deleted from world)
-    for (const [id, el] of this.actorEls) {
-      if (!seen.has(id)) {
-        el.remove()
-        this.actorEls.delete(id)
-        removed.push(id)
-      }
-    }
-
-    return removed
   }
 }

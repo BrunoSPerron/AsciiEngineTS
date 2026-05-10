@@ -1,5 +1,5 @@
 import type { InputManager } from "../../core/InputManager"
-import { TileMetrics } from "../TileMetrics"
+import { TileMetrics } from "../tileMetrics"
 import { UINode, type ILineLike } from "./UINode"
 
 // Border cell layout for a panel at (x, y) with size (w, h):

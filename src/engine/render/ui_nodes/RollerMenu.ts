@@ -1,6 +1,6 @@
 import type { InputManager } from "../../core/InputManager"
 import type { RendererUI } from "../RendererUI"
-import { TileMetrics } from "../TileMetrics"
+import { TileMetrics } from "../tileMetrics"
 import { UIPanel } from "./UIPanel"
 
 const VISIBLE_ROWS = 5
