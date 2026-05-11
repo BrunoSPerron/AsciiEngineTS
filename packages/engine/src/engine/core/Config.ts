@@ -65,16 +65,17 @@ function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> 
   return result
 }
 
-export async function loadConfig(gameName: string): Promise<EngineConfig> {
-  const path = `/ascii-engine-settings/${gameName}.toml`
+export async function loadConfig(url: string | null): Promise<EngineConfig> {
+  if (!url) {
+    return DEFAULT_CONFIG
+  }
 
   try {
-    const response = await fetch(path)
+    const response = await fetch(url)
 
     if (!response.ok) {
       if (response.status === 404) {
-        // eslint-disable-next-line no-console
-        console.info(`[AsciiEngine] No config found at ${path}, using defaults.`)
+        console.info(`[AsciiEngine] No config found at ${url}, using defaults.`)
         return DEFAULT_CONFIG
       }
       throw new Error(`Failed to fetch config: ${response.statusText}`)
@@ -85,8 +86,7 @@ export async function loadConfig(gameName: string): Promise<EngineConfig> {
     const overrides = parseTomlToConfig(raw)
     return mergeConfig(DEFAULT_CONFIG, overrides)
   } catch (err) {
-    // eslint-disable-next-line no-console
-    console.warn(`[AsciiEngine] Could not load config at ${path}, using defaults.`, err)
+    console.warn(`[AsciiEngine] Could not load config at ${url}, using defaults.`, err)
     return DEFAULT_CONFIG
   }
 }

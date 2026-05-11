@@ -7,7 +7,7 @@ import { Renderer } from '../render/Renderer'
 import { DefaultMenu } from '../render/DefaultMenu'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
-import type { GameAssets } from './GameAssets'
+import { loadGameAssets, type GameAssets } from './GameAssets'
 
 export class AsciiEngine {
   assets: GameAssets
@@ -22,16 +22,14 @@ export class AsciiEngine {
   renderer: Renderer
 
   config!: EngineConfig
-  gameName: string
 
   running = false
   paused = false
 
   private environmentReady = false
 
-  constructor(root: HTMLDivElement, gameName: string, assets: GameAssets) {
-    this.gameName = gameName
-    this.assets = assets
+  constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
+    this.assets = loadGameAssets(glob)
     root.classList.add('ascii-engine-host')
     const gameContainer = document.createElement('div')
     gameContainer.classList.add('ascii-engine')
@@ -51,7 +49,7 @@ export class AsciiEngine {
   }
 
   async start() {
-    this.config = await loadConfig(this.gameName)
+    this.config = await loadConfig(this.assets.configUrl)
 
     document.title = this.config.game.title
 
