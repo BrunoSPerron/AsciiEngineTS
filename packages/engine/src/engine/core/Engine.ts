@@ -54,6 +54,7 @@ export class AsciiEngine {
 
   async start() {
     this.config = await loadConfig(this.assets.configUrl)
+    this.renderer.viewDistance = this.config.world.chunk_view_distance
 
     document.title = this.config.game.title
 

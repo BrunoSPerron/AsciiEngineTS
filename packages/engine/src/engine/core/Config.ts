@@ -8,6 +8,7 @@ export type EngineConfig = {
   }
   world: {
     seed: number
+    chunk_view_distance: number
   }
 }
 
@@ -18,6 +19,7 @@ export const DEFAULT_CONFIG: EngineConfig = {
   },
   world: {
     seed: 0,
+    chunk_view_distance: 3,
   },
 }
 
@@ -60,6 +62,10 @@ function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> 
     const world = raw.world as Record<string, unknown>
     result.world = {
       seed: 'seed' in world ? assertNumber(world.seed, 'world.seed') : DEFAULT_CONFIG.world.seed,
+      chunk_view_distance:
+        'chunk_view_distance' in world
+          ? assertNumber(world.chunk_view_distance, 'world.chunk_view_distance')
+          : DEFAULT_CONFIG.world.chunk_view_distance,
     }
   }
 

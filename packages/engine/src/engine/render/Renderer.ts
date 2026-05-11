@@ -12,6 +12,7 @@ import baseCssUrl from './css/base.css?url'
 export class Renderer {
   root: HTMLElement
   tileMetrics: TileMetricsData
+  viewDistance = 3
 
   camera: Camera
   themeManager: ThemeManager
@@ -153,11 +154,15 @@ export class Renderer {
   private _renderChunks() {
     if (!this._world) return
 
-    const camera = this.camera
-    const left = Math.floor(camera.x / CHUNK_SIZE) - 1
-    const top = Math.floor(camera.y / CHUNK_SIZE) - 1
-    const right = left + 6
-    const bottom = top + 4
+    const target = this.camera.target
+    const cx = Math.floor(target.x / CHUNK_SIZE)
+    const cy = Math.floor(target.y / CHUNK_SIZE)
+    const d = this.viewDistance
+
+    const left = cx - d
+    const top = cy - d
+    const right = cx + d
+    const bottom = cy + d
 
     const visible = new Set<string>()
 
