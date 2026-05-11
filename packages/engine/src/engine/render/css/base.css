@@ -61,6 +61,9 @@
 
   overflow: hidden;
 
+  background-color: var(--color-bg);
+  color: var(--color-text);
+
   font-family: monospace;
   font-size: var(--font-size);
   line-height: var(--line-height);
@@ -76,9 +79,40 @@
     --actor-text 250ms ease;
 }
 
-.ascii-engine.default {
-  background-color: var(--color-bg);
-  color: var(--color-text);
+.ascii-engine {
+  position: relative;
+}
+
+.ascii-engine .layer {
+  position: absolute;
+  inset: 0;
+  /*
+  TODO make ui works with scale and use for zoom
+  */
+  transform: scale(1);
+}
+
+/* ----- Background Layer ----- */
+
+.ascii-engine .chunk {
+  position: absolute;
+  white-space: pre;
+}
+
+/* ----- Entity Layer ----- */
+
+.ascii-engine .actor {
+  position: absolute;
+  background-color: var(--actor-bg);
+  color: var(--actor-text);
+  height: var(--line-height);
+}
+
+/* ----- UI Layer ----- */
+
+.ascii-engine .layer-ui {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .ascii-engine .ui {
@@ -98,39 +132,11 @@
     color 0.12s;
 }
 
-.ascii-engine {
-  position: relative;
-}
-
-.ascii-engine .layer {
-  position: absolute;
-  inset: 0;
-  /*
-  TODO make ui works with and use for zoom
-  */
-  transform: scale(1);
-}
-
-.ascii-engine .chunk {
-  position: absolute;
-  white-space: pre;
-}
-
-.ascii-engine .actor {
-  position: absolute;
-  background-color: var(--actor-bg);
-  color: var(--actor-text);
-  height: var(--line-height);
-}
-
-.ascii-engine .layer-ui {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 .ascii-engine .ui-node.ui-line {
   font-weight: 100;
 }
+
+/* ----- UI Panel ----- */
 
 .ascii-engine .ui-panel {
   padding: 4px;
@@ -142,7 +148,7 @@
   z-index: 1;
 }
 
-/* ── Roller menu ─────────────────────────────────────── */
+/* ----- UI Roller menu ----- */
 
 .ascii-engine .ui-roller {
   background-color: var(--ui-bg);

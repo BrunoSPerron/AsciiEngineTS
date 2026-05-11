@@ -18,7 +18,7 @@ export class ThemeManager {
     this.link.rel = 'stylesheet'
     document.head.appendChild(this.link)
 
-    this.registerAllThemes()
+    this.registerEngineThemes()
     this.preloadAllThemes()
   }
 
@@ -44,20 +44,13 @@ export class ThemeManager {
     }
   }
 
-  private registerAllThemes() {
+  private registerEngineThemes() {
     const engineThemeFiles = import.meta.glob<{ default: string }>('./css/themes/*.css', {
-      query: '?url',
-      eager: true,
-    })
-    const gameThemeFiles = import.meta.glob<{ default: string }>('../../game/themes/*.css', {
       query: '?url',
       eager: true,
     })
     for (const path in engineThemeFiles) {
       this.registerFile(path, engineThemeFiles[path].default)
-    }
-    for (const path in gameThemeFiles) {
-      this.registerFile(path, gameThemeFiles[path].default)
     }
   }
 

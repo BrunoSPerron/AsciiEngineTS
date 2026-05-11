@@ -30,7 +30,6 @@ export class Renderer {
 
   constructor(root: HTMLElement, camera: Camera, inputManager: InputManager) {
     this.root = root
-    this.root.classList.add('default')
 
     const link = document.createElement('link')
     link.rel = 'stylesheet'

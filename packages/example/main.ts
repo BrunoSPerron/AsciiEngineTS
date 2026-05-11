@@ -1,6 +1,15 @@
-import { AsciiEngine } from 'ascii-engine'
+import { AsciiEngine, loadGameAssets } from 'ascii-engine'
 import './style.css'
 
-const root = document.querySelector<HTMLDivElement>('#asciiEngine')!
-const engine = new AsciiEngine(root, 'my-game')
+const container = document.querySelector<HTMLDivElement>('#asciiEngine')!
+
+const assets = loadGameAssets({
+  themes: import.meta.glob('./game/themes/*.css', {
+    query: '?url',
+    eager: true,
+    import: 'default',
+  }),
+})
+
+const engine = new AsciiEngine(container, 'my-game', assets)
 await engine.start()

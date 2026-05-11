@@ -21,9 +21,9 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
   */
 }
 
-.ascii-engine .layer-background::before {
+.ascii-engine .layer-world::before {
   content: '';
-  position: absolute;
+  position: fixed;
   inset: 0;
 
   background:
