@@ -1,4 +1,5 @@
 import { parse } from 'smol-toml'
+import { Logger } from './Logger'
 
 export type EngineConfig = {
   game: {
@@ -67,6 +68,7 @@ function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> 
 
 export async function loadConfig(url: string | null): Promise<EngineConfig> {
   if (!url) {
+    Logger.info('No config provided, using defaults.')
     return DEFAULT_CONFIG
   }
 
@@ -75,7 +77,7 @@ export async function loadConfig(url: string | null): Promise<EngineConfig> {
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.info(`[AsciiEngine] No config found at ${url}, using defaults.`)
+        Logger.info(`No config found at ${url}, using defaults.`)
         return DEFAULT_CONFIG
       }
       throw new Error(`Failed to fetch config: ${response.statusText}`)
@@ -86,7 +88,7 @@ export async function loadConfig(url: string | null): Promise<EngineConfig> {
     const overrides = parseTomlToConfig(raw)
     return mergeConfig(DEFAULT_CONFIG, overrides)
   } catch (err) {
-    console.warn(`[AsciiEngine] Could not load config at ${url}, using defaults.`, err)
+    Logger.warn(`Could not load config at ${url}, using defaults.`, err)
     return DEFAULT_CONFIG
   }
 }
