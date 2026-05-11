@@ -2,15 +2,16 @@ import type { InputManager } from '../core/InputManager'
 import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
 import type { LocalWorld } from '../world/LocalWorld'
-import type { Camera } from './Camera'
+import { type Camera } from './Camera'
 import { RendererUI } from './RendererUI'
 import { ThemeManager } from './ThemeManager'
-import { TileMetrics } from './tileMetrics'
+import { type TileMetricsData } from './tileMetrics'
 
 import baseCssUrl from './css/base.css?url'
 
 export class Renderer {
   root: HTMLElement
+  tileMetrics: TileMetricsData
 
   camera: Camera
   themeManager: ThemeManager
@@ -28,8 +29,15 @@ export class Renderer {
   private _unlistenFns = new Map<number, () => void>()
   private _world: LocalWorld | null = null
 
-  constructor(root: HTMLElement, camera: Camera, inputManager: InputManager) {
+  constructor(
+    root: HTMLElement,
+    camera: Camera,
+    inputManager: InputManager,
+    tileMetrics: TileMetricsData,
+  ) {
     this.root = root
+
+    this.tileMetrics = tileMetrics
 
     const link = document.createElement('link')
     link.rel = 'stylesheet'
@@ -40,15 +48,12 @@ export class Renderer {
     this.inputManager = inputManager
     this.camera = camera
 
-    // World container — camera offset applied here, bg and actors inside
     this.worldEl = this._makeLayer('layer-world')
     this.bg = this._makeLayerInto(this.worldEl, 'layer-background')
     this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
 
-    // UI sits outside the world container, unaffected by camera
-    this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.inputManager)
+    this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.inputManager, this.tileMetrics)
 
-    // Camera drives the world container position each frame
     camera.onFrame = (now) => this._onCameraFrame(now)
   }
 
@@ -67,8 +72,9 @@ export class Renderer {
     span.textContent = 'M'
 
     this.root.appendChild(span)
-    TileMetrics.w = span.getBoundingClientRect().width
-    TileMetrics.h = span.getBoundingClientRect().height
+    const bcr = span.getBoundingClientRect()
+    this.tileMetrics.w = bcr.width
+    this.tileMetrics.h = bcr.height
     span.remove()
   }
 
@@ -92,8 +98,8 @@ export class Renderer {
     const el = document.createElement('div')
     el.className = 'actor'
     el.textContent = entity.glyph
-    // Place at initial position with no transition
-    el.style.transform = `translate(${entity.x * TileMetrics.w}px, ${entity.y * TileMetrics.h}px)`
+    // Place at initial position with no tileMetrics
+    el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
     this.actors.appendChild(el)
     this.actorEls.set(entity.uid, el)
 
@@ -115,13 +121,13 @@ export class Renderer {
     if (entity.x === entity.prevX && entity.y === entity.prevY) return
 
     el.style.transition = `transform ${entity.moveSpeed}ms linear`
-    el.style.transform = `translate(${entity.x * TileMetrics.w}px, ${entity.y * TileMetrics.h}px)`
+    el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
   }
 
   private _onCameraFrame(_now: number) {
     this.worldEl.style.transform = `translate(
-      ${-this.camera.x * TileMetrics.w}px,
-      ${-this.camera.y * TileMetrics.h}px
+      ${-this.camera.x * this.tileMetrics.w}px,
+      ${-this.camera.y * this.tileMetrics.h}px
     )`
 
     if (this.chunksNeedRefresh) {
@@ -186,8 +192,8 @@ export class Renderer {
 
         // Chunk position is pure world space — camera offset lives on worldEl
         el.style.transform = `translate(
-          ${cx * CHUNK_SIZE * TileMetrics.w}px,
-          ${cy * CHUNK_SIZE * TileMetrics.h}px
+          ${cx * CHUNK_SIZE * this.tileMetrics.w}px,
+          ${cy * CHUNK_SIZE * this.tileMetrics.h}px
         )`
       }
     }

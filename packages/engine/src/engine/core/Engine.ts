@@ -8,6 +8,7 @@ import { DefaultMenu } from '../render/DefaultMenu'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
 import { loadGameAssets, type GameAssets } from './GameAssets'
+import { createTileMetrics } from '../render/tileMetrics'
 
 export class AsciiEngine {
   assets: GameAssets
@@ -38,11 +39,14 @@ export class AsciiEngine {
     this.localWorld = new LocalWorld(this)
 
     this.inputManager = new InputManager()
+
+    const tileMetrics = createTileMetrics()
+
     const cameraTarget = this.localWorld.spawnEntity(new PlayerUnit('☺', 20, 20, 250))
-    const camera = new Camera(gameContainer, cameraTarget)
+    const camera = new Camera(gameContainer, cameraTarget, tileMetrics)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
-    this.renderer = new Renderer(gameContainer, camera, this.inputManager)
+    this.renderer = new Renderer(gameContainer, camera, this.inputManager, tileMetrics)
 
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleWindowState)

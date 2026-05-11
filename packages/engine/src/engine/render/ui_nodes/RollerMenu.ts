@@ -1,6 +1,5 @@
 import type { InputManager } from '../../core/InputManager'
 import type { RendererUI } from '../RendererUI'
-import { TileMetrics } from '../tileMetrics'
 import type { UIPanel } from './UIPanel'
 
 const VISIBLE_ROWS = 5
@@ -74,9 +73,9 @@ export class RollerMenu {
     this.slotEls = Array.from({ length: VISIBLE_ROWS }, (_, slot) => {
       const el = document.createElement('div')
       el.style.position = 'absolute'
-      el.style.top = `${slot * TileMetrics.h}px`
+      el.style.top = `${slot * this.rendererUI.tileMetrics.h}px`
       el.style.whiteSpace = 'pre'
-      el.style.width = `${innerW * TileMetrics.w}px`
+      el.style.width = `${innerW * this.rendererUI.tileMetrics.w}px`
       container.appendChild(el)
       return el
     })

@@ -4,10 +4,12 @@ import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './ui_no
 import { UIPanel } from './ui_nodes/UIPanel'
 import { SelectMenu } from './ui_nodes/SelectMenu'
 import { RollerMenu } from './ui_nodes/RollerMenu'
+import type { TileMetricsData } from './tileMetrics'
 
 export class RendererUI {
   root: HTMLDivElement
   inputManager: InputManager
+  tileMetrics: TileMetricsData
 
   private nextId = 1
 
@@ -19,9 +21,10 @@ export class RendererUI {
   // Tracks which cells have a line-like node as their topmost entry in cellStack.
   private lineCells = new Map<string, boolean>()
 
-  constructor(root: HTMLDivElement, inputManager: InputManager) {
+  constructor(root: HTMLDivElement, inputManager: InputManager, tileMetrics: TileMetricsData) {
     this.inputManager = inputManager
     this.root = root
+    this.tileMetrics = tileMetrics
   }
 
   reserveId(): number {
@@ -476,7 +479,7 @@ export class RendererUI {
     el.style.whiteSpace = 'pre'
     el.style.willChange = 'transform, opacity'
 
-    const node = new LineNode(this.nextId++, 'hline', el, x, y, w, 1)
+    const node = new LineNode(this.nextId++, 'hline', el, x, y, w, 1, this.tileMetrics)
     node.applyTransform()
 
     for (let i = 0; i < w; i++) node.chars[i] = '═'
@@ -496,7 +499,7 @@ export class RendererUI {
     el.style.whiteSpace = 'pre'
     el.style.willChange = 'transform, opacity'
 
-    const node = new LineNode(this.nextId++, 'vline', el, x, y, 1, h)
+    const node = new LineNode(this.nextId++, 'vline', el, x, y, 1, h, this.tileMetrics)
     node.applyTransform()
     node.applyVerticalStyle()
 
@@ -520,7 +523,7 @@ export class RendererUI {
     // el is a no-op placeholder — UIPanel manages its own border divs
     const el = document.createElement('div')
     const id = reservedId ?? this.nextId++
-    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.inputManager)
+    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.inputManager, this.tileMetrics)
 
     this.nodes.set(panel.id, panel)
     this.pushBorderCells(panel)
@@ -558,7 +561,7 @@ export class RendererUI {
     el.style.whiteSpace = 'pre'
     el.style.willChange = 'transform, opacity'
 
-    const node = new UINode(this.nextId++, kind, el, x, y, w, h, chars)
+    const node = new UINode(this.nextId++, kind, el, x, y, w, h, chars, this.tileMetrics)
     node.applyTransform()
 
     this.root.appendChild(el)

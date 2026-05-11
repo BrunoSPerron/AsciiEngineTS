@@ -1,12 +1,13 @@
 import { lerp } from '../util/math'
 import type { Entity } from '../world/entities/Entity'
-import { TileMetrics } from './tileMetrics'
+import type { TileMetricsData } from './tileMetrics'
 
 export class Camera {
   x = 0
   y = 0
 
   private _target: Entity
+  private tileMetrics: TileMetricsData
   private _unlistenMove: (() => void) | null = null
 
   private _rafId = 0
@@ -17,9 +18,10 @@ export class Camera {
   onChunksInvalidated: (() => void) | null = null
   onFrame: ((now: number) => void) | null = null
 
-  constructor(viewport: HTMLDivElement, target: Entity) {
+  constructor(viewport: HTMLDivElement, target: Entity, tileMetrics: TileMetricsData) {
     this.viewport = viewport
     this._target = target
+    this.tileMetrics = tileMetrics
     this._listenToTarget()
   }
 
@@ -43,8 +45,8 @@ export class Camera {
     const now = performance.now()
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    this.x = pos[0] - clientRect.width / TileMetrics.w / 2
-    this.y = pos[1] - clientRect.height / TileMetrics.h / 2
+    this.x = pos[0] - clientRect.width / this.tileMetrics.w / 2
+    this.y = pos[1] - clientRect.height / this.tileMetrics.h / 2
   }
 
   start() {
@@ -78,8 +80,8 @@ export class Camera {
   private _update(now: number, delta: number) {
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const tx = pos[0] - clientRect.width / TileMetrics.w / 2
-    const ty = pos[1] - clientRect.height / TileMetrics.h / 2
+    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2
+    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2
 
     const alpha = Math.min(delta * 0.005, 1)
 

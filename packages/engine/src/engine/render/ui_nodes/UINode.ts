@@ -1,4 +1,4 @@
-import { TileMetrics } from '../tileMetrics'
+import { type TileMetricsData } from '../tileMetrics'
 
 export type UIKind = 'text' | 'hline' | 'vline' | 'panel'
 
@@ -24,6 +24,8 @@ export class UINode {
 
   chars: string[]
 
+  tileMetrics: TileMetricsData
+
   constructor(
     id: number,
     kind: UIKind,
@@ -33,6 +35,7 @@ export class UINode {
     w: number,
     h: number,
     chars: string[] = [],
+    tileMetrics: TileMetricsData,
   ) {
     this.id = id
     this.kind = kind
@@ -42,10 +45,11 @@ export class UINode {
     this.w = w
     this.h = h
     this.chars = chars
+    this.tileMetrics = tileMetrics
   }
 
   applyTransform() {
-    this.el.style.transform = `translate(${this.x * TileMetrics.w}px, ${this.y * TileMetrics.h}px)`
+    this.el.style.transform = `translate(${this.x * this.tileMetrics.w}px, ${this.y * this.tileMetrics.h}px)`
   }
 
   refresh() {

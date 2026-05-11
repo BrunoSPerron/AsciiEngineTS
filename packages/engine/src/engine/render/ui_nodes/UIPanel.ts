@@ -1,5 +1,5 @@
 import type { InputManager } from '../../core/InputManager'
-import { TileMetrics } from '../tileMetrics'
+import type { TileMetricsData } from '../tileMetrics'
 import { UINode, type ILineLike } from './UINode'
 
 // Border cell layout for a panel at (x, y) with size (w, h):
@@ -62,8 +62,9 @@ export class UIPanel extends UINode implements ILineLike {
     w: number,
     h: number,
     inputManager: InputManager,
+    tileMetrics: TileMetricsData,
   ) {
-    super(id, 'panel', el, x, y, w, h, [])
+    super(id, 'panel', el, x, y, w, h, [], tileMetrics)
     this.containerEl = containerEl
     this.inputManager = inputManager
 
@@ -315,19 +316,19 @@ export class UIPanel extends UINode implements ILineLike {
     this._setElTranslate(this._borderEls[RIGHT_EL], x + w - 1, y + 1)
 
     const bg = this._borderEls[BG_EL]
-    bg.style.transform = `translate(${(x + 1) * TileMetrics.w}px, ${(y + 1) * TileMetrics.h}px)`
-    bg.style.width = `${(w - 2) * TileMetrics.w}px`
-    bg.style.height = `${(h - 2) * TileMetrics.h}px`
+    bg.style.transform = `translate(${(x + 1) * this.tileMetrics.w}px, ${(y + 1) * this.tileMetrics.h}px)`
+    bg.style.width = `${(w - 2) * this.tileMetrics.w}px`
+    bg.style.height = `${(h - 2) * this.tileMetrics.h}px`
     bg.className = 'ui ui-panel'
   }
 
   private _applyBorderStyles() {
-    this._borderEls[LEFT_EL].style.lineHeight = `${TileMetrics.h}px`
-    this._borderEls[RIGHT_EL].style.lineHeight = `${TileMetrics.h}px`
+    this._borderEls[LEFT_EL].style.lineHeight = `${this.tileMetrics.h}px`
+    this._borderEls[RIGHT_EL].style.lineHeight = `${this.tileMetrics.h}px`
   }
 
   private _setElTranslate(el: HTMLElement, x: number, y: number) {
-    el.style.transform = `translate(${x * TileMetrics.w}px, ${y * TileMetrics.h}px)`
+    el.style.transform = `translate(${x * this.tileMetrics.w}px, ${y * this.tileMetrics.h}px)`
   }
 
   // ==========================================================================
@@ -392,11 +393,11 @@ export class UIPanel extends UINode implements ILineLike {
     return el.animate(
       [
         {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          transform: `translate(${x * this.tileMetrics.w}px, ${midY * this.tileMetrics.h}px)`,
           clipPath: 'inset(0 50% 0 50%)',
         },
         {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          transform: `translate(${x * this.tileMetrics.w}px, ${midY * this.tileMetrics.h}px)`,
           clipPath: 'inset(0 0 0 0)',
         },
       ],
@@ -413,11 +414,11 @@ export class UIPanel extends UINode implements ILineLike {
     return el.animate(
       [
         {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          transform: `translate(${x * this.tileMetrics.w}px, ${midY * this.tileMetrics.h}px)`,
           clipPath: 'inset(0 0 0 0)',
         },
         {
-          transform: `translate(${x * TileMetrics.w}px, ${midY * TileMetrics.h}px)`,
+          transform: `translate(${x * this.tileMetrics.w}px, ${midY * this.tileMetrics.h}px)`,
           clipPath: 'inset(0 50% 0 50%)',
         },
       ],
@@ -435,8 +436,8 @@ export class UIPanel extends UINode implements ILineLike {
   ): Animation {
     return el.animate(
       [
-        { transform: `translate(${x * TileMetrics.w}px, ${fromY * TileMetrics.h}px)` },
-        { transform: `translate(${x * TileMetrics.w}px, ${toY * TileMetrics.h}px)` },
+        { transform: `translate(${x * this.tileMetrics.w}px, ${fromY * this.tileMetrics.h}px)` },
+        { transform: `translate(${x * this.tileMetrics.w}px, ${toY * this.tileMetrics.h}px)` },
       ],
       { duration, easing, fill: 'forwards' },
     )

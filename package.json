@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev -w ascii-engine-example",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",

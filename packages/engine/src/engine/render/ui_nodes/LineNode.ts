@@ -1,4 +1,4 @@
-import { TileMetrics } from '../tileMetrics'
+import type { TileMetricsData } from '../tileMetrics'
 import { UINode, type ILineLike } from './UINode'
 
 export const LINE_GLYPHS: Record<number, string> = {
@@ -71,8 +71,9 @@ export class LineNode extends UINode implements ILineLike {
     y: number,
     w: number,
     h: number,
+    tileMetrics: TileMetricsData,
   ) {
-    super(id, kind, el, x, y, w, h, [])
+    super(id, kind, el, x, y, w, h, [], tileMetrics)
   }
 
   cellCoords(): Array<[number, number]> {
@@ -109,6 +110,6 @@ export class LineNode extends UINode implements ILineLike {
 
   applyVerticalStyle() {
     this.el.style.whiteSpace = 'pre'
-    this.el.style.lineHeight = `${TileMetrics.h}px`
+    this.el.style.lineHeight = `${this.tileMetrics.h}px`
   }
 }

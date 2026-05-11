@@ -1,6 +1,5 @@
 import type { InputManager } from '../../core/InputManager'
 import type { RendererUI } from '../RendererUI'
-import { TileMetrics } from '../tileMetrics'
 import type { UIPanel } from './UIPanel'
 
 export class SelectMenu {
@@ -37,7 +36,7 @@ export class SelectMenu {
       el.className = 'selectable'
       el.textContent = `${pad}${text}${pad}` + ' '.repeat(w - text.length)
       el.style.position = 'absolute'
-      el.style.top = `${(paddingY + i) * TileMetrics.h}px`
+      el.style.top = `${(paddingY + i) * this.rendererUI.tileMetrics.h}px`
       el.style.whiteSpace = 'pre'
       container.appendChild(el)
       return el
