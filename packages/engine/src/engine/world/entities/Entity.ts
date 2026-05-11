@@ -67,6 +67,7 @@ export class Entity {
   }
 
   scheduleFirst(engine: AsciiEngine) {
+    if (this._timeoutId !== null) return
     this.engine = engine
     this._schedule(this._moveSpeed)
   }

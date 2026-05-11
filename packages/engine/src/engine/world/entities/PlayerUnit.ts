@@ -1,5 +1,6 @@
 import { MIN_ACTION_INTERVAL } from '../../core/constants'
 import type { AsciiEngine } from '../../core/Engine'
+import { clamp } from '../../util/math'
 import { Entity } from './Entity'
 
 const KEY_TO_DIR: Record<string, [number, number]> = {
@@ -54,8 +55,8 @@ export class PlayerUnit extends Entity {
         dy += ky
       }
     }
-    dx = Math.sign(dx)
-    dy = Math.sign(dy)
+    dx = clamp(Math.sign(dx), -1, 1)
+    dy = clamp(Math.sign(dy), -1, 1)
 
     if (dx === 0 && dy === 0) return MIN_ACTION_INTERVAL
 
