@@ -1,5 +1,6 @@
 export { AsciiEngine } from './core/Engine'
-export { World } from './world/World'
 export { Camera } from './render/Camera'
 export { Entity } from './world/entities/Entity'
 export type { GameAssets } from './core/GameAssets'
+export { World } from './world/World'
+export { Menu as SUperMenu } from './render/Menu'

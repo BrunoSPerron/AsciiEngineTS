@@ -2,7 +2,6 @@ import { World } from '../world/World'
 import { Camera } from '../render/Camera'
 import { InputManager } from './InputManager'
 import { Renderer } from '../render/Renderer'
-import { DefaultMenu } from '../render/DefaultMenu'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
 import { loadGameAssets, type GameAssets } from './GameAssets'
@@ -63,8 +62,6 @@ export class AsciiEngine {
     this.environmentReady = true
     this.renderer.bindWorld(this.world)
     this.renderer.camera.jumpToTarget()
-
-    new DefaultMenu(this.inputManager, this.renderer)
 
     this.resume()
   }
