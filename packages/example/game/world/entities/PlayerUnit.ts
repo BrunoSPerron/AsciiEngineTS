@@ -1,7 +1,7 @@
-import { MIN_ACTION_INTERVAL } from '../../core/constants'
-import type { AsciiEngine } from '../../core/Engine'
-import { clamp } from '../../util/math'
-import { Entity } from './Entity'
+import { MIN_ACTION_INTERVAL } from 'ascii-engine/src/engine/core/constants'
+import type { AsciiEngine } from 'ascii-engine/src/engine/core/Engine'
+import { clamp } from 'ascii-engine/src/engine/util/math'
+import { Entity } from 'ascii-engine'
 
 const KEY_TO_DIR: Record<string, [number, number]> = {
   w: [0, -1],

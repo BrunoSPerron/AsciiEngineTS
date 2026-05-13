@@ -1,6 +1,5 @@
 import { World } from '../world/World'
 import { Camera } from '../render/Camera'
-import { PlayerUnit } from '../world/entities/PlayerUnit'
 import { InputManager } from './InputManager'
 import { Renderer } from '../render/Renderer'
 import { DefaultMenu } from '../render/DefaultMenu'
@@ -34,12 +33,9 @@ export class AsciiEngine {
 
     this.inputManager = new InputManager()
 
-    // Initial values correspond to the default css
-    // This is dynamic. See: renderer.setTileHAndW()
     const tileMetrics = { w: 19.90625, h: 18 }
 
-    const cameraTarget = this.world.spawnEntity(new PlayerUnit('☺', 20, 20, 80))
-    const camera = new Camera(gameContainer, cameraTarget, tileMetrics)
+    const camera = new Camera(gameContainer, tileMetrics)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
     this.renderer = new Renderer(gameContainer, camera, this.inputManager, tileMetrics)
@@ -50,7 +46,8 @@ export class AsciiEngine {
 
   async start() {
     this.config = await loadConfig(this.assets.configUrl)
-    this.renderer.camera.setHalfLife(this.config.camera.half_life)
+    this.renderer.camera.halfLife = this.config.camera.half_life
+    this.renderer.camera.setInitialPosition(...this.config.camera.initial_position)
     this.renderer.viewDistance = this.config.world.chunk_view_distance
 
     document.title = this.config.game.title

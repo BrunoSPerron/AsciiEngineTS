@@ -1,3 +1,5 @@
 export { AsciiEngine } from './engine/core/Engine'
 export { World } from './engine/world/World'
+export { Camera } from './engine/render/Camera'
+export { Entity } from './engine/world/entities/Entity'
 export type { GameAssets } from './engine/core/GameAssets'

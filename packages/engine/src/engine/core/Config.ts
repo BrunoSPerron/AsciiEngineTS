@@ -12,6 +12,7 @@ export type EngineConfig = {
   }
   camera: {
     half_life: number
+    initial_position: [number, number]
   }
 }
 
@@ -26,6 +27,7 @@ export const DEFAULT_CONFIG: EngineConfig = {
   },
   camera: {
     half_life: 120,
+    initial_position: [0, 0],
   },
 }
 
@@ -51,6 +53,18 @@ function assertNumber(val: unknown, path: string): number {
   return val
 }
 
+function assertNumberTuple(val: unknown, path: string): [number, number] {
+  if (
+    !Array.isArray(val) ||
+    val.length !== 2 ||
+    typeof val[0] !== 'number' ||
+    typeof val[1] !== 'number'
+  ) {
+    throw new Error(`Config: expected [number, number] at ${path}`)
+  }
+  return [val[0], val[1]]
+}
+
 function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> {
   const result: Partial<EngineConfig> = {}
 
@@ -61,6 +75,10 @@ function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> 
         'half_life' in camera
           ? assertNumber(camera.half_life, 'camera.half_life')
           : DEFAULT_CONFIG.camera.half_life,
+      initial_position:
+        'initial_position' in camera
+          ? assertNumberTuple(camera.initial_position, 'camera.initial_position')
+          : DEFAULT_CONFIG.camera.initial_position,
     }
   }
 

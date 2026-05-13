@@ -1,5 +1,5 @@
 import { lerp } from '../util/math'
-import type { Entity } from '../world/entities/Entity'
+import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
 
 export class Camera {
@@ -7,6 +7,7 @@ export class Camera {
   y = 0
 
   private _target: Entity
+  private _placeholder: Entity | null
   private _halfLife: number = 120
   private tileMetrics: TileMetricsData
   private _unlistenMove: (() => void) | null = null
@@ -19,10 +20,13 @@ export class Camera {
   onChunksInvalidated: (() => void) | null = null
   onFrame: ((now: number) => void) | null = null
 
-  constructor(viewport: HTMLDivElement, target: Entity, tileMetrics: TileMetricsData) {
+  constructor(viewport: HTMLDivElement, tileMetrics: TileMetricsData) {
     this.viewport = viewport
-    this._target = target
     this.tileMetrics = tileMetrics
+
+    const placeholder = new Entity(' ', 0, 0)
+    this._placeholder = placeholder
+    this._target = placeholder
     this._listenToTarget()
   }
 
@@ -30,20 +34,30 @@ export class Camera {
     return this._target
   }
 
-  setHalfLife(halfLife: number) {
-    this._halfLife = Math.max(halfLife, 0)
+  set target(entity: Entity) {
+    this._unlistenMove?.()
+    this._placeholder = null
+    this._target = entity
+    this._listenToTarget()
+    this.onChunksInvalidated?.()
   }
 
-  setTarget(target: Entity) {
-    this._unlistenMove?.()
-    this._target = target
-    this._listenToTarget()
+  set halfLife(halfLife: number) {
+    this._halfLife = Math.max(halfLife, 0)
   }
 
   private _listenToTarget() {
     this._unlistenMove = this._target.onMove(() => {
       this.onChunksInvalidated?.()
     })
+  }
+
+  setInitialPosition(x: number, y: number) {
+    if (this._placeholder === null) return
+    this._placeholder.x = x
+    this._placeholder.y = y
+    this._placeholder.prevX = x
+    this._placeholder.prevY = y
   }
 
   jumpToTarget() {

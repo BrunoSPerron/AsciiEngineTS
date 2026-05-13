@@ -1,5 +1,5 @@
 /*
-This css file is loaded when the style is selected
+css files in root/themes are loaded automatically as themes
 Note: These changes affect the whole page. All css here should start with '.ascii-engine'
       unless you want the style to affect non-engine elements
 This'll extend and overrides the css defined in ./engine/render/css/base.css
