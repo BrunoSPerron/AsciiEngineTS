@@ -1,9 +1,9 @@
 import type { InputManager } from '../core/InputManager'
-import { UINode, type UIKind, isLineLike } from './ui_nodes/UINode'
-import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './ui_nodes/LineNode'
-import { UIPanel } from './ui_nodes/UIPanel'
-import { SelectMenu } from './ui_nodes/SelectMenu'
-import { RollerMenu } from './ui_nodes/RollerMenu'
+import { UINode, type UIKind, isLineLike } from './nodes/UINode'
+import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './nodes/LineNode'
+import { UIPanel } from './nodes/UIPanel'
+import { SelectMenu } from './nodes/SelectMenu'
+import { RollerMenu } from './nodes/RollerMenu'
 import type { TileMetricsData } from './tileMetrics'
 
 export class RendererUI {
