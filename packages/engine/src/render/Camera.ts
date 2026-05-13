@@ -1,4 +1,4 @@
-import { lerp } from '../util/math'
+import { lerp } from '../math'
 import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
 

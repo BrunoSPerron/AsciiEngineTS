@@ -1,5 +1,5 @@
 import { MIN_ACTION_INTERVAL } from '../../core/constants'
-import { lerp } from '../../util/math'
+import { lerp } from '../../math'
 import type { AsciiEngine } from '../../core/Engine'
 
 type MoveHandler = (entity: Entity) => void
