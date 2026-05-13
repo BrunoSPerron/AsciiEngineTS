@@ -1,7 +1,7 @@
 import type { InputManager } from '../core/InputManager'
 import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
-import type { LocalWorld } from '../world/LocalWorld'
+import type { World } from '../world/World'
 import { type Camera } from './Camera'
 import { RendererUI } from './RendererUI'
 import { ThemeManager } from './ThemeManager'
@@ -28,7 +28,7 @@ export class Renderer {
 
   private chunksNeedRefresh = true
   private _unlistenFns = new Map<number, () => void>()
-  private _world: LocalWorld | null = null
+  private _world: World | null = null
 
   constructor(
     root: HTMLElement,
@@ -37,7 +37,6 @@ export class Renderer {
     tileMetrics: TileMetricsData,
   ) {
     this.root = root
-
     this.tileMetrics = tileMetrics
 
     const link = document.createElement('link')
@@ -79,18 +78,15 @@ export class Renderer {
     span.remove()
   }
 
-  /** Called by Camera's onMove listener to trigger a chunk visibility refresh. */
   invalidateChunks() {
     this.chunksNeedRefresh = true
   }
 
-  /** Called by Engine to wire spawn/despawn events from a LocalWorld. */
-  bindWorld(world: LocalWorld) {
+  bindWorld(world: World) {
     this._world = world
     world.onSpawn((entity) => this._registerActor(entity))
     world.onDespawn((entity) => this._unregisterActor(entity))
-    // Register existing entities
-    for (const entity of world.entities.values()) {
+    for (const entity of world.local.entities.values()) {
       this._registerActor(entity)
     }
   }
@@ -99,7 +95,6 @@ export class Renderer {
     const el = document.createElement('div')
     el.className = 'actor'
     el.textContent = entity.glyph
-    // Place at initial position with no tileMetrics
     el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
     this.actors.appendChild(el)
     this.actorEls.set(entity.uid, el)
@@ -118,9 +113,7 @@ export class Renderer {
   renderActor(entity: Entity) {
     const el = this.actorEls.get(entity.uid)
     if (!el) return
-
     if (entity.x === entity.prevX && entity.y === entity.prevY) return
-
     el.style.transition = `transform ${entity.moveSpeed}ms linear`
     el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
   }
@@ -159,20 +152,14 @@ export class Renderer {
     const cy = Math.floor(target.y / CHUNK_SIZE)
     const d = this.viewDistance
 
-    const left = cx - d
-    const top = cy - d
-    const right = cx + d
-    const bottom = cy + d
-
     const visible = new Set<string>()
 
-    for (let cy = top; cy <= bottom; cy++) {
-      for (let cx = left; cx <= right; cx++) {
-        const key = `${cx},${cy}`
+    for (let cy2 = cy - d; cy2 <= cy + d; cy2++) {
+      for (let cx2 = cx - d; cx2 <= cx + d; cx2++) {
+        const key = `${cx2},${cy2}`
         visible.add(key)
 
-        const chunk = this._world.getChunk(cx, cy)
-
+        const chunk = this._world.getChunk(cx2, cy2)
         let el = this.chunkEls.get(key)
 
         if (!el) {
@@ -195,10 +182,9 @@ export class Renderer {
           chunk.dirty = false
         }
 
-        // Chunk position is pure world space — camera offset lives on worldEl
         el.style.transform = `translate(
-          ${cx * CHUNK_SIZE * this.tileMetrics.w}px,
-          ${cy * CHUNK_SIZE * this.tileMetrics.h}px
+          ${cx2 * CHUNK_SIZE * this.tileMetrics.w}px,
+          ${cy2 * CHUNK_SIZE * this.tileMetrics.h}px
         )`
       }
     }
