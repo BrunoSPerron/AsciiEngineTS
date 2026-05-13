@@ -1,5 +1,5 @@
 # ascii engine settings
-# All fields are optional — omitted fields fall back to engine defaults.
+# All fields are optional. Missing fields fall back to engine defaults.
 
 [game]
 title = "My Ascii Game"
@@ -7,3 +7,6 @@ start_theme = "Flamingo"
 
 [world]
 seed = 12345
+
+[camera]
+half_life = 400  # ms to close half the distance to target

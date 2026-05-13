@@ -10,6 +10,9 @@ export type EngineConfig = {
     seed: number
     chunk_view_distance: number
   }
+  camera: {
+    half_life: number
+  }
 }
 
 export const DEFAULT_CONFIG: EngineConfig = {
@@ -21,12 +24,16 @@ export const DEFAULT_CONFIG: EngineConfig = {
     seed: 0,
     chunk_view_distance: 3,
   },
+  camera: {
+    half_life: 120,
+  },
 }
 
 function mergeConfig(defaults: EngineConfig, overrides: Partial<EngineConfig>): EngineConfig {
   return {
     game: { ...defaults.game, ...overrides.game },
     world: { ...defaults.world, ...overrides.world },
+    camera: { ...defaults.camera, ...overrides.camera },
   }
 }
 
@@ -46,6 +53,16 @@ function assertNumber(val: unknown, path: string): number {
 
 function parseTomlToConfig(raw: Record<string, unknown>): Partial<EngineConfig> {
   const result: Partial<EngineConfig> = {}
+
+  if ('camera' in raw && raw.camera !== null && typeof raw.camera === 'object') {
+    const camera = raw.camera as Record<string, unknown>
+    result.camera = {
+      half_life:
+        'half_life' in camera
+          ? assertNumber(camera.half_life, 'camera.half_life')
+          : DEFAULT_CONFIG.camera.half_life,
+    }
+  }
 
   if ('game' in raw && raw.game !== null && typeof raw.game === 'object') {
     const game = raw.game as Record<string, unknown>

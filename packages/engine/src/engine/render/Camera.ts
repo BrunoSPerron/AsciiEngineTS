@@ -7,6 +7,7 @@ export class Camera {
   y = 0
 
   private _target: Entity
+  private _halfLife: number = 120
   private tileMetrics: TileMetricsData
   private _unlistenMove: (() => void) | null = null
 
@@ -27,6 +28,10 @@ export class Camera {
 
   get target(): Entity {
     return this._target
+  }
+
+  setHalfLife(halfLife: number) {
+    this._halfLife = Math.max(halfLife, 0)
   }
 
   setTarget(target: Entity) {
@@ -83,8 +88,7 @@ export class Camera {
     const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2
     const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2
 
-    const alpha = Math.min(delta * 0.005, 1)
-
+    const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
     this.x = lerp(this.x, tx, alpha)
     this.y = lerp(this.y, ty, alpha)
   }

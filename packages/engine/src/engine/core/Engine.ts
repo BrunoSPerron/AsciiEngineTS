@@ -35,10 +35,10 @@ export class AsciiEngine {
     this.inputManager = new InputManager()
 
     // Initial values correspond to the default css
-    // This is dynamic. See this.renderer.setTileHAndW()
+    // This is dynamic. See: renderer.setTileHAndW()
     const tileMetrics = { w: 19.90625, h: 18 }
 
-    const cameraTarget = this.world.spawnEntity(new PlayerUnit('☺', 20, 20, 250))
+    const cameraTarget = this.world.spawnEntity(new PlayerUnit('☺', 20, 20, 80))
     const camera = new Camera(gameContainer, cameraTarget, tileMetrics)
     camera.onChunksInvalidated = () => this.renderer.invalidateChunks()
 
@@ -50,6 +50,7 @@ export class AsciiEngine {
 
   async start() {
     this.config = await loadConfig(this.assets.configUrl)
+    this.renderer.camera.setHalfLife(this.config.camera.half_life)
     this.renderer.viewDistance = this.config.world.chunk_view_distance
 
     document.title = this.config.game.title
