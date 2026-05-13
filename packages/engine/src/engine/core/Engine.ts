@@ -7,7 +7,6 @@ import { DefaultMenu } from '../render/DefaultMenu'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
 import { loadGameAssets, type GameAssets } from './GameAssets'
-import { createTileMetrics } from '../render/tileMetrics'
 
 export class AsciiEngine {
   assets: GameAssets
@@ -35,7 +34,9 @@ export class AsciiEngine {
 
     this.inputManager = new InputManager()
 
-    const tileMetrics = createTileMetrics()
+    // Initial values correspond to the default css
+    // This is dynamic. See this.renderer.setTileHAndW()
+    const tileMetrics = { w: 19.90625, h: 18 }
 
     const cameraTarget = this.world.spawnEntity(new PlayerUnit('☺', 20, 20, 250))
     const camera = new Camera(gameContainer, cameraTarget, tileMetrics)

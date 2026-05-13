@@ -1,6 +1,7 @@
 import { Chunk, CHUNK_SIZE } from './Chunk'
 import { ChunkRecord } from './ChunkRecord'
-import { type Entity } from './entities/Entity'
+import type { Entity } from './entities/Entity'
+import type { Region } from './Region'
 import type { AsciiEngine } from '../core/Engine'
 
 // ---------------------------------------------------------------------------
@@ -15,6 +16,9 @@ export type LocalState = {
 export type GlobalState = {
   chunkRecords: Map<string, ChunkRecord>
   entities: Map<number, Entity>
+
+  // TODO: Named regions grouping chunks into logical areas. Populated during world generation.
+  regions: Map<string, Region>
 }
 
 // ---------------------------------------------------------------------------
@@ -36,6 +40,7 @@ export class World {
   readonly global: GlobalState = {
     chunkRecords: new Map(),
     entities: new Map(),
+    regions: new Map(),
   }
 
   private nextId = 1
@@ -161,7 +166,7 @@ export class World {
   }
 
   // --------------------------------------------------------------------------
-  // Active chunk coordination
+  // Active chunk coordination (TODO: wire to camera)
   // --------------------------------------------------------------------------
 
   updateActiveChunks(_cx: number, _cy: number, _viewDistance: number): void {
