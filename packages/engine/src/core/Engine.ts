@@ -102,7 +102,7 @@ export class AsciiEngine {
     if (!this.paused) this.world.local.entities.forEach((e) => e.scheduleFirst(this))
   }
 
-  handleWindowState = () => {
+  private handleWindowState = () => {
     const minimized = window.innerWidth === 0 || window.innerHeight === 0
     if (minimized || document.hidden) {
       this.suspend()
@@ -111,7 +111,7 @@ export class AsciiEngine {
     }
   }
 
-  handleVisibility = () => {
+  private handleVisibility = () => {
     if (document.hidden) {
       this.suspend()
     } else {
