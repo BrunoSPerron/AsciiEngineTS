@@ -4,8 +4,7 @@ import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
 
 export class Camera {
-  x = 0
-  y = 0
+  pos = new Vector2()
 
   private _target: Entity
   private _placeholder: Entity | null
@@ -74,8 +73,8 @@ export class Camera {
     const now = performance.now()
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    this.x = pos[0] - clientRect.width / this.tileMetrics.w / 2
-    this.y = pos[1] - clientRect.height / this.tileMetrics.h / 2
+    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2
+    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2
   }
 
   start() {
@@ -111,9 +110,8 @@ export class Camera {
     const clientRect = this.viewport.getBoundingClientRect()
     const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2
     const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2
-
     const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
-    this.x = lerp(this.x, tx, alpha)
-    this.y = lerp(this.y, ty, alpha)
+    this.pos.x = lerp(this.pos.x, tx, alpha)
+    this.pos.y = lerp(this.pos.y, ty, alpha)
   }
 }

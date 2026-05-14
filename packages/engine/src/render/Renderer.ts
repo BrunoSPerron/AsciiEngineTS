@@ -120,8 +120,8 @@ export class Renderer {
 
   private _onCameraFrame(_now: number) {
     this.worldEl.style.transform = `translate(
-      ${-this.camera.x * this.tileMetrics.w}px,
-      ${-this.camera.y * this.tileMetrics.h}px
+      ${-this.camera.pos.x * this.tileMetrics.w}px,
+      ${-this.camera.pos.y * this.tileMetrics.h}px
     )`
 
     if (this.chunksNeedRefresh) {
