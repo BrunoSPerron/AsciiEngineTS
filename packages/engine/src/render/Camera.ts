@@ -25,9 +25,8 @@ export class Camera {
     this.viewport = viewport
     this.tileMetrics = tileMetrics
 
-    const placeholder = new Entity(' ', Vector2.ZERO, 0)
-    this._placeholder = placeholder
-    this._target = placeholder
+    this._placeholder = new Entity(' ', new Vector2(0, 0), 0)
+    this._target = this._placeholder
     this._listenToTarget()
   }
 

@@ -25,6 +25,9 @@ export class PlayerEntity extends Entity {
   private _unlistenDown = ''
   private _unlistenUp = ''
 
+  private _dir = new Vector2()
+  private _targetPos = new Vector2()
+
   OnLoad(): void {
     const inputManager = this.engine.inputManager
     this._unlistenDown = inputManager.onKeyDown((e) => {
@@ -44,21 +47,25 @@ export class PlayerEntity extends Entity {
   }
 
   act(): number {
-    const d = new Vector2() // fresh instance, not the static singleton
+    this._dir.set(0, 0)
+
     for (const [key, vec] of Object.entries(KEY_TO_DIR)) {
       if (this._heldKeys.has(key)) {
-        d.add(vec)
+        this._dir.add(vec)
       }
     }
-    d.clamp()
-    if (d.equal(Vector2.ZERO)) return 0
 
-    d.add(this.pos)
-    const target = this.engine.world.getTile(d)
+    this._dir.clamp()
+    if (this._dir.equal(Vector2.ZERO)) return 0
+
+    this._targetPos.set(this.pos.x, this.pos.y).add(this._dir)
+
+    const target = this.engine.world.getTile(this._targetPos)
     if (target.solid) return 0
 
-    this.pos = d
+    this.pos.set(this._targetPos.x, this._targetPos.y)
     this.emitMove()
+
     return this.moveSpeed
   }
 }
