@@ -69,15 +69,22 @@ export class Entity {
   }
 
   private _schedule(delay: number) {
+    const scheduledAt = performance.now()
     this._nextActDelay = delay
     this._timeoutId = setTimeout(() => {
-      this._lastActTime = performance.now()
+      const now = performance.now()
+      this._lastActTime = now
       this.prevX = this.x
       this.prevY = this.y
 
       const next = this.act()
+      const clamped = Math.max(next, MIN_ACTION_INTERVAL)
+      this._nextActDelay = clamped
 
-      this._schedule(Math.max(next, MIN_ACTION_INTERVAL))
+      const drift = now - (scheduledAt + delay)
+      const corrected = Math.max(clamped - drift, 0)
+
+      this._schedule(corrected)
     }, delay)
   }
 
