@@ -53,7 +53,7 @@ function createSchema(value: unknown): z.ZodTypeAny {
     return z.object(shape).strict()
   }
 
-  throw new Error(`Unsupported config value: ${value}`)
+  throw new Error(`Unsupported config value: ${String(value)}`)
 }
 
 export async function loadConfig(url: string | null): Promise<EngineConfig> {
