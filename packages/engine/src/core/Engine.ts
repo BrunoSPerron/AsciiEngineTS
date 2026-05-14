@@ -20,6 +20,7 @@ export class AsciiEngine {
   paused = false
 
   private environmentReady = false
+  private pausedTimeouts: Map<number, number> = new Map()
 
   constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
     this.assets = loadGameAssets(glob)
@@ -76,14 +77,19 @@ export class AsciiEngine {
 
   pause() {
     if (this.paused) return
+    this.pausedTimeouts.clear()
     this.paused = true
-    this.world.local.entities.forEach((e) => e.unschedule())
+    this.world.local.entities.forEach((e) => {
+      this.pausedTimeouts.set(e.uid, e.unschedule())
+    })
   }
 
   unpause() {
     if (!this.paused) return
     this.paused = false
-    this.world.local.entities.forEach((e) => e.scheduleFirst(this))
+    this.world.local.entities.forEach((e) => {
+      e.scheduleFirst(this, this.pausedTimeouts.get(e.uid))
+    })
   }
 
   private suspend = () => {

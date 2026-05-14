@@ -4,6 +4,7 @@ import { z } from 'zod'
 
 import { Logger } from './Logger'
 
+// DEFAULT_CONFIG is the source of truth, any change is automaticaly loaded
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',
@@ -37,7 +38,7 @@ function createSchema(value: unknown): z.ZodTypeAny {
   }
 
   if (Array.isArray(value)) {
-    // tuple support
+    // TODO improve tuple validation
     if (value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
       return z.tuple([z.number(), z.number()])
     }

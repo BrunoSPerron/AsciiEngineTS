@@ -17,6 +17,7 @@ export class Entity {
   private _speed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
   private _lastActTime: number = performance.now()
+  private _scheduledAt: number = 0
   private _nextActDelay: number
 
   private _moveListeners = new Set<MoveHandler>()
@@ -60,15 +61,17 @@ export class Entity {
 
   OnUnload() {}
 
-  scheduleFirst(engine: AsciiEngine) {
+  scheduleFirst(engine: AsciiEngine, delay: number = -1) {
     if (this._timeoutId !== null) return
     this.engine = engine
-    this._schedule(this._speed)
+    if (delay < 0) delay = this._speed
+    this._schedule(delay)
   }
 
   private _schedule(delay: number) {
-    const scheduledAt = performance.now()
+    this._scheduledAt = performance.now()
     this._nextActDelay = delay
+
     this._timeoutId = setTimeout(() => {
       const now = performance.now()
       this._lastActTime = now
@@ -78,18 +81,23 @@ export class Entity {
       const clamped = Math.max(next, MIN_ACTION_INTERVAL)
       this._nextActDelay = clamped
 
-      const drift = now - (scheduledAt + delay)
+      const drift = now - (this._scheduledAt + delay)
       const corrected = Math.max(clamped - drift, 0)
 
       this._schedule(corrected)
     }, delay)
   }
 
-  unschedule() {
-    if (this._timeoutId !== null) {
-      clearTimeout(this._timeoutId)
-      this._timeoutId = null
-    }
+  unschedule(): number {
+    if (this._timeoutId === null) return 0
+
+    clearTimeout(this._timeoutId)
+    this._timeoutId = null
+
+    const now = performance.now()
+    const remaining = Math.max(this._scheduledAt + this._nextActDelay - now, 0)
+
+    return remaining
   }
 
   /**
