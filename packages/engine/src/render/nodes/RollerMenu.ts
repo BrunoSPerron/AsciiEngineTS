@@ -70,9 +70,10 @@ export class RollerMenu {
     })
 
     this.renderSlots()
+    const panelId = this.rendererUI.reserveId()
+    this.inputManager.pushContext(`roller_menu_${panelId}`)
+    this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
     this.registerKeys()
-
-    this.panel = await this.rendererUI.drawPanel(x, y, w, h, container)
 
     return new Promise<number>((resolve) => {
       this.resolve = resolve
@@ -114,7 +115,6 @@ export class RollerMenu {
   // ==================================================
 
   private registerKeys() {
-    this.inputManager.pushContext('roller_menu')
     this.listenerKey = this.inputManager.onKeyDown((e) => {
       switch (e.key) {
         case 'ArrowUp':

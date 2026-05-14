@@ -28,11 +28,15 @@ export class Game {
 
     this.engine.inputManager.onKeyDown((e) => {
       if (e.key === 'Escape') {
-        this.engine.pause()
-        void menu.open()
-        this.engine.unpause()
+        void this.openPauseMenu(menu)
       }
     })
+  }
+
+  private async openPauseMenu(menu: Menu) {
+    this.engine.pause()
+    await menu.open()
+    this.engine.unpause()
   }
 
   private spawnPlayer() {

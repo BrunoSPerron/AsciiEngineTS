@@ -45,8 +45,9 @@ export class SelectMenu {
     this.setSelected(0)
 
     const panelId = this.rendererUI.reserveId()
-    this.registerKeys(panelId, wraparound)
+    this.inputManager.pushContext(`select_menu_${panelId}`)
     this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
+    this.registerKeys(panelId, wraparound)
 
     return new Promise<number>((resolve) => {
       this.resolve = resolve
@@ -73,7 +74,6 @@ export class SelectMenu {
   }
 
   private registerKeys(panelId: number, wraparound: boolean) {
-    this.inputManager.pushContext(`select_menu_${panelId}`)
     this.listenerKey = this.inputManager.onKeyDown((e) => {
       switch (e.key) {
         case 'ArrowUp':
