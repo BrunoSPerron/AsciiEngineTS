@@ -35,7 +35,7 @@ export class AsciiEngine {
     const tileMetrics = { w: 19.90625, h: 18 }
 
     const camera = new Camera(gameContainer, tileMetrics)
-    camera.onChunksInvalidated(() => this.renderer.invalidateChunks)
+    camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
 
     this.renderer = new Renderer(gameContainer, camera, this.inputManager, tileMetrics)
 

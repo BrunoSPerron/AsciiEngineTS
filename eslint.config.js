@@ -39,11 +39,11 @@ export default [
   },
 
   {
-    files: ['packages/example/**/*.ts'],
+    files: ['packages/examples/**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: './packages/example/tsconfig.json',
+        project: './packages/examples/tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
