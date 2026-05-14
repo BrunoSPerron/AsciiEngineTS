@@ -44,6 +44,7 @@ export class World {
 
   private _spawnListeners = new Set<EntityHandler>()
   private _despawnListeners = new Set<EntityHandler>()
+  private _moveUnlisteners = new Map<number, () => void>()
 
   constructor(engine: AsciiEngine) {
     this.engine = engine
@@ -79,7 +80,8 @@ export class World {
     startChunk.entities.add(entity.uid)
 
     // Keep chunk sets in sync as entity moves
-    entity.onMove((e) => this._onEntityMove(e))
+    const unlistenMove = entity.onMove((e) => this._onEntityMove(e))
+    this._moveUnlisteners.set(entity.uid, unlistenMove)
 
     entity.OnLoad()
     for (const fn of this._spawnListeners) fn(entity)
@@ -92,6 +94,10 @@ export class World {
     if (!entity) return undefined
 
     entity.unschedule()
+
+    this._moveUnlisteners.get(id)?.()
+    this._moveUnlisteners.delete(id)
+
     this.local.entities.delete(id)
 
     const chunk = this._chunkForEntity(entity)
