@@ -1,4 +1,5 @@
 import { Entity, Vector2 } from 'ascii-engine'
+import { Logger } from 'ascii-engine/src/core/Logger'
 
 //TODO add constant default vectors
 const KEY_TO_DIR: Record<string, Vector2> = {
@@ -61,7 +62,10 @@ export class PlayerEntity extends Entity {
     this._targetPos.set(this.pos.x, this.pos.y).add(this._dir)
 
     const target = this.engine.world.getTile(this._targetPos)
-    if (target.solid) return 0
+    if (target.solid) {
+      Logger.info(`position: ${this.pos}`)
+      return 0
+    }
 
     this.pos.set(this._targetPos.x, this._targetPos.y)
     this.emitMove()

@@ -25,7 +25,7 @@ export class Entity {
     this.glyph = glyph
 
     this.pos = pos
-    this.previousPos = pos
+    this.previousPos = pos.clone()
 
     this.moveSpeed = moveSpeed
   }
@@ -71,7 +71,7 @@ export class Entity {
     this._timeoutId = setTimeout(() => {
       const now = performance.now()
       this._lastActTime = now
-      this.previousPos = this.pos
+      this.previousPos.set(this.pos.x, this.pos.y)
 
       const next = this.act()
       const clamped = Math.max(next, MIN_ACTION_INTERVAL)
