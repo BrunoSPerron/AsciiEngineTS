@@ -1,5 +1,5 @@
-import { type AsciiEngine, Menu } from 'ascii-engine'
-import { PlayerUnit } from './world/entities/PlayerUnit'
+import { type AsciiEngine, Menu, Vector2 } from 'ascii-engine'
+import { PlayerEntity } from './world/entities/PlayerEntity'
 
 export class Game {
   private engine: AsciiEngine
@@ -28,14 +28,15 @@ export class Game {
 
     this.engine.inputManager.onKeyDown((e) => {
       if (e.key === 'Escape') {
+        this.engine.pause()
         void menu.open()
+        this.engine.unpause()
       }
     })
   }
 
   private spawnPlayer() {
-    const unit = this.engine.world.spawnEntity(new PlayerUnit('☺', 20, 20, 80))
-
+    const unit = this.engine.world.spawnEntity(new PlayerEntity('☺', new Vector2(20, 20), 80))
     this.engine.renderer.camera.target = unit
   }
 }

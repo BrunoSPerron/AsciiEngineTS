@@ -3,6 +3,7 @@ import { ChunkRecord } from './ChunkRecord'
 import type { Entity } from './entities/Entity'
 import type { Region } from './Region'
 import type { AsciiEngine } from '../core/Engine'
+import type { Vector2 } from '../math/Vector2'
 
 // ---------------------------------------------------------------------------
 // Namespaced state containers — plain data, no behavior
@@ -73,9 +74,9 @@ export class World {
     this.local.entities.set(entity.uid, entity)
 
     // Register entity into its starting chunk
-    const startChunk = this.getChunk(
-      Math.floor(entity.x / CHUNK_SIZE),
-      Math.floor(entity.y / CHUNK_SIZE),
+    const startChunk = this.getChunkXY(
+      Math.floor(entity.pos.x / CHUNK_SIZE),
+      Math.floor(entity.pos.y / CHUNK_SIZE),
     )
     startChunk.entities.add(entity.uid)
 
@@ -83,9 +84,9 @@ export class World {
     const unlistenMove = entity.onMove((e) => this._onEntityMove(e))
     this._moveUnlisteners.set(entity.uid, unlistenMove)
 
+    entity.scheduleFirst(this.engine)
     entity.OnLoad()
     for (const fn of this._spawnListeners) fn(entity)
-    entity.scheduleFirst(this.engine)
     return entity
   }
 
@@ -111,7 +112,7 @@ export class World {
   // Chunk access
   // --------------------------------------------------------------------------
 
-  getChunk(cx: number, cy: number): Chunk {
+  getChunkXY(cx: number, cy: number): Chunk {
     const key = `${cx},${cy}`
     let chunk = this.local.chunks.get(key)
     if (!chunk) {
@@ -121,7 +122,7 @@ export class World {
     return chunk
   }
 
-  getChunkRecord(cx: number, cy: number): ChunkRecord {
+  getChunkXYRecord(cx: number, cy: number): ChunkRecord {
     const key = `${cx},${cy}`
     let record = this.global.chunkRecords.get(key)
     if (!record) {
@@ -131,12 +132,16 @@ export class World {
     return record
   }
 
-  getTile(wx: number, wy: number) {
+  getTile(pos: Vector2) {
+    return this.getTileXY(pos.x, pos.y)
+  }
+
+  getTileXY(wx: number, wy: number) {
     const cx = Math.floor(wx / CHUNK_SIZE)
     const cy = Math.floor(wy / CHUNK_SIZE)
     const lx = ((wx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
     const ly = ((wy % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
-    return this.getChunk(cx, cy).get(lx, ly)
+    return this.getChunkXY(cx, cy).get(lx, ly)
   }
 
   // --------------------------------------------------------------------------
@@ -163,7 +168,8 @@ export class World {
     const cx = Math.floor(wx / CHUNK_SIZE)
     const cy = Math.floor(wy / CHUNK_SIZE)
     return this.getEntitiesNearChunk(cx, cy, chunkRadius).filter(
-      (e) => Math.abs(e.x - wx) <= radius && Math.abs(e.y - wy) <= radius,
+      // TODO improve Vector2 class to simplify this
+      (e) => Math.abs(e.pos.x - wx) <= radius && Math.abs(e.pos.y - wy) <= radius,
     )
   }
 
@@ -180,18 +186,18 @@ export class World {
   // --------------------------------------------------------------------------
 
   private _onEntityMove(entity: Entity) {
-    const oldCx = Math.floor(entity.prevX / CHUNK_SIZE)
-    const oldCy = Math.floor(entity.prevY / CHUNK_SIZE)
-    const newCx = Math.floor(entity.x / CHUNK_SIZE)
-    const newCy = Math.floor(entity.y / CHUNK_SIZE)
+    const oldCx = Math.floor(entity.previousPos.x / CHUNK_SIZE)
+    const oldCy = Math.floor(entity.previousPos.y / CHUNK_SIZE)
+    const newCx = Math.floor(entity.pos.x / CHUNK_SIZE)
+    const newCy = Math.floor(entity.pos.y / CHUNK_SIZE)
     if (oldCx === newCx && oldCy === newCy) return
     this.local.chunks.get(`${oldCx},${oldCy}`)?.entities.delete(entity.uid)
     this.local.chunks.get(`${newCx},${newCy}`)?.entities.add(entity.uid)
   }
 
   private _chunkForEntity(entity: Entity): Chunk | undefined {
-    const cx = Math.floor(entity.x / CHUNK_SIZE)
-    const cy = Math.floor(entity.y / CHUNK_SIZE)
+    const cx = Math.floor(entity.pos.x / CHUNK_SIZE)
+    const cy = Math.floor(entity.pos.y / CHUNK_SIZE)
     return this.local.chunks.get(`${cx},${cy}`)
   }
 }

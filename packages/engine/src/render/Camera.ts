@@ -1,4 +1,5 @@
-import { lerp } from '../math'
+import { lerp } from '../math/utils'
+import { Vector2 } from '../math/Vector2'
 import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
 
@@ -24,7 +25,7 @@ export class Camera {
     this.viewport = viewport
     this.tileMetrics = tileMetrics
 
-    const placeholder = new Entity(' ', 0, 0)
+    const placeholder = new Entity(' ', Vector2.ZERO, 0)
     this._placeholder = placeholder
     this._target = placeholder
     this._listenToTarget()
@@ -64,10 +65,10 @@ export class Camera {
 
   setInitialPosition(x: number, y: number) {
     if (this._placeholder === null) return
-    this._placeholder.x = x
-    this._placeholder.y = y
-    this._placeholder.prevX = x
-    this._placeholder.prevY = y
+    this._placeholder.pos.x = x
+    this._placeholder.pos.y = y
+    this._placeholder.previousPos.x = x
+    this._placeholder.previousPos.y = y
   }
 
   jumpToTarget() {

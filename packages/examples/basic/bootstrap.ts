@@ -1,13 +1,7 @@
 import { AsciiEngine } from 'ascii-engine'
 import { Game } from './Game'
 
-export async function bootstrap() {
-  const container = document.querySelector<HTMLDivElement>('#asciiEngine')
-
-  if (!container) {
-    throw new Error('#asciiEngine container not found')
-  }
-
+export async function bootstrap(container: HTMLDivElement) {
   const assets: Record<string, string> = import.meta.glob('./assets/**/*', {
     query: '?url',
     eager: true,
@@ -15,10 +9,8 @@ export async function bootstrap() {
   })
 
   const engine = new AsciiEngine(container, assets)
-
   await engine.start()
 
   const game = new Game(engine)
-
   game.initialize()
 }

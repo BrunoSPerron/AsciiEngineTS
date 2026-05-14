@@ -1,6 +1,7 @@
 import { MIN_ACTION_INTERVAL } from '../../core/constants'
-import { lerp } from '../../math'
+import { lerp } from '../../math/utils'
 import type { AsciiEngine } from '../../core/Engine'
+import type { Vector2 } from '../../math/Vector2'
 
 type MoveHandler = (entity: Entity) => void
 
@@ -8,11 +9,8 @@ export class Entity {
   uid = -1
   glyph: string
 
-  x: number
-  y: number
-
-  prevX: number
-  prevY: number
+  pos: Vector2
+  previousPos: Vector2
 
   protected engine!: AsciiEngine
 
@@ -23,13 +21,11 @@ export class Entity {
 
   private _moveListeners = new Set<MoveHandler>()
 
-  constructor(glyph: string, x: number, y: number, moveSpeed: number = 0) {
+  constructor(glyph: string, pos: Vector2, moveSpeed: number = 0) {
     this.glyph = glyph
 
-    this.x = x
-    this.y = y
-    this.prevX = x
-    this.prevY = y
+    this.pos = pos
+    this.previousPos = pos
 
     this.moveSpeed = moveSpeed
   }
@@ -48,7 +44,10 @@ export class Entity {
   public visualPosition(now: number): [number, number] {
     const elapsed = now - this._lastActTime
     const alpha = Math.min(elapsed / this._nextActDelay, 1)
-    return [lerp(this.prevX, this.x, alpha), lerp(this.prevY, this.y, alpha)]
+    return [
+      lerp(this.previousPos.x, this.pos.x, alpha),
+      lerp(this.previousPos.y, this.pos.y, alpha),
+    ]
   }
 
   onMove = (fn: MoveHandler): (() => void) => {
@@ -58,9 +57,7 @@ export class Entity {
 
   OnLoad() {}
 
-  OnUnload() {
-    this.unschedule()
-  }
+  OnUnload() {}
 
   scheduleFirst(engine: AsciiEngine) {
     if (this._timeoutId !== null) return
@@ -74,8 +71,7 @@ export class Entity {
     this._timeoutId = setTimeout(() => {
       const now = performance.now()
       this._lastActTime = now
-      this.prevX = this.x
-      this.prevY = this.y
+      this.previousPos = this.pos
 
       const next = this.act()
       const clamped = Math.max(next, MIN_ACTION_INTERVAL)

@@ -63,7 +63,7 @@ export class AsciiEngine {
     this.renderer.bindWorld(this.world)
     this.renderer.camera.jumpToTarget()
 
-    this.resume()
+    this.schedule()
   }
 
   destroy() {
@@ -86,14 +86,14 @@ export class AsciiEngine {
     this.world.local.entities.forEach((e) => e.scheduleFirst(this))
   }
 
-  suspend = () => {
+  private suspend = () => {
     if (!this.running) return
     this.running = false
     this.renderer.camera.suspend()
     this.world.local.entities.forEach((e) => e.unschedule())
   }
 
-  resume = () => {
+  private schedule = () => {
     if (this.running) return
     if (document.hidden) return
     if (!this.environmentReady) return
@@ -107,7 +107,7 @@ export class AsciiEngine {
     if (minimized || document.hidden) {
       this.suspend()
     } else {
-      this.resume()
+      this.schedule()
     }
   }
 
@@ -115,7 +115,7 @@ export class AsciiEngine {
     if (document.hidden) {
       this.suspend()
     } else {
-      this.resume()
+      this.schedule()
     }
   }
 }

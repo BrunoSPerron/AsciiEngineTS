@@ -95,7 +95,7 @@ export class Renderer {
     const el = document.createElement('div')
     el.className = 'actor'
     el.textContent = entity.glyph
-    el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
+    el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
     this.actors.appendChild(el)
     this.actorEls.set(entity.uid, el)
 
@@ -113,9 +113,9 @@ export class Renderer {
   renderActor(entity: Entity) {
     const el = this.actorEls.get(entity.uid)
     if (!el) return
-    if (entity.x === entity.prevX && entity.y === entity.prevY) return
+    if (entity.pos.equal(entity.previousPos)) return
     el.style.transition = `transform ${entity.moveSpeed}ms linear`
-    el.style.transform = `translate(${entity.x * this.tileMetrics.w}px, ${entity.y * this.tileMetrics.h}px)`
+    el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
   }
 
   private _onCameraFrame(_now: number) {
@@ -147,7 +147,7 @@ export class Renderer {
   private _renderChunks() {
     if (!this._world) return
 
-    const target = this.camera.target
+    const target = this.camera.target.pos
     const cx = Math.floor(target.x / CHUNK_SIZE)
     const cy = Math.floor(target.y / CHUNK_SIZE)
     const d = this.viewDistance
@@ -159,7 +159,7 @@ export class Renderer {
         const key = `${cx2},${cy2}`
         visible.add(key)
 
-        const chunk = this._world.getChunk(cx2, cy2)
+        const chunk = this._world.getChunkXY(cx2, cy2)
         let el = this.chunkEls.get(key)
 
         if (!el) {
