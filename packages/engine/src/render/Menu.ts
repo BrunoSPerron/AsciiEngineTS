@@ -40,11 +40,12 @@ export class Menu {
 
     const roller = this.renderer.uiLayer.createRollerMenu()
 
-    roller.onChanged((selected: number) => {
+    const unlisten = roller.onChange((selected) => {
       this.renderer.themeManager.set(themes[selected])
     })
 
     const selected = await roller.open(10, 10, themes, 1, currentIndex)
+    unlisten()
 
     if (selected === -1) {
       this.renderer.themeManager.set(previousTheme)

@@ -17,8 +17,8 @@ export class Camera {
 
   viewport: HTMLDivElement
 
-  onChunksInvalidated: (() => void) | null = null
-  onFrame: ((now: number) => void) | null = null
+  private _chunksInvalidatedListeners = new Set<() => void>()
+  private _frameListeners = new Set<(now: number) => void>()
 
   constructor(viewport: HTMLDivElement, tileMetrics: TileMetricsData) {
     this.viewport = viewport
@@ -39,16 +39,26 @@ export class Camera {
     this._placeholder = null
     this._target = entity
     this._listenToTarget()
-    this.onChunksInvalidated?.()
+    for (const fn of this._chunksInvalidatedListeners) fn()
   }
 
   set halfLife(halfLife: number) {
     this._halfLife = Math.max(halfLife, 0)
   }
 
+  onChunksInvalidated = (fn: () => void): (() => void) => {
+    this._chunksInvalidatedListeners.add(fn)
+    return () => this._chunksInvalidatedListeners.delete(fn)
+  }
+
+  onFrame = (fn: (now: number) => void): (() => void) => {
+    this._frameListeners.add(fn)
+    return () => this._frameListeners.delete(fn)
+  }
+
   private _listenToTarget() {
     this._unlistenMove = this._target.onMove(() => {
-      this.onChunksInvalidated?.()
+      for (const fn of this._chunksInvalidatedListeners) fn()
     })
   }
 
@@ -91,7 +101,7 @@ export class Camera {
     this._last = now
 
     this._update(now, delta)
-    this.onFrame?.(now)
+    for (const fn of this._frameListeners) fn(now)
 
     this._rafId = requestAnimationFrame(this._frame)
   }

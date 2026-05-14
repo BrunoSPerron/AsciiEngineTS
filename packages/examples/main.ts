@@ -1,5 +1,4 @@
-import { AsciiEngine } from 'ascii-engine'
-import { Menu } from 'ascii-engine/src/render/Menu'
+import { AsciiEngine, Menu } from 'ascii-engine'
 import './style.css'
 import { PlayerUnit } from './basic/world/entities/PlayerUnit'
 

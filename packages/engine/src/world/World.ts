@@ -22,14 +22,10 @@ export type GlobalState = {
 }
 
 // ---------------------------------------------------------------------------
-// Event handlers
+// World
 // ---------------------------------------------------------------------------
 
 type EntityHandler = (entity: Entity) => void
-
-// ---------------------------------------------------------------------------
-// World
-// ---------------------------------------------------------------------------
 
 export class World {
   readonly local: LocalState = {
@@ -46,8 +42,8 @@ export class World {
   private nextId = 1
   private engine: AsciiEngine
 
-  private _spawnListeners: Set<EntityHandler> = new Set()
-  private _despawnListeners: Set<EntityHandler> = new Set()
+  private _spawnListeners = new Set<EntityHandler>()
+  private _despawnListeners = new Set<EntityHandler>()
 
   constructor(engine: AsciiEngine) {
     this.engine = engine
@@ -57,14 +53,14 @@ export class World {
   // Spawn / despawn listeners
   // --------------------------------------------------------------------------
 
-  onSpawn(handler: EntityHandler): () => void {
-    this._spawnListeners.add(handler)
-    return () => this._spawnListeners.delete(handler)
+  onSpawn = (fn: EntityHandler): (() => void) => {
+    this._spawnListeners.add(fn)
+    return () => this._spawnListeners.delete(fn)
   }
 
-  onDespawn(handler: EntityHandler): () => void {
-    this._despawnListeners.add(handler)
-    return () => this._despawnListeners.delete(handler)
+  onDespawn = (fn: EntityHandler): (() => void) => {
+    this._despawnListeners.add(fn)
+    return () => this._despawnListeners.delete(fn)
   }
 
   // --------------------------------------------------------------------------

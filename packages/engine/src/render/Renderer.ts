@@ -54,7 +54,7 @@ export class Renderer {
 
     this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.inputManager, this.tileMetrics)
 
-    camera.onFrame = (now) => this._onCameraFrame(now)
+    camera.onFrame((now) => this._onCameraFrame(now))
   }
 
   setTileHAndW() {
@@ -78,7 +78,7 @@ export class Renderer {
     span.remove()
   }
 
-  invalidateChunks() {
+  invalidateChunks = () => {
     this.chunksNeedRefresh = true
   }
 

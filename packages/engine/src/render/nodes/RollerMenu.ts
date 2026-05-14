@@ -14,7 +14,6 @@ const SLOT_CLASSES: readonly string[] = [
 ]
 
 type ChangeHandler = (index: number) => void
-type ListenerMap = Map<string, ChangeHandler>
 
 export class RollerMenu {
   private rendererUI: RendererUI
@@ -26,27 +25,17 @@ export class RollerMenu {
   private panel: UIPanel | null = null
   private resolve!: (index: number) => void
 
-  private idCounter = 0
-  private changeListeners: ListenerMap = new Map()
   private listenerKey: string = ''
+  private _changeListeners = new Set<ChangeHandler>()
 
   constructor(rendererUI: RendererUI, inputManager: InputManager) {
     this.rendererUI = rendererUI
     this.inputManager = inputManager
   }
 
-  onChanged(fn: ChangeHandler): string {
-    const key = `lk_${++this.idCounter}`
-    this.changeListeners.set(key, fn)
-    return key
-  }
-
-  unlisten(key: string): void {
-    this.changeListeners.delete(key)
-  }
-
-  private emitChanged(index: number) {
-    for (const fn of this.changeListeners.values()) fn(index)
+  onChange = (fn: ChangeHandler): (() => void) => {
+    this._changeListeners.add(fn)
+    return () => this._changeListeners.delete(fn)
   }
 
   async open(
@@ -117,7 +106,7 @@ export class RollerMenu {
     const count = this.items.length
     this.currentIndex = (((this.currentIndex + delta) % count) + count) % count
     this.renderSlots()
-    this.emitChanged(this.currentIndex)
+    for (const fn of this._changeListeners) fn(this.currentIndex)
   }
 
   // ==================================================

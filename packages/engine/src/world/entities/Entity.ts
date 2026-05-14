@@ -21,7 +21,7 @@ export class Entity {
   private _lastActTime: number = performance.now()
   private _nextActDelay: number = 0
 
-  private _moveListeners: Set<MoveHandler> = new Set()
+  private _moveListeners = new Set<MoveHandler>()
 
   constructor(glyph: string, x: number, y: number, moveSpeed: number = 0) {
     this.glyph = glyph
@@ -51,13 +51,9 @@ export class Entity {
     return [lerp(this.prevX, this.x, alpha), lerp(this.prevY, this.y, alpha)]
   }
 
-  public onMove(handler: MoveHandler): () => void {
-    this._moveListeners.add(handler)
-    return () => this._moveListeners.delete(handler)
-  }
-
-  protected emitMove() {
-    for (const fn of this._moveListeners) fn(this)
+  onMove = (fn: MoveHandler): (() => void) => {
+    this._moveListeners.add(fn)
+    return () => this._moveListeners.delete(fn)
   }
 
   OnLoad() {}
@@ -97,5 +93,9 @@ export class Entity {
    */
   act(): number {
     return this._moveSpeed
+  }
+
+  protected emitMove() {
+    for (const fn of this._moveListeners) fn(this)
   }
 }
