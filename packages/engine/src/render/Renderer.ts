@@ -173,10 +173,10 @@ export class Renderer {
         if (chunk.dirty) {
           let text = ''
           for (let y = 0; y < CHUNK_SIZE; y++) {
+            if (y > 0) text += '\n'
             for (let x = 0; x < CHUNK_SIZE; x++) {
               text += chunk.get(x, y).glyph
             }
-            text += '\n'
           }
           el.textContent = text
           chunk.dirty = false

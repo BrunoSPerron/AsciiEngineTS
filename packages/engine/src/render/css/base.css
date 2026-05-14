@@ -97,15 +97,20 @@
 .ascii-engine .chunk {
   position: absolute;
   white-space: pre;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* ----- Entity Layer ----- */
 
 .ascii-engine .actor {
   position: absolute;
+  top: 0;
+  left: 0;
   background-color: var(--actor-bg);
   color: var(--actor-text);
   height: var(--line-height);
+  line-height: var(--line-height);
 }
 
 /* ----- UI Layer ----- */
