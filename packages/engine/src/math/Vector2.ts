@@ -3,15 +3,15 @@ import { clamp } from './utils'
 export class Vector2 {
   static readonly ZERO = new Vector2(0, 0)
 
-  static readonly UP = new Vector2(0, -1)
-  static readonly DOWN = new Vector2(0, 1)
-  static readonly LEFT = new Vector2(-1, 0)
-  static readonly RIGHT = new Vector2(1, 0)
+  static readonly UP: Readonly<Vector2> = Object.freeze(new Vector2(0, -1))
+  static readonly DOWN: Readonly<Vector2> = Object.freeze(new Vector2(0, 1))
+  static readonly LEFT: Readonly<Vector2> = Object.freeze(new Vector2(-1, 0))
+  static readonly RIGHT: Readonly<Vector2> = Object.freeze(new Vector2(1, 0))
 
-  static readonly UP_LEFT = new Vector2(-1, -1)
-  static readonly UP_RIGHT = new Vector2(1, -1)
-  static readonly DOWN_LEFT = new Vector2(-1, 1)
-  static readonly DOWN_RIGHT = new Vector2(1, 1)
+  static readonly UP_LEFT: Readonly<Vector2> = Object.freeze(new Vector2(-1, -1))
+  static readonly UP_RIGHT: Readonly<Vector2> = Object.freeze(new Vector2(1, -1))
+  static readonly DOWN_LEFT: Readonly<Vector2> = Object.freeze(new Vector2(-1, 1))
+  static readonly DOWN_RIGHT: Readonly<Vector2> = Object.freeze(new Vector2(1, 1))
 
   public x: number
   public y: number

@@ -44,7 +44,7 @@ export class PlayerEntity extends Entity {
   }
 
   act(): number {
-    const d = Vector2.ZERO
+    const d = new Vector2() // fresh instance, not the static singleton
     for (const [key, vec] of Object.entries(KEY_TO_DIR)) {
       if (this._heldKeys.has(key)) {
         d.add(vec)
