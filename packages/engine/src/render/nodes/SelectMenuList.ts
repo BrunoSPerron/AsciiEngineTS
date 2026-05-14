@@ -2,7 +2,7 @@ import type { InputManager } from '../../core/InputManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
 
-export class SelectMenu {
+export class SelectMenuList {
   private rendererUI: RendererUI
   private inputManager: InputManager
   private itemEls: HTMLDivElement[] = []
@@ -47,7 +47,7 @@ export class SelectMenu {
     const panelId = this.rendererUI.reserveId()
     this.inputManager.pushContext(`select_menu_${panelId}`)
     this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
-    this.registerKeys(panelId, wraparound)
+    this.registerKeys(wraparound)
 
     return new Promise<number>((resolve) => {
       this.resolve = resolve
@@ -73,7 +73,7 @@ export class SelectMenu {
     this.setSelected(next)
   }
 
-  private registerKeys(panelId: number, wraparound: boolean) {
+  private registerKeys(wraparound: boolean) {
     this.listenerKey = this.inputManager.onKeyDown((e) => {
       switch (e.key) {
         case 'ArrowUp':

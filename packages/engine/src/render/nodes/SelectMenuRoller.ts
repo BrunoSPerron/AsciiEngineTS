@@ -15,7 +15,7 @@ const SLOT_CLASSES: readonly string[] = [
 
 type ChangeHandler = (index: number) => void
 
-export class RollerMenu {
+export class SelectMenuRoller {
   private rendererUI: RendererUI
   private inputManager: InputManager
 
@@ -138,15 +138,13 @@ export class RollerMenu {
   private async close(index: number) {
     this.inputManager.unlisten(this.listenerKey)
     if (!this.panel) {
-      this.inputManager.popContext('roller_menu')
-      this.resolve(index)
-      return
+      throw Error('Logic Error: Panel Closed too early')
     }
     this.rendererUI.unregisterPanelEarly(this.panel)
     await this.panel.close()
+    this.inputManager.popContext(`roller_menu_${this.panel.id}`)
     this.rendererUI.removePanel(this.panel)
     this.panel = null
-    this.inputManager.popContext('roller_menu')
     this.resolve(index)
   }
 }

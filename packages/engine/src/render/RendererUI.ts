@@ -2,8 +2,8 @@ import type { InputManager } from '../core/InputManager'
 import { UINode, type UIKind, isLineLike } from './nodes/UINode'
 import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './nodes/LineNode'
 import { UIPanel } from './nodes/UIPanel'
-import { SelectMenu } from './nodes/SelectMenu'
-import { RollerMenu } from './nodes/RollerMenu'
+import { SelectMenuList } from './nodes/SelectMenuList'
+import { SelectMenuRoller } from './nodes/SelectMenuRoller'
 import type { TileMetricsData } from './tileMetrics'
 
 export class RendererUI {
@@ -170,7 +170,7 @@ export class RendererUI {
     const w = maxLen + paddingX * 2 + 2
     const h = items.length + paddingY * 2 + 2
 
-    return new SelectMenu(this, this.inputManager).open(
+    return new SelectMenuList(this, this.inputManager).open(
       x,
       y,
       w,
@@ -182,12 +182,12 @@ export class RendererUI {
     )
   }
 
-  showRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
-    return new RollerMenu(this, this.inputManager).open(x, y, items, paddingX)
+  showSelectRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
+    return new SelectMenuRoller(this, this.inputManager).open(x, y, items, paddingX)
   }
 
-  createRollerMenu(): RollerMenu {
-    return new RollerMenu(this, this.inputManager)
+  createSelectRollerMenu(): SelectMenuRoller {
+    return new SelectMenuRoller(this, this.inputManager)
   }
 
   // ==========================================================================

@@ -1,4 +1,4 @@
-import { type AsciiEngine, Menu, Vector2 } from 'ascii-engine'
+import { type AsciiEngine, SelectMenu, Vector2 } from 'ascii-engine'
 import { PlayerEntity } from './world/entities/PlayerEntity'
 
 export class Game {
@@ -14,29 +14,23 @@ export class Game {
   }
 
   private setupMenu() {
-    const menu = new Menu(this.engine.renderer)
+    const escapeMenu = new SelectMenu(this.engine)
 
-    menu.register('Option 1', () => {
+    escapeMenu.register('Option 1', () => {
       // TODO
     })
 
-    menu.registerPaletteSelect()
+    escapeMenu.registerPaletteSelect()
 
-    menu.register('Option 2', () => {
+    escapeMenu.register('Option 2', () => {
       // TODO
     })
 
     this.engine.inputManager.onKeyDown((e) => {
       if (e.key === 'Escape') {
-        void this.openPauseMenu(menu)
+        void escapeMenu.open()
       }
     })
-  }
-
-  private async openPauseMenu(menu: Menu) {
-    this.engine.pause()
-    await menu.open()
-    this.engine.unpause()
   }
 
   private spawnPlayer() {

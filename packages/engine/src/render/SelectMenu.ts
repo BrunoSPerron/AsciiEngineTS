@@ -1,3 +1,4 @@
+import type { AsciiEngine } from '../core/Engine'
 import type { Renderer } from './Renderer'
 
 type MenuEntry = {
@@ -5,12 +6,15 @@ type MenuEntry = {
   action: () => void | Promise<void>
 }
 
-export class Menu {
+export class SelectMenu {
+  private engine: AsciiEngine
   private renderer: Renderer
+
   private entries: MenuEntry[] = []
 
-  constructor(renderer: Renderer) {
-    this.renderer = renderer
+  constructor(engine: AsciiEngine) {
+    this.engine = engine
+    this.renderer = this.engine.renderer
   }
 
   register(label: string, action: () => void | Promise<void>): void {
@@ -24,11 +28,15 @@ export class Menu {
   async open(): Promise<number> {
     if (this.entries.length === 0) return -1
 
+    this.engine.pause()
+
     const labels = this.entries.map((e) => e.label)
     const selected = await this.renderer.uiLayer.showSelectMenu(10, 10, labels)
     if (selected >= 0 && selected < this.entries.length) {
       await this.entries[selected].action()
     }
+
+    this.engine.unpause()
     return selected
   }
 
@@ -38,7 +46,7 @@ export class Menu {
     const currentIndex = themes.indexOf(currentTheme)
     const previousTheme = currentTheme
 
-    const roller = this.renderer.uiLayer.createRollerMenu()
+    const roller = this.renderer.uiLayer.createSelectRollerMenu()
 
     const unlisten = roller.onChange((selected) => {
       this.renderer.themeManager.set(themes[selected])
