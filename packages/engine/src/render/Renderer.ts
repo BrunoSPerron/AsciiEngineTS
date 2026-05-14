@@ -114,7 +114,7 @@ export class Renderer {
     const el = this.actorEls.get(entity.uid)
     if (!el) return
     if (entity.pos.equal(entity.previousPos)) return
-    el.style.transition = `transform ${entity.moveSpeed}ms linear`
+    el.style.transition = `transform ${entity.speed}ms linear`
     el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
   }
 

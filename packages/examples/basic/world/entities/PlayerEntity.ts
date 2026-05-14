@@ -66,6 +66,6 @@ export class PlayerEntity extends Entity {
     this.pos.set(this._targetPos.x, this._targetPos.y)
     this.emitMove()
 
-    return this.moveSpeed
+    return this.speed
   }
 }

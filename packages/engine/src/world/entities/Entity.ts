@@ -14,28 +14,29 @@ export class Entity {
 
   protected engine!: AsciiEngine
 
-  private _moveSpeed: number = 1000
+  private _speed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
   private _lastActTime: number = performance.now()
-  private _nextActDelay: number = 0
+  private _nextActDelay: number
 
   private _moveListeners = new Set<MoveHandler>()
 
-  constructor(glyph: string, pos: Vector2, moveSpeed: number = 0) {
+  constructor(glyph: string, pos: Vector2, speed: number = 0) {
     this.glyph = glyph
 
     this.pos = pos
     this.previousPos = pos.clone()
 
-    this.moveSpeed = moveSpeed
+    this._speed = speed
+    this._nextActDelay = this._speed
   }
 
-  public get moveSpeed(): number {
-    return this._moveSpeed
+  public get speed(): number {
+    return this._speed
   }
 
-  public set moveSpeed(value: number) {
-    this._moveSpeed = Math.max(value, MIN_ACTION_INTERVAL)
+  public set speed(value: number) {
+    this._speed = Math.max(value, MIN_ACTION_INTERVAL)
   }
 
   /**
@@ -62,7 +63,7 @@ export class Entity {
   scheduleFirst(engine: AsciiEngine) {
     if (this._timeoutId !== null) return
     this.engine = engine
-    this._schedule(this._moveSpeed)
+    this._schedule(this._speed)
   }
 
   private _schedule(delay: number) {
@@ -95,7 +96,7 @@ export class Entity {
    * @returns delay until next action, in milliseconds
    */
   act(): number {
-    return this._moveSpeed
+    return this._speed
   }
 
   protected emitMove() {

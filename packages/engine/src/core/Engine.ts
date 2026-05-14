@@ -59,10 +59,10 @@ export class AsciiEngine {
     await document.fonts.ready
 
     this.renderer.setTileHAndW()
-    this.environmentReady = true
     this.renderer.bindWorld(this.world)
     this.renderer.camera.jumpToTarget()
 
+    this.environmentReady = true
     this.schedule()
   }
 
