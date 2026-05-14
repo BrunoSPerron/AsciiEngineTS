@@ -6,6 +6,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "smol-toml": "^1.6.1"
+    "smol-toml": "^1.6.1",
+    "deepmerge": "^4.3.1",
+    "zod": "^4.4.3"
   }
 }
