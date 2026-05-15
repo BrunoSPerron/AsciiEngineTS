@@ -61,7 +61,37 @@ export class PlayerEntity extends Entity {
     this._targetPos.set(this.pos.x, this.pos.y).add(this._dir)
 
     const target = this.engine.world.getTile(this._targetPos)
-    if (target.solid) return 0
+    if (target.solid) {
+      let up, down, left, right
+      this._targetPos.set(this.pos.x, this.pos.y)
+      if (this._dir.equal(Vector2.UP_LEFT)) {
+        up = this.engine.world.getTileXY(this.pos.x, this.pos.y - 1)
+        left = this.engine.world.getTileXY(this.pos.x - 1, this.pos.y)
+        if (up.solid && !left.solid) this._targetPos.x -= 1
+        else if (!up.solid && left.solid) this._targetPos.y -= 1
+        else return 0
+      } else if (this._dir.equal(Vector2.UP_RIGHT)) {
+        up = this.engine.world.getTileXY(this.pos.x, this.pos.y - 1)
+        right = this.engine.world.getTileXY(this.pos.x + 1, this.pos.y)
+        if (up.solid && !right.solid) this._targetPos.x += 1
+        else if (!up.solid && right.solid) this._targetPos.y -= 1
+        else return 0
+      } else if (this._dir.equal(Vector2.DOWN_LEFT)) {
+        down = this.engine.world.getTileXY(this.pos.x, this.pos.y + 1)
+        left = this.engine.world.getTileXY(this.pos.x - 1, this.pos.y)
+        if (down.solid && !left.solid) this._targetPos.x -= 1
+        else if (!down.solid && left.solid) this._targetPos.y += 1
+        else return 0
+      } else if (this._dir.equal(Vector2.DOWN_RIGHT)) {
+        down = this.engine.world.getTileXY(this.pos.x, this.pos.y + 1)
+        right = this.engine.world.getTileXY(this.pos.x + 1, this.pos.y)
+        if (down.solid && !right.solid) this._targetPos.x += 1
+        else if (!down.solid && right.solid) this._targetPos.y += 1
+        else return 0
+      } else {
+        return 0
+      }
+    }
 
     this.pos.set(this._targetPos.x, this._targetPos.y)
     this.emitMove()
