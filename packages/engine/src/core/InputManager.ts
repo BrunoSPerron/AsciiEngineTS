@@ -5,19 +5,22 @@ type InputContext = {
   keyUpListeners: ListenerMap
 }
 
+type HeldKey = { key: string; code: string }
+
 export class InputManager {
   private target: Window
   private contextStack: Array<{ name: string; ctx: InputContext }> = []
   private idCounter = 0
-  private keyDownState: Set<string> = new Set()
+
+  private keyDownState: Map<string, HeldKey> = new Map()
 
   private boundKeyDown = (e: KeyboardEvent) => {
-    this.keyDownState.add(e.key)
+    this.keyDownState.set(this._stateKey(e), { key: e.key, code: e.code })
     this.emit(this.activeCtx().keyDownListeners, e)
   }
 
   private boundKeyUp = (e: KeyboardEvent) => {
-    this.keyDownState.delete(e.key)
+    this.keyDownState.delete(this._stateKey(e))
     this.emit(this.activeCtx().keyUpListeners, e)
   }
 
@@ -34,6 +37,15 @@ export class InputManager {
   // ---------- Public API ----------
 
   pushContext(name: string): void {
+    if (this.contextStack.length > 0) {
+      for (const held of this.keyDownState.values()) {
+        this.emit(
+          this.activeCtx().keyUpListeners,
+          new KeyboardEvent('keyup', { key: held.key, code: held.code, bubbles: true }),
+        )
+      }
+    }
+
     this.contextStack.push({
       name,
       ctx: { keyDownListeners: new Map(), keyUpListeners: new Map() },
@@ -43,9 +55,26 @@ export class InputManager {
   popContext(name: string): void {
     const i = this.contextStack.findLastIndex((c) => c.name === name)
     if (i === -1) return
+
+    for (const held of this.keyDownState.values()) {
+      this.emit(
+        this.contextStack[i].ctx.keyUpListeners,
+        new KeyboardEvent('keyup', { key: held.key, code: held.code, bubbles: true }),
+      )
+    }
+
     this.contextStack[i].ctx.keyDownListeners.clear()
     this.contextStack[i].ctx.keyUpListeners.clear()
     this.contextStack.splice(i, 1)
+
+    if (this.contextStack.length > 0) {
+      for (const held of this.keyDownState.values()) {
+        this.emit(
+          this.activeCtx().keyDownListeners,
+          new KeyboardEvent('keydown', { key: held.key, code: held.code, bubbles: true }),
+        )
+      }
+    }
   }
 
   onKeyDown(fn: KeyHandler): string {
@@ -57,7 +86,10 @@ export class InputManager {
   }
 
   isKeyDown(key: string): boolean {
-    return this.keyDownState.has(key)
+    for (const held of this.keyDownState.values()) {
+      if (held.key === key || held.code === key) return true
+    }
+    return false
   }
 
   unlisten(key: string): void {
@@ -84,6 +116,10 @@ export class InputManager {
     for (const fn of set.values()) fn(event)
   }
 
+  private _stateKey(e: KeyboardEvent): string {
+    return e.code || e.key
+  }
+
   private handleVisibility = () => {
     if (document.visibilityState === 'hidden') {
       this.resetKeys()
@@ -91,8 +127,11 @@ export class InputManager {
   }
 
   private resetKeys = () => {
-    for (const key of this.keyDownState) {
-      this.emit(this.activeCtx().keyUpListeners, new KeyboardEvent('keyup', { key }))
+    for (const held of this.keyDownState.values()) {
+      this.emit(
+        this.activeCtx().keyUpListeners,
+        new KeyboardEvent('keyup', { key: held.key, code: held.code }),
+      )
     }
     this.keyDownState.clear()
   }

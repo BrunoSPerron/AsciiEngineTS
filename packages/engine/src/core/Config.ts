@@ -75,7 +75,7 @@ export async function loadConfig(url: string | null): Promise<EngineConfig> {
     const text = await response.text()
     const raw = parse(text)
     const merged = merge(DEFAULT_CONFIG, raw, {
-      arrayMerge: (_dest, source) => source,
+      arrayMerge: (_dest, source: unknown[]) => source,
     })
 
     ConfigSchema.parse(merged)
