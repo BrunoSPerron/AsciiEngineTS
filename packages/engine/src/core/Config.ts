@@ -20,10 +20,10 @@ export const DEFAULT_CONFIG = {
   bindings: {
     pause: ['Escape'],
     confirm: ['Enter'],
-    up: ['w', 'ArrowUp', 'Numpad7', 'Numpad8', 'Numpad9'],
-    down: ['s', 'ArrowDown', 'Numpad1', 'Numpad2', 'Numpad3'],
-    left: ['a', 'ArrowLeft', 'Numpad1', 'Numpad4', 'Numpad7'],
-    right: ['d', 'ArrowRight', 'Numpad3', 'Numpad6', 'Numpad9'],
+    up: ['KeyW', 'ArrowUp', 'Numpad7', 'Numpad8', 'Numpad9'],
+    down: ['KeyS', 'ArrowDown', 'Numpad1', 'Numpad2', 'Numpad3'],
+    left: ['KeyA', 'ArrowLeft', 'Numpad1', 'Numpad4', 'Numpad7'],
+    right: ['KeyD', 'ArrowRight', 'Numpad3', 'Numpad6', 'Numpad9'],
   } as Record<string, string[]>,
 }
 

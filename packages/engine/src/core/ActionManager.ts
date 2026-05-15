@@ -9,7 +9,7 @@ type InputContext = {
 }
 
 export class ActionManager {
-  private keyToActions = new Map<string, string[]>()
+  private codeToActions = new Map<string, string[]>()
   private actionToKeys = new Map<string, string[]>()
 
   private contextStack: InputContext[] = []
@@ -17,25 +17,16 @@ export class ActionManager {
   private actionPressCount = new Map<string, number>()
   private idCounter = 0
 
-  private _actionsForEvent(e: KeyboardEvent): string[] {
-    const byCode = this.keyToActions.get(e.code) ?? []
-    const byKey = this.keyToActions.get(e.key) ?? []
-    // Deduplicate in case code and key resolve to overlapping action sets
-    return [...new Set([...byCode, ...byKey])]
-  }
-
   private boundKeyDown = (e: KeyboardEvent) => {
-    const stateKey = this._stateKey(e)
-    if (this.keyDownState.has(stateKey)) return
-    this.keyDownState.set(stateKey, { key: e.key, code: e.code })
-    for (const action of this._actionsForEvent(e)) this._pressAction(action)
+    if (this.keyDownState.has(e.code)) return
+    this.keyDownState.set(e.code, { key: e.key, code: e.code })
+    for (const action of this.codeToActions.get(e.code) ?? []) this._pressAction(action)
   }
 
   private boundKeyUp = (e: KeyboardEvent) => {
-    const stateKey = this._stateKey(e)
-    if (!this.keyDownState.has(stateKey)) return
-    this.keyDownState.delete(stateKey)
-    for (const action of this._actionsForEvent(e)) this._releaseAction(action)
+    if (!this.keyDownState.has(e.code)) return
+    this.keyDownState.delete(e.code)
+    for (const action of this.codeToActions.get(e.code) ?? []) this._releaseAction(action)
   }
 
   private boundBlur = () => this._resetKeys()
@@ -156,14 +147,14 @@ export class ActionManager {
   }
 
   private _loadBindings(bindings: Record<string, string[]>) {
-    this.keyToActions.clear()
+    this.codeToActions.clear()
     this.actionToKeys.clear()
     for (const [action, keys] of Object.entries(bindings)) {
       this.actionToKeys.set(action, keys)
       for (const key of keys) {
-        const existing = this.keyToActions.get(key) ?? []
+        const existing = this.codeToActions.get(key) ?? []
         existing.push(action)
-        this.keyToActions.set(key, existing)
+        this.codeToActions.set(key, existing)
       }
     }
   }
@@ -183,10 +174,6 @@ export class ActionManager {
 
   private _nextId(): string {
     return `lk_${++this.idCounter}`
-  }
-
-  private _stateKey(e: KeyboardEvent): string {
-    return e.code || e.key
   }
 
   private _emitAction(listeners: Map<string, ActionHandler>, action: string) {
