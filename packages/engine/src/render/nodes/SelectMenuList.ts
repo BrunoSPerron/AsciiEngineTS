@@ -1,3 +1,4 @@
+import type { ContextManager } from '../../core/ContextManager'
 import type { ActionManager } from '../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
@@ -5,15 +6,21 @@ import type { UIPanel } from './UIPanel'
 export class SelectMenuList {
   private _rendererUI: RendererUI
   private _actionManager: ActionManager
+  private _contextManager: ContextManager
   private _itemEls: HTMLDivElement[] = []
   private _currentIndex: number = 0
   private _panel: UIPanel | null = null
 
   private resolve!: (index: number) => void
 
-  constructor(rendererUI: RendererUI, actionManager: ActionManager) {
+  constructor(
+    rendererUI: RendererUI,
+    actionManager: ActionManager,
+    contextManager: ContextManager,
+  ) {
     this._rendererUI = rendererUI
     this._actionManager = actionManager
+    this._contextManager = contextManager
   }
 
   async open(
@@ -44,7 +51,7 @@ export class SelectMenuList {
     this.setSelected(0)
 
     const panelId = this._rendererUI.reserveId()
-    this._actionManager.pushContext(`select_menu_${panelId}`)
+    this._contextManager.pushContext(`select_menu_${panelId}`)
     this._panel = await this._rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
     this.registerKeys(wraparound)
 
@@ -94,7 +101,7 @@ export class SelectMenuList {
   private async close(index: number) {
     const ctxName = `select_menu_${this._panel?.id ?? ''}`
     if (!this._panel) {
-      this._actionManager.popContext(ctxName)
+      this._contextManager.popContext(ctxName)
       this.resolve(index)
       return
     }
@@ -102,7 +109,7 @@ export class SelectMenuList {
     await this._panel.close()
     this._rendererUI.removePanel(this._panel)
     this._panel = null
-    this._actionManager.popContext(ctxName)
+    this._contextManager.popContext(ctxName)
     this.resolve(index)
   }
 }

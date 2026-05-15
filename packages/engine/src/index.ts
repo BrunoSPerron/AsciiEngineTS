@@ -1,5 +1,7 @@
 export { AsciiEngine } from './core/Engine'
 export { ActionManager } from './core/ActionManager'
+export { ContextManager } from './core/ContextManager'
+export { MouseManager } from './core/MouseManager'
 export { Camera } from './render/Camera'
 export { Entity } from './world/entities/Entity'
 export type { GameAssets } from './core/GameAssets'

@@ -5,10 +5,12 @@ import { SelectMenuList } from './nodes/SelectMenuList'
 import { SelectMenuRoller } from './nodes/SelectMenuRoller'
 import type { TileMetricsData } from './tileMetrics'
 import type { ActionManager } from '../core/ActionManager'
+import type { ContextManager } from '../core/ContextManager'
 
 export class RendererUI {
   root: HTMLDivElement
   _actionManager: ActionManager
+  _contextManager: ContextManager
   tileMetrics: TileMetricsData
 
   private nextId = 1
@@ -21,8 +23,14 @@ export class RendererUI {
   // Tracks which cells have a line-like node as their topmost entry in cellStack.
   private lineCells = new Map<string, boolean>()
 
-  constructor(root: HTMLDivElement, actionManager: ActionManager, tileMetrics: TileMetricsData) {
+  constructor(
+    root: HTMLDivElement,
+    actionManager: ActionManager,
+    contextManager: ContextManager,
+    tileMetrics: TileMetricsData,
+  ) {
     this._actionManager = actionManager
+    this._contextManager = contextManager
     this.root = root
     this.tileMetrics = tileMetrics
   }
@@ -170,7 +178,7 @@ export class RendererUI {
     const w = maxLen + paddingX * 2 + 2
     const h = items.length + paddingY * 2 + 2
 
-    return new SelectMenuList(this, this._actionManager).open(
+    return new SelectMenuList(this, this._actionManager, this._contextManager).open(
       x,
       y,
       w,
@@ -183,11 +191,16 @@ export class RendererUI {
   }
 
   showSelectRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
-    return new SelectMenuRoller(this, this._actionManager).open(x, y, items, paddingX)
+    return new SelectMenuRoller(this, this._actionManager, this._contextManager).open(
+      x,
+      y,
+      items,
+      paddingX,
+    )
   }
 
   createSelectRollerMenu(): SelectMenuRoller {
-    return new SelectMenuRoller(this, this._actionManager)
+    return new SelectMenuRoller(this, this._actionManager, this._contextManager)
   }
 
   // ==========================================================================
@@ -399,7 +412,6 @@ export class RendererUI {
   }
 
   private reconcileNeighborsPanelBorder(panel: UIPanel) {
-    // Reconcile one cell outside each edge of the panel border
     for (let i = 0; i < panel.w; i++) {
       this.reconcileAt(panel.x + i, panel.y - 1)
       this.reconcileAt(panel.x + i, panel.y + panel.h)
@@ -520,7 +532,6 @@ export class RendererUI {
     containerEl.style.inset = '0'
     this.root.appendChild(containerEl)
 
-    // el is a no-op placeholder — UIPanel manages its own border divs
     const el = document.createElement('div')
     const id = reservedId ?? this.nextId++
     const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.tileMetrics)
@@ -574,7 +585,6 @@ export class RendererUI {
   // ==========================================================================
 
   private footprintCoords(node: UINode): Array<[number, number]> {
-    // For UIPanel, footprint is border + interior
     if (node instanceof UIPanel) {
       return [...node.cellCoords(), ...node.interiorCoords()]
     }

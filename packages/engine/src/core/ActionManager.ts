@@ -1,3 +1,5 @@
+import type { ContextManager, ContextListener } from './ContextManager'
+
 type ActionHandler = (action: string) => void
 
 type HeldKey = { key: string; code: string }
@@ -8,11 +10,13 @@ type InputContext = {
   actionUpListeners: Map<string, ActionHandler>
 }
 
-export class ActionManager {
+export class ActionManager implements ContextListener {
   private codeToActions = new Map<string, string[]>()
   private actionToKeys = new Map<string, string[]>()
 
-  private contextStack: InputContext[] = []
+  private _contextManager: ContextManager
+  private _inputContexts = new Map<string, InputContext>()
+
   private keyDownState = new Map<string, HeldKey>()
   private actionPressCount = new Map<string, number>()
   private idCounter = 0
@@ -35,9 +39,13 @@ export class ActionManager {
     if (document.visibilityState === 'hidden') this._resetKeys()
   }
 
-  constructor(bindings: Record<string, string[]>) {
+  constructor(bindings: Record<string, string[]>, contextManager: ContextManager) {
+    this._contextManager = contextManager
     this._loadBindings(bindings)
-    this._pushContext('root')
+
+    // Create the root input context that ContextManager already has
+    this._ensureInputContext('root')
+    contextManager.registerListener(this)
 
     window.addEventListener('keydown', this.boundKeyDown)
     window.addEventListener('keyup', this.boundKeyUp)
@@ -46,58 +54,53 @@ export class ActionManager {
   }
 
   // --------------------------------------------------------------------------
-  // Context
+  // ContextListener implementation
   // --------------------------------------------------------------------------
 
-  pushContext(name: string): void {
-    const ctx = this._activeCtx()
+  onPush(outgoing: string, incoming: string): void {
+    const outCtx = this._ensureInputContext(outgoing)
+    // Release all held actions in the outgoing context
     for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(ctx.actionUpListeners, action)
+      if (count > 0) this._emitAction(outCtx.actionUpListeners, action)
     }
-    this._pushContext(name)
-    const next = this._activeCtx()
+    const inCtx = this._ensureInputContext(incoming)
+    // Re-press all held actions in the incoming context
     for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(next.actionDownListeners, action)
+      if (count > 0) this._emitAction(inCtx.actionDownListeners, action)
     }
   }
 
-  popContext(name: string): void {
-    const i = this.contextStack.findLastIndex((c) => c.name === name)
-    if (i === -1) return
-
-    const ctx = this.contextStack[i]
-
-    for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(ctx.actionUpListeners, action)
-    }
-
-    this.contextStack.splice(i, 1)
-
-    if (this.contextStack.length > 0) {
-      const next = this._activeCtx()
+  onPop(outgoing: string, incoming: string): void {
+    const outCtx = this._inputContexts.get(outgoing)
+    if (outCtx) {
       for (const [action, count] of this.actionPressCount.entries()) {
-        if (count > 0) this._emitAction(next.actionDownListeners, action)
+        if (count > 0) this._emitAction(outCtx.actionUpListeners, action)
       }
+      this._inputContexts.delete(outgoing)
+    }
+    const inCtx = this._ensureInputContext(incoming)
+    for (const [action, count] of this.actionPressCount.entries()) {
+      if (count > 0) this._emitAction(inCtx.actionDownListeners, action)
     }
   }
 
   // --------------------------------------------------------------------------
-  // Action listeners
+  // Action listeners — registered on the currently active context
   // --------------------------------------------------------------------------
 
   onActionKeyDown(fn: ActionHandler): () => void {
     const key = this._nextId()
-    this._activeCtx().actionDownListeners.set(key, fn)
+    this._activeInputCtx().actionDownListeners.set(key, fn)
     return () => {
-      for (const ctx of this.contextStack) ctx.actionDownListeners.delete(key)
+      for (const ctx of this._inputContexts.values()) ctx.actionDownListeners.delete(key)
     }
   }
 
   onActionKeyUp(fn: ActionHandler): () => void {
     const key = this._nextId()
-    this._activeCtx().actionUpListeners.set(key, fn)
+    this._activeInputCtx().actionUpListeners.set(key, fn)
     return () => {
-      for (const ctx of this.contextStack) ctx.actionUpListeners.delete(key)
+      for (const ctx of this._inputContexts.values()) ctx.actionUpListeners.delete(key)
     }
   }
 
@@ -106,7 +109,7 @@ export class ActionManager {
   // --------------------------------------------------------------------------
 
   isActionDown(action: string, context: string): boolean {
-    if (this._activeCtx().name !== context) return false
+    if (this._contextManager.active !== context) return false
     return (this.actionPressCount.get(action) ?? 0) > 0
   }
 
@@ -119,7 +122,7 @@ export class ActionManager {
     window.removeEventListener('keyup', this.boundKeyUp)
     window.removeEventListener('blur', this.boundBlur)
     document.removeEventListener('visibilitychange', this.boundVisibility)
-    this.contextStack = []
+    this._inputContexts.clear()
     this.keyDownState.clear()
     this.actionPressCount.clear()
   }
@@ -131,7 +134,7 @@ export class ActionManager {
   private _pressAction(action: string) {
     const count = this.actionPressCount.get(action) ?? 0
     if (count === 0) {
-      this._emitAction(this._activeCtx().actionDownListeners, action)
+      this._emitAction(this._activeInputCtx().actionDownListeners, action)
     }
     this.actionPressCount.set(action, count + 1)
   }
@@ -140,7 +143,7 @@ export class ActionManager {
     const count = this.actionPressCount.get(action) ?? 0
     if (count <= 1) {
       this.actionPressCount.delete(action)
-      this._emitAction(this._activeCtx().actionUpListeners, action)
+      this._emitAction(this._activeInputCtx().actionUpListeners, action)
       return
     }
     this.actionPressCount.set(action, count - 1)
@@ -159,17 +162,17 @@ export class ActionManager {
     }
   }
 
-  private _pushContext(name: string): void {
-    this.contextStack.push({
-      name,
-      actionDownListeners: new Map(),
-      actionUpListeners: new Map(),
-    })
+  private _ensureInputContext(name: string): InputContext {
+    let ctx = this._inputContexts.get(name)
+    if (!ctx) {
+      ctx = { name, actionDownListeners: new Map(), actionUpListeners: new Map() }
+      this._inputContexts.set(name, ctx)
+    }
+    return ctx
   }
 
-  private _activeCtx(): InputContext {
-    if (this.contextStack.length === 0) throw new Error('No active input context')
-    return this.contextStack[this.contextStack.length - 1]
+  private _activeInputCtx(): InputContext {
+    return this._ensureInputContext(this._contextManager.active)
   }
 
   private _nextId(): string {
@@ -181,7 +184,7 @@ export class ActionManager {
   }
 
   private _resetKeys() {
-    const ctx = this._activeCtx()
+    const ctx = this._activeInputCtx()
     for (const [action, count] of this.actionPressCount.entries()) {
       if (count > 0) {
         this._emitAction(ctx.actionUpListeners, action)

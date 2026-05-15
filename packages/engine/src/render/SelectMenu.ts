@@ -1,4 +1,5 @@
 import type { AsciiEngine } from '../core/Engine'
+import { Logger } from '../core/Logger'
 import type { Renderer } from './Renderer'
 
 type MenuEntry = {
@@ -31,7 +32,12 @@ export class SelectMenu {
     this.engine.pause()
 
     const labels = this.entries.map((e) => e.label)
-    const selected = await this.renderer.uiLayer.showSelectMenu(10, 10, labels)
+    const uiLayer = this.renderer.uiLayer
+    if (uiLayer == null) {
+      Logger.error('Cannot Open Menu: No uiLayer in renderer')
+      return -1
+    }
+    const selected = await uiLayer.showSelectMenu(10, 10, labels)
     if (selected >= 0 && selected < this.entries.length) {
       await this.entries[selected].action()
     }
@@ -46,7 +52,12 @@ export class SelectMenu {
     const currentIndex = themes.indexOf(currentTheme)
     const previousTheme = currentTheme
 
-    const roller = this.renderer.uiLayer.createSelectRollerMenu()
+    const uiLayer = this.renderer.uiLayer
+    if (uiLayer == null) {
+      Logger.error('No uiLayer in renderer')
+      return
+    }
+    const roller = uiLayer.createSelectRollerMenu()
 
     const unlisten = roller.onChange((selected) => {
       this.renderer.themeManager.set(themes[selected])

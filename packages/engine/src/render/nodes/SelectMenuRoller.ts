@@ -1,3 +1,4 @@
+import type { ContextManager } from '../../core/ContextManager'
 import type { ActionManager } from '../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
@@ -18,6 +19,7 @@ type ChangeHandler = (index: number) => void
 export class SelectMenuRoller {
   private rendererUI: RendererUI
   private _actionManager: ActionManager
+  private _contextManager: ContextManager
 
   private items: string[] = []
   private currentIndex: number = 0
@@ -27,9 +29,14 @@ export class SelectMenuRoller {
 
   private _changeListeners = new Set<ChangeHandler>()
 
-  constructor(rendererUI: RendererUI, actionManager: ActionManager) {
+  constructor(
+    rendererUI: RendererUI,
+    actionManager: ActionManager,
+    contextManager: ContextManager,
+  ) {
     this.rendererUI = rendererUI
     this._actionManager = actionManager
+    this._contextManager = contextManager
   }
 
   onChange = (fn: ChangeHandler): (() => void) => {
@@ -70,7 +77,7 @@ export class SelectMenuRoller {
 
     this.renderSlots()
     const panelId = this.rendererUI.reserveId()
-    this._actionManager.pushContext(`roller_menu_${panelId}`)
+    this._contextManager.pushContext(`roller_menu_${panelId}`)
     this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
     this.registerKeys()
 
@@ -138,7 +145,7 @@ export class SelectMenuRoller {
     }
     this.rendererUI.unregisterPanelEarly(this.panel)
     await this.panel.close()
-    this._actionManager.popContext(`roller_menu_${this.panel.id}`)
+    this._contextManager.popContext(`roller_menu_${this.panel.id}`)
     this.rendererUI.removePanel(this.panel)
     this.panel = null
     this.resolve(index)

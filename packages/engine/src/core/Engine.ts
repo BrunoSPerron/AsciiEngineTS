@@ -1,6 +1,8 @@
 import { World } from '../world/World'
 import { Camera } from '../render/Camera'
 import { ActionManager } from './ActionManager'
+import { ContextManager } from './ContextManager'
+import { MouseManager } from './MouseManager'
 import { Renderer } from '../render/Renderer'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
@@ -12,7 +14,9 @@ export class AsciiEngine {
 
   world: World
 
+  contextManager: ContextManager
   actionManager!: ActionManager
+  mouseManager!: MouseManager
   renderer: Renderer
 
   config!: EngineConfig
@@ -32,6 +36,8 @@ export class AsciiEngine {
 
     this.world = new World(this)
 
+    this.contextManager = new ContextManager()
+
     const tileMetrics = { w: 19.90625, h: 18 }
 
     const camera = new Camera(gameContainer, tileMetrics)
@@ -48,8 +54,22 @@ export class AsciiEngine {
     document.title = this.config.game.title
     await document.fonts.ready
 
-    this.actionManager = new ActionManager(this.config.bindings)
-    this.renderer.initialize(this.world, this.actionManager, this.config, this.assets)
+    this.actionManager = new ActionManager(this.config.bindings, this.contextManager)
+    this.renderer.initialize(
+      this.world,
+      this.actionManager,
+      this.contextManager,
+      this.config,
+      this.assets,
+    )
+
+    this.mouseManager = new MouseManager(
+      this.renderer.root as HTMLElement,
+      this.renderer.tileMetrics,
+      this.renderer.camera,
+      this.contextManager,
+    )
+    this.mouseManager.setUILayer(this.renderer.uiLayer!)
 
     const initPos = this.config.camera.initial_position
     const initCx = Math.floor(initPos[0] / CHUNK_SIZE)
@@ -64,6 +84,7 @@ export class AsciiEngine {
   destroy() {
     this.suspend()
     this.world.local.entities.forEach((e) => e.unschedule())
+    this.mouseManager?.destroy()
 
     document.removeEventListener('visibilitychange', this.handleVisibility)
     window.removeEventListener('resize', this.handleWindowState)

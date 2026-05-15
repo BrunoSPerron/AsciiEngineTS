@@ -9,6 +9,7 @@ import baseCssUrl from './css/base.css?url'
 import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
 import type { ActionManager } from '../core/ActionManager'
+import type { ContextManager } from '../core/ContextManager'
 
 export class Renderer {
   root: HTMLElement
@@ -17,7 +18,6 @@ export class Renderer {
 
   camera: Camera
   themeManager: ThemeManager
-  actionManager?: ActionManager
 
   worldEl: HTMLDivElement
   bg: HTMLDivElement
@@ -48,13 +48,23 @@ export class Renderer {
     this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
   }
 
-  initialize(world: World, actionManager: ActionManager, config: EngineConfig, assets: GameAssets) {
+  initialize(
+    world: World,
+    actionManager: ActionManager,
+    contextManager: ContextManager,
+    config: EngineConfig,
+    assets: GameAssets,
+  ) {
     this.camera.halfLife = config.camera.half_life
     this.camera.setInitialPosition(...config.camera.initial_position)
     this.viewDistance = config.world.chunk_view_distance
-    this.actionManager = actionManager
 
-    this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.actionManager, this.tileMetrics)
+    this.uiLayer = new RendererUI(
+      this._makeLayer('layer-ui'),
+      actionManager,
+      contextManager,
+      this.tileMetrics,
+    )
 
     for (const { name, url } of assets.themes) {
       this.themeManager.register(name, url)
