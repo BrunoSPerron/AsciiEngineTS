@@ -10,3 +10,4 @@ seed = 12345
 
 [camera]
 half_life = 400  # ms to close half the distance to target
+initial_position = [20, 20]
