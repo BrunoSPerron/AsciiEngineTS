@@ -11,14 +11,20 @@ export const DEFAULT_CONFIG = {
     start_theme: 'Copper',
   },
   world: {
-    seed: 0,
     chunk_view_distance: 3,
   },
   camera: {
-    half_life: 120,
+    half_life: 400,
     initial_position: [0, 0] as [number, number],
   },
-  bindings: {} as Record<string, string[]>,
+  bindings: {
+    pause: ['Escape'],
+    confirm: ['Enter'],
+    up: ['w', 'ArrowUp', 'Numpad7', 'Numpad8', 'Numpad9'],
+    down: ['s', 'ArrowDown', 'Numpad1', 'Numpad2', 'Numpad3'],
+    left: ['a', 'ArrowLeft', 'Numpad1', 'Numpad4', 'Numpad7'],
+    right: ['d', 'ArrowRight', 'Numpad3', 'Numpad6', 'Numpad9'],
+  } as Record<string, string[]>,
 }
 
 export type EngineConfig = typeof DEFAULT_CONFIG
