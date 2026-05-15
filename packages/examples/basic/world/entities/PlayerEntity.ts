@@ -1,14 +1,10 @@
 import { Entity, GridVector } from 'ascii-engine'
 
 const ACTION_TO_DIR: Record<string, GridVector> = {
-  move_up: GridVector.UP,
-  move_left: GridVector.LEFT,
-  move_down: GridVector.DOWN,
-  move_right: GridVector.RIGHT,
-  move_up_left: GridVector.UP_LEFT,
-  move_up_right: GridVector.UP_RIGHT,
-  move_down_left: GridVector.DOWN_LEFT,
-  move_down_right: GridVector.DOWN_RIGHT,
+  up: GridVector.UP,
+  left: GridVector.LEFT,
+  down: GridVector.DOWN,
+  right: GridVector.RIGHT,
 }
 
 export class PlayerEntity extends Entity {
