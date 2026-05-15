@@ -1,6 +1,6 @@
 import { World } from '../world/World'
 import { Camera } from '../render/Camera'
-import { InputManager } from './InputManager'
+import { ActionManager } from './ActionManager'
 import { Renderer } from '../render/Renderer'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
@@ -12,7 +12,7 @@ export class AsciiEngine {
 
   world: World
 
-  inputManager: InputManager
+  actionManager!: ActionManager
   renderer: Renderer
 
   config!: EngineConfig
@@ -32,14 +32,12 @@ export class AsciiEngine {
 
     this.world = new World(this)
 
-    this.inputManager = new InputManager()
-
     const tileMetrics = { w: 19.90625, h: 18 }
 
     const camera = new Camera(gameContainer, tileMetrics)
     camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
 
-    this.renderer = new Renderer(gameContainer, camera, this.inputManager, tileMetrics)
+    this.renderer = new Renderer(gameContainer, camera, tileMetrics)
 
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleWindowState)
@@ -47,21 +45,12 @@ export class AsciiEngine {
 
   async start() {
     this.config = await loadConfig(this.assets.configUrl)
-    this.renderer.camera.halfLife = this.config.camera.half_life
-    this.renderer.camera.setInitialPosition(...this.config.camera.initial_position)
-    this.renderer.viewDistance = this.config.world.chunk_view_distance
-
     document.title = this.config.game.title
-
-    for (const { name, url } of this.assets.themes) {
-      this.renderer.themeManager.register(name, url)
-    }
-    this.renderer.themeManager.set(this.config.game.start_theme)
-
     await document.fonts.ready
 
-    this.renderer.setTileHAndW()
-    this.renderer.bindWorld(this.world)
+    this.actionManager = new ActionManager(this.config.bindings)
+    this.renderer.initialize(this.world, this.actionManager, this.config, this.assets)
+
     const initPos = this.config.camera.initial_position
     const initCx = Math.floor(initPos[0] / CHUNK_SIZE)
     const initCy = Math.floor(initPos[1] / CHUNK_SIZE)

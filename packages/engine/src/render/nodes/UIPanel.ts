@@ -1,4 +1,3 @@
-import type { InputManager } from '../../core/InputManager'
 import type { TileMetricsData } from '../tileMetrics'
 import { UINode, type ILineLike } from './UINode'
 
@@ -47,7 +46,6 @@ export class UIPanel extends UINode implements ILineLike {
   //
   // This gives each border cell a unique index that charIndexFor() can map to.
 
-  protected inputManager: InputManager
   protected openingPromise: Promise<Animation[]> = Promise.resolve([])
 
   private static readonly PHASE1_RATIO = 0.6
@@ -61,12 +59,10 @@ export class UIPanel extends UINode implements ILineLike {
     y: number,
     w: number,
     h: number,
-    inputManager: InputManager,
     tileMetrics: TileMetricsData,
   ) {
     super(id, 'panel', el, x, y, w, h, [], tileMetrics)
     this.containerEl = containerEl
-    this.inputManager = inputManager
 
     const make = (cls: string): HTMLDivElement => {
       const d = document.createElement('div')

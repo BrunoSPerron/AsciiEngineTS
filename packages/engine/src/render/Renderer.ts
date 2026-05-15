@@ -1,4 +1,3 @@
-import type { InputManager } from '../core/InputManager'
 import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
 import type { World } from '../world/World'
@@ -6,8 +5,10 @@ import { type Camera } from './Camera'
 import { RendererUI } from './RendererUI'
 import { ThemeManager } from './ThemeManager'
 import { type TileMetricsData } from './tileMetrics'
-
 import baseCssUrl from './css/base.css?url'
+import type { EngineConfig } from '../core/Config'
+import type { GameAssets } from '../core/GameAssets'
+import type { ActionManager } from '../core/ActionManager'
 
 export class Renderer {
   root: HTMLElement
@@ -16,12 +17,12 @@ export class Renderer {
 
   camera: Camera
   themeManager: ThemeManager
-  inputManager: InputManager
+  actionManager?: ActionManager
 
   worldEl: HTMLDivElement
   bg: HTMLDivElement
   actors: HTMLDivElement
-  uiLayer: RendererUI
+  uiLayer?: RendererUI
 
   actorEls = new Map<number, HTMLDivElement>()
   chunkEls = new Map<string, HTMLPreElement>()
@@ -30,12 +31,7 @@ export class Renderer {
   private _unlistenFns = new Map<number, () => void>()
   private _world: World | null = null
 
-  constructor(
-    root: HTMLElement,
-    camera: Camera,
-    inputManager: InputManager,
-    tileMetrics: TileMetricsData,
-  ) {
+  constructor(root: HTMLElement, camera: Camera, tileMetrics: TileMetricsData) {
     this.root = root
     this.tileMetrics = tileMetrics
 
@@ -45,16 +41,29 @@ export class Renderer {
     document.head.appendChild(link)
 
     this.themeManager = new ThemeManager()
-    this.inputManager = inputManager
     this.camera = camera
 
     this.worldEl = this._makeLayer('layer-world')
     this.bg = this._makeLayerInto(this.worldEl, 'layer-background')
     this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
+  }
 
-    this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.inputManager, this.tileMetrics)
+  initialize(world: World, actionManager: ActionManager, config: EngineConfig, assets: GameAssets) {
+    this.camera.halfLife = config.camera.half_life
+    this.camera.setInitialPosition(...config.camera.initial_position)
+    this.viewDistance = config.world.chunk_view_distance
+    this.actionManager = actionManager
 
-    camera.onFrame((now) => this._onCameraFrame(now))
+    this.uiLayer = new RendererUI(this._makeLayer('layer-ui'), this.actionManager, this.tileMetrics)
+
+    for (const { name, url } of assets.themes) {
+      this.themeManager.register(name, url)
+    }
+    this.themeManager.set(config.game.start_theme)
+
+    this.setTileHAndW()
+    this.bindWorld(world)
+    this.camera.onFrame((now) => this._onCameraFrame(now))
   }
 
   setTileHAndW() {

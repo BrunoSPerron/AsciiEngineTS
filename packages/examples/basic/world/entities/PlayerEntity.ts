@@ -1,55 +1,47 @@
 import { Entity, GridVector } from 'ascii-engine'
 
-const KEY_TO_DIR: Record<string, GridVector> = {
-  w: GridVector.UP,
-  a: GridVector.LEFT,
-  s: GridVector.DOWN,
-  d: GridVector.RIGHT,
-  ArrowUp: GridVector.UP,
-  ArrowLeft: GridVector.LEFT,
-  ArrowDown: GridVector.DOWN,
-  ArrowRight: GridVector.RIGHT,
-  Numpad1: GridVector.DOWN_LEFT,
-  Numpad2: GridVector.DOWN,
-  Numpad3: GridVector.DOWN_RIGHT,
-  Numpad4: GridVector.LEFT,
-  Numpad6: GridVector.RIGHT,
-  Numpad7: GridVector.UP_LEFT,
-  Numpad8: GridVector.UP,
-  Numpad9: GridVector.UP_RIGHT,
+const ACTION_TO_DIR: Record<string, GridVector> = {
+  move_up: GridVector.UP,
+  move_left: GridVector.LEFT,
+  move_down: GridVector.DOWN,
+  move_right: GridVector.RIGHT,
+  move_up_left: GridVector.UP_LEFT,
+  move_up_right: GridVector.UP_RIGHT,
+  move_down_left: GridVector.DOWN_LEFT,
+  move_down_right: GridVector.DOWN_RIGHT,
 }
 
 export class PlayerEntity extends Entity {
-  private _heldKeys = new Set<string>()
-  private _unlistenDown = ''
-  private _unlistenUp = ''
+  private _heldActions = new Set<string>()
+  private _unlistenDown: () => void = () => {}
+  private _unlistenUp: () => void = () => {}
 
   private _dir = new GridVector()
   private _targetPos = new GridVector()
 
   OnLoad(): void {
-    const inputManager = this.engine.inputManager
-    this._unlistenDown = inputManager.onKeyDown((e) => {
-      const key = KEY_TO_DIR[e.code] ? e.code : KEY_TO_DIR[e.key] ? e.key : null
-      if (key) this._heldKeys.add(key)
+    const actionManager = this.engine.actionManager
+
+    this._unlistenDown = actionManager.onActionKeyDown((action) => {
+      if (action in ACTION_TO_DIR) this._heldActions.add(action)
     })
-    this._unlistenUp = inputManager.onKeyUp((e) => {
-      this._heldKeys.delete(e.code)
-      this._heldKeys.delete(e.key)
+
+    this._unlistenUp = actionManager.onActionKeyUp((action) => {
+      this._heldActions.delete(action)
     })
   }
 
   OnUnload(): void {
-    this.engine.inputManager.unlisten(this._unlistenDown)
-    this.engine.inputManager.unlisten(this._unlistenUp)
-    this._heldKeys.clear()
+    this._unlistenDown()
+    this._unlistenUp()
+    this._heldActions.clear()
   }
 
   act(): number {
     this._dir.setXY(0, 0)
 
-    for (const [key, vec] of Object.entries(KEY_TO_DIR)) {
-      if (this._heldKeys.has(key)) {
+    for (const [action, vec] of Object.entries(ACTION_TO_DIR)) {
+      if (this._heldActions.has(action)) {
         this._dir.add(vec)
       }
     }

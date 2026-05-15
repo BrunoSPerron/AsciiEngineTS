@@ -11,3 +11,11 @@ seed = 12345
 [camera]
 half_life = 400  # ms to close half the distance to target
 initial_position = [20, 20]
+
+[bindings]
+pause       = ["Escape"]
+confirm     = ["Enter"]
+up          = ["w", "ArrowUp", "Numpad7", "Numpad8", "Numpad9"]
+down        = ["s", "ArrowDown", "Numpad1", "Numpad2", "Numpad3"]
+left        = ["a", "ArrowLeft", "Numpad1", "Numpad4", "Numpad7"]
+right       = ["d", "ArrowRight", "Numpad3", "Numpad6", "Numpad9"]

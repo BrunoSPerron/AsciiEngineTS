@@ -27,8 +27,8 @@ export class Game {
       // TODO
     })
 
-    this.engine.inputManager.onKeyDown((e) => {
-      if (e.key === 'Escape') {
+    this.engine.actionManager.onActionKeyDown((action) => {
+      if (action === 'pause') {
         void this._escapeMenu.open()
       }
     })

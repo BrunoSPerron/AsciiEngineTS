@@ -1,4 +1,4 @@
-import type { InputManager } from '../../core/InputManager'
+import type { ActionManager } from '../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
 
@@ -17,7 +17,7 @@ type ChangeHandler = (index: number) => void
 
 export class SelectMenuRoller {
   private rendererUI: RendererUI
-  private inputManager: InputManager
+  private _actionManager: ActionManager
 
   private items: string[] = []
   private currentIndex: number = 0
@@ -25,12 +25,11 @@ export class SelectMenuRoller {
   private panel: UIPanel | null = null
   private resolve!: (index: number) => void
 
-  private listenerKey: string = ''
   private _changeListeners = new Set<ChangeHandler>()
 
-  constructor(rendererUI: RendererUI, inputManager: InputManager) {
+  constructor(rendererUI: RendererUI, actionManager: ActionManager) {
     this.rendererUI = rendererUI
-    this.inputManager = inputManager
+    this._actionManager = actionManager
   }
 
   onChange = (fn: ChangeHandler): (() => void) => {
@@ -71,7 +70,7 @@ export class SelectMenuRoller {
 
     this.renderSlots()
     const panelId = this.rendererUI.reserveId()
-    this.inputManager.pushContext(`roller_menu_${panelId}`)
+    this._actionManager.pushContext(`roller_menu_${panelId}`)
     this.panel = await this.rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
     this.registerKeys()
 
@@ -115,20 +114,18 @@ export class SelectMenuRoller {
   // ==================================================
 
   private registerKeys() {
-    this.listenerKey = this.inputManager.onKeyDown((e) => {
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
+    this._actionManager.onActionKeyDown((action) => {
+      switch (action) {
+        case 'up':
           this.move(-1)
           break
-        case 'ArrowDown':
-        case 's':
+        case 'down':
           this.move(+1)
           break
-        case 'Enter':
+        case 'confirm':
           void this.close(this.currentIndex)
           break
-        case 'Escape':
+        case 'pause':
           void this.close(-1)
           break
       }
@@ -136,13 +133,12 @@ export class SelectMenuRoller {
   }
 
   private async close(index: number) {
-    this.inputManager.unlisten(this.listenerKey)
     if (!this.panel) {
       throw Error('Logic Error: Panel Closed too early')
     }
     this.rendererUI.unregisterPanelEarly(this.panel)
     await this.panel.close()
-    this.inputManager.popContext(`roller_menu_${this.panel.id}`)
+    this._actionManager.popContext(`roller_menu_${this.panel.id}`)
     this.rendererUI.removePanel(this.panel)
     this.panel = null
     this.resolve(index)

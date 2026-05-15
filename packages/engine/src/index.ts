@@ -1,8 +1,10 @@
 export { AsciiEngine } from './core/Engine'
+export { ActionManager } from './core/ActionManager'
 export { Camera } from './render/Camera'
 export { Entity } from './world/entities/Entity'
 export type { GameAssets } from './core/GameAssets'
-export { World } from './world/World'
-export { SelectMenu } from './render/SelectMenu'
-export { clamp, lerp } from './math/utils'
 export { GridVector } from './math/GridVector'
+export { SelectMenu } from './render/SelectMenu'
+export { World } from './world/World'
+
+export { clamp, lerp } from './math/utils'

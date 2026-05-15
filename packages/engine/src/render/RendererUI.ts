@@ -1,14 +1,14 @@
-import type { InputManager } from '../core/InputManager'
 import { UINode, type UIKind, isLineLike } from './nodes/UINode'
 import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './nodes/LineNode'
 import { UIPanel } from './nodes/UIPanel'
 import { SelectMenuList } from './nodes/SelectMenuList'
 import { SelectMenuRoller } from './nodes/SelectMenuRoller'
 import type { TileMetricsData } from './tileMetrics'
+import type { ActionManager } from '../core/ActionManager'
 
 export class RendererUI {
   root: HTMLDivElement
-  inputManager: InputManager
+  _actionManager: ActionManager
   tileMetrics: TileMetricsData
 
   private nextId = 1
@@ -21,8 +21,8 @@ export class RendererUI {
   // Tracks which cells have a line-like node as their topmost entry in cellStack.
   private lineCells = new Map<string, boolean>()
 
-  constructor(root: HTMLDivElement, inputManager: InputManager, tileMetrics: TileMetricsData) {
-    this.inputManager = inputManager
+  constructor(root: HTMLDivElement, actionManager: ActionManager, tileMetrics: TileMetricsData) {
+    this._actionManager = actionManager
     this.root = root
     this.tileMetrics = tileMetrics
   }
@@ -170,7 +170,7 @@ export class RendererUI {
     const w = maxLen + paddingX * 2 + 2
     const h = items.length + paddingY * 2 + 2
 
-    return new SelectMenuList(this, this.inputManager).open(
+    return new SelectMenuList(this, this._actionManager).open(
       x,
       y,
       w,
@@ -183,11 +183,11 @@ export class RendererUI {
   }
 
   showSelectRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
-    return new SelectMenuRoller(this, this.inputManager).open(x, y, items, paddingX)
+    return new SelectMenuRoller(this, this._actionManager).open(x, y, items, paddingX)
   }
 
   createSelectRollerMenu(): SelectMenuRoller {
-    return new SelectMenuRoller(this, this.inputManager)
+    return new SelectMenuRoller(this, this._actionManager)
   }
 
   // ==========================================================================
@@ -523,7 +523,7 @@ export class RendererUI {
     // el is a no-op placeholder — UIPanel manages its own border divs
     const el = document.createElement('div')
     const id = reservedId ?? this.nextId++
-    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.inputManager, this.tileMetrics)
+    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.tileMetrics)
 
     this.nodes.set(panel.id, panel)
     this.pushBorderCells(panel)

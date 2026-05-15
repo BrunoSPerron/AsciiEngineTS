@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { Logger } from './Logger'
 
-// DEFAULT_CONFIG define EngineConfig, everything is derived
+// DEFAULT_CONFIG defines EngineConfig, everything is derived
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',
@@ -18,11 +18,18 @@ export const DEFAULT_CONFIG = {
     half_life: 120,
     initial_position: [0, 0] as [number, number],
   },
+  bindings: {} as Record<string, string[]>,
 }
 
 export type EngineConfig = typeof DEFAULT_CONFIG
 
-const ConfigSchema = createSchema(DEFAULT_CONFIG) as z.ZodObject
+const BindingsSchema = z.record(z.string(), z.array(z.string()))
+
+const BaseConfigSchema = createSchema(
+  (({ bindings: _bindings, ...rest }) => rest)(DEFAULT_CONFIG),
+) as z.ZodObject<z.ZodRawShape>
+
+const ConfigSchema = BaseConfigSchema.extend({ bindings: BindingsSchema })
 
 function createSchema(value: unknown): z.ZodTypeAny {
   if (typeof value === 'string') {
@@ -38,7 +45,6 @@ function createSchema(value: unknown): z.ZodTypeAny {
   }
 
   if (Array.isArray(value)) {
-    // TODO improve tuple validation
     if (value.length === 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
       return z.tuple([z.number(), z.number()])
     }
