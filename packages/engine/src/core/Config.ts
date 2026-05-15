@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { Logger } from './Logger'
 
-// DEFAULT_CONFIG is the source of truth, any change is derived when loaded
+// DEFAULT_CONFIG define EngineConfig, everything is derived
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',

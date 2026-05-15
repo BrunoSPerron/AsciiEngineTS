@@ -85,8 +85,8 @@ export class World {
     const unlistenMove = entity.onMove((e) => this._onEntityMove(e))
     this._moveUnlisteners.set(entity.uid, unlistenMove)
 
-    entity.scheduleFirst(this.engine)
     entity.OnLoad()
+    entity.scheduleFirst(this.engine)
     for (const fn of this._spawnListeners) fn(entity)
     return entity
   }
