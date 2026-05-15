@@ -7,7 +7,7 @@ const ACTION_TO_DIR: Record<string, GridVector> = {
   right: GridVector.RIGHT,
 }
 
-export class PlayerEntity extends Entity {
+export class ActionHero extends Entity {
   private _heldActions = new Set<string>()
   private _unlistenDown: () => void = () => {}
   private _unlistenUp: () => void = () => {}
@@ -47,22 +47,35 @@ export class PlayerEntity extends Entity {
 
     this._targetPos.set(this.pos).add(this._dir)
     const target = this.engine.world.getTile(this._targetPos)
-
-    if (target.solid && !this.resolveDiagonalCollision(this._dir)) return 0
+    let resolved = false
+    if (target.solid) {
+      resolved = this.resolveDiagonalCollision(this._dir)
+      if (!resolved) return 0
+    }
+    let mult = 1
+    if (
+      !resolved &&
+      (this._dir.equal(GridVector.DOWN_LEFT) ||
+        this._dir.equal(GridVector.DOWN_RIGHT) ||
+        this._dir.equal(GridVector.UP_LEFT) ||
+        this._dir.equal(GridVector.UP_RIGHT))
+    ) {
+      mult = 1.3333333333333333
+    }
 
     this.pos.set(this._targetPos)
 
-    return this.speed
+    return this.speed * mult
   }
 
   private resolveDiagonalCollision(dir: GridVector): boolean {
     const { x, y } = this.pos
-    const w = this.engine.world
+    const world = this.engine.world
 
-    const upTile = () => w.getTileXY(x, y - 1)
-    const downTile = () => w.getTileXY(x, y + 1)
-    const leftTile = () => w.getTileXY(x - 1, y)
-    const rightTile = () => w.getTileXY(x + 1, y)
+    const upTile = () => world.getTileXY(x, y - 1)
+    const downTile = () => world.getTileXY(x, y + 1)
+    const leftTile = () => world.getTileXY(x - 1, y)
+    const rightTile = () => world.getTileXY(x + 1, y)
 
     this._targetPos.setXY(x, y)
 

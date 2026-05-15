@@ -1,5 +1,5 @@
 import { type AsciiEngine, SelectMenu, GridVector } from 'ascii-engine'
-import { PlayerEntity } from './world/entities/PlayerEntity'
+import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
   private engine: AsciiEngine
@@ -35,7 +35,7 @@ export class Game {
   }
 
   private spawnPlayer() {
-    const unit = this.engine.world.spawnEntity(new PlayerEntity('☺', new GridVector(20, 20), 80))
+    const unit = this.engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 20), 80))
     this.engine.renderer.camera.target = unit
   }
 }

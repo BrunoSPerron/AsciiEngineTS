@@ -14,11 +14,11 @@ export class Entity {
 
   engine!: AsciiEngine
 
+  private _currentActMs: number = MIN_ACTION_INTERVAL
   private _speed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
   private _lastActTime: number = performance.now()
   private _scheduledAt: number = 0
-  private _nextActDelay: number
 
   private _moveListeners = new Set<MoveHandler>()
 
@@ -29,7 +29,15 @@ export class Entity {
     this.previousPos = pos.clone()
 
     this._speed = speed
-    this._nextActDelay = this._speed
+    this.currentActMs = this._speed
+  }
+
+  public get currentActMs(): number {
+    return this._currentActMs
+  }
+
+  public set currentActMs(value: number) {
+    this._currentActMs = Math.max(value, MIN_ACTION_INTERVAL)
   }
 
   public get speed(): number {
@@ -45,7 +53,7 @@ export class Entity {
    */
   public visualPosition(now: number): [number, number] {
     const elapsed = now - this._lastActTime
-    const alpha = Math.min(elapsed / this._nextActDelay, 1)
+    const alpha = Math.min(elapsed / this.currentActMs, 1)
     return [
       lerp(this.previousPos.x, this.pos.x, alpha),
       lerp(this.previousPos.y, this.pos.y, alpha),
@@ -69,22 +77,20 @@ export class Entity {
 
   private _schedule(delay: number) {
     this._scheduledAt = performance.now()
-    this._nextActDelay = delay
+    this.currentActMs = delay
 
     this._timeoutId = setTimeout(() => {
       const now = performance.now()
       this._lastActTime = now
       this.previousPos.setXY(this.pos.x, this.pos.y)
 
-      const next = this.act()
+      this.currentActMs = this.act()
       if (!this.pos.equal(this.previousPos)) {
         this._emitMove()
       }
-      const clamped = Math.max(next, MIN_ACTION_INTERVAL)
-      this._nextActDelay = clamped
 
       const drift = now - (this._scheduledAt + delay)
-      const corrected = Math.max(clamped - drift, 0)
+      const corrected = Math.max(this.currentActMs - drift, 0)
 
       this._schedule(corrected)
     }, delay)
@@ -97,7 +103,7 @@ export class Entity {
     this._timeoutId = null
 
     const now = performance.now()
-    const remaining = Math.max(this._scheduledAt + this._nextActDelay - now, 0)
+    const remaining = Math.max(this._scheduledAt + this.currentActMs - now, 0)
 
     return remaining
   }
