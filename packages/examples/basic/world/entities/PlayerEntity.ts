@@ -66,7 +66,6 @@ export class PlayerEntity extends Entity {
     }
 
     this.pos.set(this._targetPos.x, this._targetPos.y)
-    this.emitMove()
 
     return this.speed
   }
@@ -75,15 +74,10 @@ export class PlayerEntity extends Entity {
     const { x, y } = this.pos
     const w = this.engine.world
 
-    const up = y - 1
-    const down = y + 1
-    const left = x - 1
-    const right = x + 1
-
-    const upTile = () => w.getTileXY(x, up)
-    const downTile = () => w.getTileXY(x, down)
-    const leftTile = () => w.getTileXY(left, y)
-    const rightTile = () => w.getTileXY(right, y)
+    const upTile = () => w.getTileXY(x, y - 1)
+    const downTile = () => w.getTileXY(x, y + 1)
+    const leftTile = () => w.getTileXY(x - 1, y)
+    const rightTile = () => w.getTileXY(x + 1, y)
 
     this._targetPos.set(x, y)
 

@@ -78,6 +78,9 @@ export class Entity {
       this.previousPos.set(this.pos.x, this.pos.y)
 
       const next = this.act()
+      if (!this.pos.equal(this.previousPos)) {
+        this._emitMove()
+      }
       const clamped = Math.max(next, MIN_ACTION_INTERVAL)
       this._nextActDelay = clamped
 
@@ -107,7 +110,7 @@ export class Entity {
     return this._speed
   }
 
-  protected emitMove() {
+  private _emitMove() {
     for (const fn of this._moveListeners) fn(this)
   }
 }
