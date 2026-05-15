@@ -89,6 +89,10 @@ export class Renderer {
     for (const entity of world.local.entities.values()) {
       this._registerActor(entity)
     }
+    this._world.onChunkChange((cx, cy) => {
+      this._world?.updateActiveChunks(cx, cy, this.viewDistance)
+      this.invalidateChunks()
+    })
   }
 
   private _registerActor(entity: Entity) {
@@ -147,48 +151,40 @@ export class Renderer {
   private _renderChunks() {
     if (!this._world) return
 
-    const target = this.camera.target.pos
-    const cx = Math.floor(target.x / CHUNK_SIZE)
-    const cy = Math.floor(target.y / CHUNK_SIZE)
-    const d = this.viewDistance
-
     const visible = new Set<string>()
 
-    for (let cy2 = cy - d; cy2 <= cy + d; cy2++) {
-      for (let cx2 = cx - d; cx2 <= cx + d; cx2++) {
-        const key = `${cx2},${cy2}`
-        visible.add(key)
+    for (const [key, chunk] of this._world.local.chunks) {
+      visible.add(key)
 
-        const chunk = this._world.getChunkXY(cx2, cy2)
-        let el = this.chunkEls.get(key)
-
-        if (!el) {
-          el = document.createElement('pre')
-          el.className = 'chunk'
-          this.bg.appendChild(el)
-          this.chunkEls.set(key, el)
-          chunk.dirty = true
-        }
-
-        if (chunk.dirty) {
-          let text = ''
-          for (let y = 0; y < CHUNK_SIZE; y++) {
-            if (y > 0) text += '\n'
-            for (let x = 0; x < CHUNK_SIZE; x++) {
-              text += chunk.get(x, y).glyph
-            }
-          }
-          el.textContent = text
-          chunk.dirty = false
-        }
-
-        el.style.transform = `translate(
-          ${cx2 * CHUNK_SIZE * this.tileMetrics.w}px,
-          ${cy2 * CHUNK_SIZE * this.tileMetrics.h}px
-        )`
+      let el = this.chunkEls.get(key)
+      if (!el) {
+        el = document.createElement('pre')
+        el.className = 'chunk'
+        this.bg.appendChild(el)
+        this.chunkEls.set(key, el)
+        chunk.dirty = true
       }
+
+      if (chunk.dirty) {
+        let text = ''
+        for (let y = 0; y < CHUNK_SIZE; y++) {
+          if (y > 0) text += '\n'
+          for (let x = 0; x < CHUNK_SIZE; x++) {
+            text += chunk.get(x, y).glyph
+          }
+        }
+        el.textContent = text
+        chunk.dirty = false
+      }
+
+      const [cxStr, cyStr] = key.split(',')
+      el.style.transform = `translate(
+      ${Number(cxStr) * CHUNK_SIZE * this.tileMetrics.w}px,
+      ${Number(cyStr) * CHUNK_SIZE * this.tileMetrics.h}px
+    )`
     }
 
+    // Remove DOM elements for unloaded chunks
     for (const [key, el] of this.chunkEls) {
       if (!visible.has(key)) {
         el.remove()

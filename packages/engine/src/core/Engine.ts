@@ -5,6 +5,7 @@ import { Renderer } from '../render/Renderer'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
 import { loadGameAssets, type GameAssets } from './GameAssets'
+import { CHUNK_SIZE } from '../world/Chunk'
 
 export class AsciiEngine {
   assets: GameAssets
@@ -61,6 +62,10 @@ export class AsciiEngine {
 
     this.renderer.setTileHAndW()
     this.renderer.bindWorld(this.world)
+    const initPos = this.config.camera.initial_position
+    const initCx = Math.floor(initPos[0] / CHUNK_SIZE)
+    const initCy = Math.floor(initPos[1] / CHUNK_SIZE)
+    this.world.updateActiveChunks(initCx, initCy, this.renderer.viewDistance)
     this.renderer.camera.jumpToTarget()
 
     this.environmentReady = true

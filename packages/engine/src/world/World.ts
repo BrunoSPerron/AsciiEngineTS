@@ -46,6 +46,7 @@ export class World {
   private _spawnListeners = new Set<EntityHandler>()
   private _despawnListeners = new Set<EntityHandler>()
   private _moveUnlisteners = new Map<number, () => void>()
+  private _chunkChangeListeners = new Set<(cx: number, cy: number) => void>()
 
   constructor(engine: AsciiEngine) {
     this.engine = engine
@@ -177,8 +178,33 @@ export class World {
   // Active chunk coordination (TODO: wire to camera)
   // --------------------------------------------------------------------------
 
-  updateActiveChunks(_cx: number, _cy: number, _viewDistance: number): void {
-    // TODO: load/unload chunks based on camera position
+  onChunkChange = (fn: (cx: number, cy: number) => void): (() => void) => {
+    this._chunkChangeListeners.add(fn)
+    return () => this._chunkChangeListeners.delete(fn)
+  }
+
+  updateActiveChunks(cx: number, cy: number, viewDistance: number): void {
+    const desired = new Set<string>()
+    for (let dy = -viewDistance; dy <= viewDistance; dy++) {
+      for (let dx = -viewDistance; dx <= viewDistance; dx++) {
+        desired.add(`${cx + dx},${cy + dy}`)
+      }
+    }
+
+    for (const key of desired) {
+      if (!this.local.chunks.has(key)) {
+        const [cxStr, cyStr] = key.split(',')
+        this.getChunkXY(Number(cxStr), Number(cyStr))
+      }
+    }
+
+    for (const [key, chunk] of this.local.chunks) {
+      if (desired.has(key)) continue
+      for (const uid of [...chunk.entities]) {
+        this.extractEntity(uid)
+      }
+      this.local.chunks.delete(key)
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -193,6 +219,7 @@ export class World {
     if (oldCx === newCx && oldCy === newCy) return
     this.local.chunks.get(`${oldCx},${oldCy}`)?.entities.delete(entity.uid)
     this.local.chunks.get(`${newCx},${newCy}`)?.entities.add(entity.uid)
+    for (const fn of this._chunkChangeListeners) fn(newCx, newCy)
   }
 
   private _chunkForEntity(entity: Entity): Chunk | undefined {
