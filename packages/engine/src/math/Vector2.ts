@@ -54,8 +54,9 @@ export class Vector2 {
     return this
   }
 
-  clampLength(_max: number): Vector2 {
-    // TODO Adapt from normalize
+  clampLength(max: number): Vector2 {
+    const len = this.length()
+    if (len > max) this.scale(max / len)
     return this
   }
 
@@ -67,11 +68,12 @@ export class Vector2 {
 
   length(): number {
     // Simplified for grid system: Diagonals = 1.5 unit
-    return this.x + this.y - Math.min(this.x, this.y) * 0.5
+    const ax = Math.abs(this.x)
+    const ay = Math.abs(this.y)
+    return ax + ay - Math.min(ax, ay) * 0.5
   }
 
   normalize(): Vector2 {
-    //TODO Adapt to fit with our simplified length()
     const len = this.length()
     if (len > 0) this.scale(1 / len)
     return this
