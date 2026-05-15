@@ -1,10 +1,10 @@
 import { lerp } from '../math/utils'
-import { Vector2 } from '../math/Vector2'
+import { GridVector } from '../math/GridVector'
 import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
 
 export class Camera {
-  pos = new Vector2()
+  pos = new GridVector()
 
   private _target: Entity
   private _placeholder: Entity | null
@@ -24,7 +24,7 @@ export class Camera {
     this.viewport = viewport
     this.tileMetrics = tileMetrics
 
-    this._placeholder = new Entity(' ', new Vector2(0, 0), 0)
+    this._placeholder = new Entity(' ', new GridVector(0, 0), 0)
     this._target = this._placeholder
     this._listenToTarget()
   }

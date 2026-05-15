@@ -1,22 +1,22 @@
-import { Entity, Vector2 } from 'ascii-engine'
+import { Entity, GridVector } from 'ascii-engine'
 
-const KEY_TO_DIR: Record<string, Vector2> = {
-  w: Vector2.UP,
-  a: Vector2.LEFT,
-  s: Vector2.DOWN,
-  d: Vector2.RIGHT,
-  ArrowUp: Vector2.UP,
-  ArrowLeft: Vector2.LEFT,
-  ArrowDown: Vector2.DOWN,
-  ArrowRight: Vector2.RIGHT,
-  Numpad1: Vector2.DOWN_LEFT,
-  Numpad2: Vector2.DOWN,
-  Numpad3: Vector2.DOWN_RIGHT,
-  Numpad4: Vector2.LEFT,
-  Numpad6: Vector2.RIGHT,
-  Numpad7: Vector2.UP_LEFT,
-  Numpad8: Vector2.UP,
-  Numpad9: Vector2.UP_RIGHT,
+const KEY_TO_DIR: Record<string, GridVector> = {
+  w: GridVector.UP,
+  a: GridVector.LEFT,
+  s: GridVector.DOWN,
+  d: GridVector.RIGHT,
+  ArrowUp: GridVector.UP,
+  ArrowLeft: GridVector.LEFT,
+  ArrowDown: GridVector.DOWN,
+  ArrowRight: GridVector.RIGHT,
+  Numpad1: GridVector.DOWN_LEFT,
+  Numpad2: GridVector.DOWN,
+  Numpad3: GridVector.DOWN_RIGHT,
+  Numpad4: GridVector.LEFT,
+  Numpad6: GridVector.RIGHT,
+  Numpad7: GridVector.UP_LEFT,
+  Numpad8: GridVector.UP,
+  Numpad9: GridVector.UP_RIGHT,
 }
 
 export class PlayerEntity extends Entity {
@@ -24,8 +24,8 @@ export class PlayerEntity extends Entity {
   private _unlistenDown = ''
   private _unlistenUp = ''
 
-  private _dir = new Vector2()
-  private _targetPos = new Vector2()
+  private _dir = new GridVector()
+  private _targetPos = new GridVector()
 
   OnLoad(): void {
     const inputManager = this.engine.inputManager
@@ -46,7 +46,7 @@ export class PlayerEntity extends Entity {
   }
 
   act(): number {
-    this._dir.set(0, 0)
+    this._dir.setXY(0, 0)
 
     for (const [key, vec] of Object.entries(KEY_TO_DIR)) {
       if (this._heldKeys.has(key)) {
@@ -55,9 +55,9 @@ export class PlayerEntity extends Entity {
     }
 
     this._dir.clamp()
-    if (this._dir.equal(Vector2.ZERO)) return 0
+    if (this._dir.equal(GridVector.ZERO)) return 0
 
-    this._targetPos.set(this.pos.x, this.pos.y).add(this._dir)
+    this._targetPos.set(this.pos).add(this._dir)
     const target = this.engine.world.getTile(this._targetPos)
 
     if (target.solid) {
@@ -65,12 +65,12 @@ export class PlayerEntity extends Entity {
       if (!ok) return 0
     }
 
-    this.pos.set(this._targetPos.x, this._targetPos.y)
+    this.pos.set(this._targetPos)
 
     return this.speed
   }
 
-  private resolveDiagonalCollision(dir: Vector2): boolean {
+  private resolveDiagonalCollision(dir: GridVector): boolean {
     const { x, y } = this.pos
     const w = this.engine.world
 
@@ -79,9 +79,9 @@ export class PlayerEntity extends Entity {
     const leftTile = () => w.getTileXY(x - 1, y)
     const rightTile = () => w.getTileXY(x + 1, y)
 
-    this._targetPos.set(x, y)
+    this._targetPos.setXY(x, y)
 
-    if (dir.equal(Vector2.UP_LEFT)) {
+    if (dir.equal(GridVector.UP_LEFT)) {
       const u = upTile()
       const l = leftTile()
       if (u.solid && !l.solid) this._targetPos.x -= 1
@@ -89,7 +89,7 @@ export class PlayerEntity extends Entity {
       else return false
       return true
     }
-    if (dir.equal(Vector2.UP_RIGHT)) {
+    if (dir.equal(GridVector.UP_RIGHT)) {
       const u = upTile()
       const r = rightTile()
       if (u.solid && !r.solid) this._targetPos.x += 1
@@ -97,7 +97,7 @@ export class PlayerEntity extends Entity {
       else return false
       return true
     }
-    if (dir.equal(Vector2.DOWN_LEFT)) {
+    if (dir.equal(GridVector.DOWN_LEFT)) {
       const d = downTile()
       const l = leftTile()
       if (d.solid && !l.solid) this._targetPos.x -= 1
@@ -105,7 +105,7 @@ export class PlayerEntity extends Entity {
       else return false
       return true
     }
-    if (dir.equal(Vector2.DOWN_RIGHT)) {
+    if (dir.equal(GridVector.DOWN_RIGHT)) {
       const d = downTile()
       const r = rightTile()
       if (d.solid && !r.solid) this._targetPos.x += 1

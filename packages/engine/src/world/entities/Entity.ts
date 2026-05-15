@@ -1,7 +1,7 @@
 import { MIN_ACTION_INTERVAL } from '../../core/constants'
 import { lerp } from '../../math/utils'
 import type { AsciiEngine } from '../../core/Engine'
-import type { Vector2 } from '../../math/Vector2'
+import type { GridVector } from '../../math/GridVector'
 
 type MoveHandler = (entity: Entity) => void
 
@@ -9,8 +9,8 @@ export class Entity {
   uid = -1
   glyph: string
 
-  pos: Vector2
-  previousPos: Vector2
+  pos: GridVector
+  previousPos: GridVector
 
   protected engine!: AsciiEngine
 
@@ -22,7 +22,7 @@ export class Entity {
 
   private _moveListeners = new Set<MoveHandler>()
 
-  constructor(glyph: string, pos: Vector2, speed: number = 0) {
+  constructor(glyph: string, pos: GridVector, speed: number = 0) {
     this.glyph = glyph
 
     this.pos = pos
@@ -75,7 +75,7 @@ export class Entity {
     this._timeoutId = setTimeout(() => {
       const now = performance.now()
       this._lastActTime = now
-      this.previousPos.set(this.pos.x, this.pos.y)
+      this.previousPos.setXY(this.pos.x, this.pos.y)
 
       const next = this.act()
       if (!this.pos.equal(this.previousPos)) {

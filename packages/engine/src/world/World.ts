@@ -3,7 +3,7 @@ import { ChunkRecord } from './ChunkRecord'
 import type { Entity } from './entities/Entity'
 import type { Region } from './Region'
 import type { AsciiEngine } from '../core/Engine'
-import type { Vector2 } from '../math/Vector2'
+import type { GridVector } from '../math/GridVector'
 
 // ---------------------------------------------------------------------------
 // Namespaced state containers — plain data, no behavior
@@ -133,7 +133,7 @@ export class World {
     return record
   }
 
-  getTile(pos: Vector2) {
+  getTile(pos: GridVector) {
     return this.getTileXY(pos.x, pos.y)
   }
 
@@ -169,13 +169,13 @@ export class World {
     const cx = Math.floor(wx / CHUNK_SIZE)
     const cy = Math.floor(wy / CHUNK_SIZE)
     return this.getEntitiesNearChunk(cx, cy, chunkRadius).filter(
-      // TODO improve Vector2 class to simplify this
+      // TODO improve GridVector class to simplify this
       (e) => Math.abs(e.pos.x - wx) <= radius && Math.abs(e.pos.y - wy) <= radius,
     )
   }
 
   // --------------------------------------------------------------------------
-  // Active chunk coordination (TODO: wire to camera)
+  // Active chunk coordination
   // --------------------------------------------------------------------------
 
   onChunkChange = (fn: (cx: number, cy: number) => void): (() => void) => {
