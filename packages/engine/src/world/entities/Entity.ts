@@ -12,7 +12,7 @@ export class Entity {
   pos: GridVector
   previousPos: GridVector
 
-  protected engine!: AsciiEngine
+  engine!: AsciiEngine
 
   private _speed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -61,9 +61,8 @@ export class Entity {
 
   OnUnload() {}
 
-  scheduleFirst(engine: AsciiEngine, delay: number = -1) {
+  scheduleFirst(delay: number = -1) {
     if (this._timeoutId !== null) return
-    this.engine = engine
     if (delay < 0) delay = this._speed
     this._schedule(delay)
   }

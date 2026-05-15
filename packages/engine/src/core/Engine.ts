@@ -93,7 +93,7 @@ export class AsciiEngine {
     if (!this.paused) return
     this.paused = false
     this.world.local.entities.forEach((e) => {
-      e.scheduleFirst(this, this.pausedTimeouts.get(e.uid))
+      e.scheduleFirst(this.pausedTimeouts.get(e.uid))
     })
   }
 
@@ -110,7 +110,7 @@ export class AsciiEngine {
     if (!this.environmentReady) return
     this.running = true
     this.renderer.camera.resume()
-    if (!this.paused) this.world.local.entities.forEach((e) => e.scheduleFirst(this))
+    if (!this.paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
   }
 
   private handleWindowState = () => {

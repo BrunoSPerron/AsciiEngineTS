@@ -60,10 +60,7 @@ export class PlayerEntity extends Entity {
     this._targetPos.set(this.pos).add(this._dir)
     const target = this.engine.world.getTile(this._targetPos)
 
-    if (target.solid) {
-      const ok = this.resolveDiagonalCollision(this._dir)
-      if (!ok) return 0
-    }
+    if (target.solid && !this.resolveDiagonalCollision(this._dir)) return 0
 
     this.pos.set(this._targetPos)
 
