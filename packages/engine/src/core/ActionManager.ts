@@ -14,6 +14,7 @@ export class ActionManager {
 
   private contextStack: InputContext[] = []
   private keyDownState = new Map<string, HeldKey>()
+  private actionPressCount = new Map<string, number>()
   private idCounter = 0
 
   private _actionsForEvent(e: KeyboardEvent): string[] {
@@ -24,17 +25,17 @@ export class ActionManager {
   }
 
   private boundKeyDown = (e: KeyboardEvent) => {
-    this.keyDownState.set(this._stateKey(e), { key: e.key, code: e.code })
-    for (const action of this._actionsForEvent(e)) {
-      this._emitAction(this._activeCtx().actionDownListeners, action)
-    }
+    const stateKey = this._stateKey(e)
+    if (this.keyDownState.has(stateKey)) return
+    this.keyDownState.set(stateKey, { key: e.key, code: e.code })
+    for (const action of this._actionsForEvent(e)) this._pressAction(action)
   }
 
   private boundKeyUp = (e: KeyboardEvent) => {
-    this.keyDownState.delete(this._stateKey(e))
-    for (const action of this._actionsForEvent(e)) {
-      this._emitAction(this._activeCtx().actionUpListeners, action)
-    }
+    const stateKey = this._stateKey(e)
+    if (!this.keyDownState.has(stateKey)) return
+    this.keyDownState.delete(stateKey)
+    for (const action of this._actionsForEvent(e)) this._releaseAction(action)
   }
 
   private boundBlur = () => this._resetKeys()
@@ -58,14 +59,15 @@ export class ActionManager {
   // --------------------------------------------------------------------------
 
   pushContext(name: string): void {
-    for (const held of this.keyDownState.values()) {
-      const synth = new KeyboardEvent('keyup', { key: held.key, code: held.code })
-      const ctx = this._activeCtx()
-      for (const action of this._actionsForEvent(synth)) {
-        this._emitAction(ctx.actionUpListeners, action)
-      }
+    const ctx = this._activeCtx()
+    for (const [action, count] of this.actionPressCount.entries()) {
+      if (count > 0) this._emitAction(ctx.actionUpListeners, action)
     }
     this._pushContext(name)
+    const next = this._activeCtx()
+    for (const [action, count] of this.actionPressCount.entries()) {
+      if (count > 0) this._emitAction(next.actionDownListeners, action)
+    }
   }
 
   popContext(name: string): void {
@@ -74,28 +76,22 @@ export class ActionManager {
 
     const ctx = this.contextStack[i]
 
-    for (const held of this.keyDownState.values()) {
-      const synth = new KeyboardEvent('keyup', { key: held.key, code: held.code })
-      for (const action of this._actionsForEvent(synth)) {
-        this._emitAction(ctx.actionUpListeners, action)
-      }
+    for (const [action, count] of this.actionPressCount.entries()) {
+      if (count > 0) this._emitAction(ctx.actionUpListeners, action)
     }
 
     this.contextStack.splice(i, 1)
 
     if (this.contextStack.length > 0) {
       const next = this._activeCtx()
-      for (const held of this.keyDownState.values()) {
-        const synth = new KeyboardEvent('keydown', { key: held.key, code: held.code })
-        for (const action of this._actionsForEvent(synth)) {
-          this._emitAction(next.actionDownListeners, action)
-        }
+      for (const [action, count] of this.actionPressCount.entries()) {
+        if (count > 0) this._emitAction(next.actionDownListeners, action)
       }
     }
   }
 
   // --------------------------------------------------------------------------
-  // Action listeners — registered on the current context
+  // Action listeners
   // --------------------------------------------------------------------------
 
   onActionKeyDown(fn: ActionHandler): () => void {
@@ -120,14 +116,7 @@ export class ActionManager {
 
   isActionDown(action: string, context: string): boolean {
     if (this._activeCtx().name !== context) return false
-    const keys = this.actionToKeys.get(action)
-    if (!keys) return false
-    return keys.some((k) => {
-      for (const held of this.keyDownState.values()) {
-        if (held.key === k || held.code === k) return true
-      }
-      return false
-    })
+    return (this.actionPressCount.get(action) ?? 0) > 0
   }
 
   // --------------------------------------------------------------------------
@@ -141,11 +130,30 @@ export class ActionManager {
     document.removeEventListener('visibilitychange', this.boundVisibility)
     this.contextStack = []
     this.keyDownState.clear()
+    this.actionPressCount.clear()
   }
 
   // --------------------------------------------------------------------------
   // Private
   // --------------------------------------------------------------------------
+
+  private _pressAction(action: string) {
+    const count = this.actionPressCount.get(action) ?? 0
+    if (count === 0) {
+      this._emitAction(this._activeCtx().actionDownListeners, action)
+    }
+    this.actionPressCount.set(action, count + 1)
+  }
+
+  private _releaseAction(action: string) {
+    const count = this.actionPressCount.get(action) ?? 0
+    if (count <= 1) {
+      this.actionPressCount.delete(action)
+      this._emitAction(this._activeCtx().actionUpListeners, action)
+      return
+    }
+    this.actionPressCount.set(action, count - 1)
+  }
 
   private _loadBindings(bindings: Record<string, string[]>) {
     this.keyToActions.clear()
@@ -187,12 +195,12 @@ export class ActionManager {
 
   private _resetKeys() {
     const ctx = this._activeCtx()
-    for (const held of this.keyDownState.values()) {
-      const synth = new KeyboardEvent('keyup', { key: held.key, code: held.code })
-      for (const action of this._actionsForEvent(synth)) {
+    for (const [action, count] of this.actionPressCount.entries()) {
+      if (count > 0) {
         this._emitAction(ctx.actionUpListeners, action)
       }
     }
     this.keyDownState.clear()
+    this.actionPressCount.clear()
   }
 }
