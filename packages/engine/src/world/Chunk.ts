@@ -21,6 +21,7 @@ export class Chunk {
         this.tiles[i] = {
           glyph: edge ? '#' : ' ',
           solid: edge,
+          style: edge ? 'wall' : undefined,
         }
       }
     }

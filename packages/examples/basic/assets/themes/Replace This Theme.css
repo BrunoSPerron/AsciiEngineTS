@@ -21,6 +21,14 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
   */
 }
 
+/*
+any .tile-*
+*/
+.ascii-engine .tile-wall {
+  color: #ed6f63;
+  background-color: #2d2926;
+}
+
 .ascii-engine .layer-world::before {
   content: '';
   position: fixed;

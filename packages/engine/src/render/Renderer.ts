@@ -11,6 +11,44 @@ import type { GameAssets } from '../core/GameAssets'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
 
+const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
+const esc = (ch: string): string => HTML_ESC[ch] ?? ch
+
+function buildChunkHTML(chunk: {
+  get(x: number, y: number): { glyph: string; style?: string }
+}): string {
+  let html = ''
+
+  for (let y = 0; y < CHUNK_SIZE; y++) {
+    if (y > 0) html += '\n'
+
+    let currentStyle: string | undefined = undefined
+    let run = ''
+
+    for (let x = 0; x < CHUNK_SIZE; x++) {
+      const tile = chunk.get(x, y)
+      const tileStyle = tile.style
+
+      if (tileStyle !== currentStyle) {
+        if (run.length > 0) {
+          html +=
+            currentStyle !== undefined ? `<span class="tile-${currentStyle}">${run}</span>` : run
+          run = ''
+        }
+        currentStyle = tileStyle
+      }
+
+      run += esc(tile.glyph)
+    }
+
+    if (run.length > 0) {
+      html += currentStyle !== undefined ? `<span class="tile-${currentStyle}">${run}</span>` : run
+    }
+  }
+
+  return html
+}
+
 export class Renderer {
   root: HTMLElement
   tileMetrics: TileMetricsData
@@ -185,14 +223,7 @@ export class Renderer {
       }
 
       if (chunk.dirty) {
-        let text = ''
-        for (let y = 0; y < CHUNK_SIZE; y++) {
-          if (y > 0) text += '\n'
-          for (let x = 0; x < CHUNK_SIZE; x++) {
-            text += chunk.get(x, y).glyph
-          }
-        }
-        el.textContent = text
+        el.innerHTML = buildChunkHTML(chunk)
         chunk.dirty = false
       }
 
@@ -203,7 +234,6 @@ export class Renderer {
     )`
     }
 
-    // Remove DOM elements for unloaded chunks
     for (const [key, el] of this.chunkEls) {
       if (!visible.has(key)) {
         el.remove()
