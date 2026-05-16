@@ -146,6 +146,22 @@ export class World {
     return this.getChunkXY(cx, cy).get(lx, ly)
   }
 
+  setTileStyle(style: string, positions: Array<[number, number]>): void {
+    const dirtyChunks = new Set<Chunk>()
+
+    for (const [wx, wy] of positions) {
+      const cx = Math.floor(wx / CHUNK_SIZE)
+      const cy = Math.floor(wy / CHUNK_SIZE)
+      const lx = ((wx % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
+      const ly = ((wy % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
+      const chunk = this.getChunkXY(cx, cy)
+      chunk.get(lx, ly).style = style
+      dirtyChunks.add(chunk)
+    }
+
+    for (const chunk of dirtyChunks) chunk.dirty = true
+  }
+
   // --------------------------------------------------------------------------
   // Spatial queries
   // --------------------------------------------------------------------------

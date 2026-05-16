@@ -1,6 +1,6 @@
 # Adding a Tile Style
 
-Tile styles let you assign per-cell colors to world tiles without touching engine internals. 
+Tile styles let you assign per-cell colors to world tiles without touching engine internals.
 
 ---
 ## Steps
@@ -18,29 +18,19 @@ Add your style to your base css or theme file under `.ascii-engine`. The class n
 
 Both `color` and `background-color` are optional — omit either to inherit from the active [[Theming|theme]].
 
-### 2. Set the style on a tile
+### 2. Apply the style to tiles
 
-Assign the style name (without the `tile-` prefix) to the `style` field of a [[Tile]]:
-
-```ts
-chunk.tiles[i] = {
-  glyph: '~',
-  solid: false,
-  style: 'water',
-}
-```
-
-`style` is optional. Leaving it `undefined` renders the tile with no wrapping span, using the theme's default `--color-text` and `--color-bg`.
-
-### 3. Mark the chunk dirty
-
-The renderer only rebuilds a chunk's HTML when `chunk.dirty` is `true`. If you're mutating tiles after initial generation, set it manually:
+Use `world.setTileStyle()` to apply a style to one or more world-space positions:
 
 ```ts
-chunk.dirty = true
+world.setTileStyle('water', [
+  [10, 5],
+  [11, 5],
+  [12, 5],
+])
 ```
 
-Newly created chunks start dirty by default. See [[Chunk]] for chunk lifecycle details.
+The engine handles chunk invalidation automatically — no need to touch `chunk.dirty` directly.
 
 ---
 
@@ -74,5 +64,5 @@ This inverts the current theme colors, making the style theme-agnostic. See [[Th
 
 ## Related
 
-- [[Chunk]] — how tiles are grouped and rendere
+- [[Chunk]] — how tiles are grouped and rendered
 - [[Theming]] — CSS variables and theme structure
