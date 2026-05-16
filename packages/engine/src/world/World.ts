@@ -22,6 +22,8 @@ export type GlobalState = {
   regions: Map<string, Region>
 }
 
+export type ChunkGenerator = (cx: number, cy: number, chunk: Chunk) => void
+
 // ---------------------------------------------------------------------------
 // World
 // ---------------------------------------------------------------------------
@@ -42,6 +44,8 @@ export class World {
 
   private nextId = 1
   private engine: AsciiEngine
+
+  private _chunkGenerator: ChunkGenerator | null = null
 
   private _spawnListeners = new Set<EntityHandler>()
   private _despawnListeners = new Set<EntityHandler>()
@@ -119,6 +123,7 @@ export class World {
     let chunk = this.local.chunks.get(key)
     if (!chunk) {
       chunk = new Chunk(cx, cy)
+      this._chunkGenerator?.(cx, cy, chunk)
       this.local.chunks.set(key, chunk)
     }
     return chunk
@@ -192,8 +197,12 @@ export class World {
   }
 
   // --------------------------------------------------------------------------
-  // Active chunk coordination
+  // chunk coordination
   // --------------------------------------------------------------------------
+
+  setChunkGenerator(fn: ChunkGenerator): void {
+    this._chunkGenerator = fn
+  }
 
   onChunkChange = (fn: (cx: number, cy: number) => void): (() => void) => {
     this._chunkChangeListeners.add(fn)

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "guides/AddingATileStyle.md",
+                "file": "world/Chunk.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "AddingATileStyle"
+              "title": "Chunk"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "guides/AddingATileStyle.md",
+                "file": "world/Chunk.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Rétrolien pour AddingATileStyle"
+              "title": "Rétrolien pour Chunk"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "guides/AddingATileStyle.md",
+                "file": "world/Chunk.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Liens sortants de AddingATileStyle"
+              "title": "Liens sortants de Chunk"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "guides/AddingATileStyle.md",
+                "file": "world/Chunk.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Plan de AddingATileStyle"
+              "title": "Plan de Chunk"
             }
           }
         ]
@@ -185,8 +185,8 @@
   },
   "active": "7c5d02114f5579dc",
   "lastOpenFiles": [
-    "world/Chunk.md",
     "guides/AddingATileStyle.md",
+    "world/Chunk.md",
     "input/MouseManager.md",
     "input/ContextManager.md",
     "input/ActionManager.md",

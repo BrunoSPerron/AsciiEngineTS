@@ -60,7 +60,9 @@ export class ActionHero extends Entity {
         this._dir.equal(GridVector.UP_LEFT) ||
         this._dir.equal(GridVector.UP_RIGHT))
     ) {
-      mult = 1.3333333333333333
+      // GridVector use a simplified 1.5 unit for diagonal distance
+      // This is the actual ratio
+      mult = 1.414
     }
 
     this.pos.set(this._targetPos)

@@ -86,7 +86,7 @@ export class Renderer {
     this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
   }
 
-  initialize(
+  init(
     world: World,
     actionManager: ActionManager,
     contextManager: ContextManager,

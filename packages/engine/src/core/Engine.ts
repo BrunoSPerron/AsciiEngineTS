@@ -49,13 +49,13 @@ export class AsciiEngine {
     window.addEventListener('resize', this.handleWindowState)
   }
 
-  async start() {
+  async init() {
     this.config = await loadConfig(this.assets.configUrl)
     document.title = this.config.game.title
     await document.fonts.ready
 
     this.actionManager = new ActionManager(this.config.bindings, this.contextManager)
-    this.renderer.initialize(
+    this.renderer.init(
       this.world,
       this.actionManager,
       this.contextManager,
@@ -68,13 +68,15 @@ export class AsciiEngine {
       this.renderer.tileMetrics,
       this.renderer.camera,
       this.contextManager,
+      this.renderer.uiLayer!,
     )
-    this.mouseManager.setUILayer(this.renderer.uiLayer!)
     this.renderer.uiLayer!.mouseManager = this.mouseManager
+  }
 
-    const initPos = this.config.camera.initial_position
-    const initCx = Math.floor(initPos[0] / CHUNK_SIZE)
-    const initCy = Math.floor(initPos[1] / CHUNK_SIZE)
+  start() {
+    const initPos = this.renderer.camera.target.pos
+    const initCx = Math.floor(initPos.x / CHUNK_SIZE)
+    const initCy = Math.floor(initPos.y / CHUNK_SIZE)
     this.world.updateActiveChunks(initCx, initCy, this.renderer.viewDistance)
     this.renderer.camera.jumpToTarget()
 

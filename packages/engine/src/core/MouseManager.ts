@@ -41,11 +41,13 @@ export class MouseManager implements ContextListener {
     tileMetrics: TileMetricsData,
     camera: Camera,
     contextManager: ContextManager,
+    uiLayer: RendererUI,
   ) {
     this._container = container
     this._tileMetrics = tileMetrics
     this._camera = camera
     this._contextManager = contextManager
+    this._uiLayer = uiLayer
 
     this._ensureMouseContext('root')
     contextManager.registerListener(this)
@@ -54,14 +56,6 @@ export class MouseManager implements ContextListener {
     container.addEventListener('mousedown', this._onMouseDown)
     container.addEventListener('mouseup', this._onMouseUp)
     container.addEventListener('mouseleave', this._onMouseLeave)
-  }
-
-  // --------------------------------------------------------------------------
-  // Called by Engine after renderer is initialized
-  // --------------------------------------------------------------------------
-
-  setUILayer(uiLayer: RendererUI): void {
-    this._uiLayer = uiLayer
   }
 
   // --------------------------------------------------------------------------

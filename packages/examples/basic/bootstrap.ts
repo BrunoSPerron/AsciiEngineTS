@@ -9,8 +9,10 @@ export async function bootstrap(container: HTMLDivElement) {
   })
 
   const engine = new AsciiEngine(container, assets)
-  await engine.start()
+  await engine.init()
 
   const game = new Game(engine)
-  game.initialize()
+  game.init()
+
+  engine.start()
 }
