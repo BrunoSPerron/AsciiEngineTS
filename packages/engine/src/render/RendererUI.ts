@@ -6,11 +6,14 @@ import { SelectMenuRoller } from './nodes/SelectMenuRoller'
 import type { TileMetricsData } from './tileMetrics'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
+import type { MouseManager } from '../core/MouseManager'
 
 export class RendererUI {
   root: HTMLDivElement
   _actionManager: ActionManager
   _contextManager: ContextManager
+  public mouseManager: MouseManager | null = null
+
   tileMetrics: TileMetricsData
 
   private nextId = 1
@@ -178,16 +181,12 @@ export class RendererUI {
     const w = maxLen + paddingX * 2 + 2
     const h = items.length + paddingY * 2 + 2
 
-    return new SelectMenuList(this, this._actionManager, this._contextManager).open(
-      x,
-      y,
-      w,
-      h,
-      items,
-      paddingX,
-      paddingY,
-      wraparound,
-    )
+    return new SelectMenuList(
+      this,
+      this._actionManager,
+      this._contextManager,
+      this.mouseManager,
+    ).open(x, y, w, h, items, paddingX, paddingY, wraparound)
   }
 
   showSelectRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {

@@ -2,11 +2,13 @@ import type { ContextManager } from '../../core/ContextManager'
 import type { ActionManager } from '../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
+import type { MouseManager } from '../../core/MouseManager'
 
 export class SelectMenuList {
   private _rendererUI: RendererUI
   private _actionManager: ActionManager
   private _contextManager: ContextManager
+  private _mouseManager: MouseManager | null
   private _itemEls: HTMLDivElement[] = []
   private _currentIndex: number = 0
   private _panel: UIPanel | null = null
@@ -17,10 +19,12 @@ export class SelectMenuList {
     rendererUI: RendererUI,
     actionManager: ActionManager,
     contextManager: ContextManager,
+    mouseManager: MouseManager | null = null,
   ) {
     this._rendererUI = rendererUI
     this._actionManager = actionManager
     this._contextManager = contextManager
+    this._mouseManager = mouseManager
   }
 
   async open(
@@ -53,10 +57,42 @@ export class SelectMenuList {
     const panelId = this._rendererUI.reserveId()
     this._contextManager.pushContext(`select_menu_${panelId}`)
     this._panel = await this._rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
+
+    let unlistenHover: (() => void) | null
+    let unlistenClick: (() => void) | null
+    if (this._mouseManager) {
+      unlistenHover = this._mouseManager.onUIHover((_nodeId, cellX, cellY) => {
+        const interiorX0 = x + 1
+        const interiorX1 = x + w - 2
+        const itemY0 = y + 1 + paddingY
+
+        if (cellX < interiorX0 || cellX > interiorX1) return
+        const itemIndex = cellY - itemY0
+        if (itemIndex >= 0 && itemIndex < items.length) {
+          this.setSelected(itemIndex)
+        }
+      })
+      unlistenClick = this._mouseManager.onUIMouseDown((_nodeId, cellX, cellY, button) => {
+        if (button !== 0) return
+        const interiorX0 = x + 1
+        const interiorX1 = x + w - 2
+        const itemY0 = y + 1 + paddingY
+        if (cellX < interiorX0 || cellX > interiorX1) return
+        const itemIndex = cellY - itemY0
+        if (itemIndex >= 0 && itemIndex < items.length) {
+          void this.close(itemIndex)
+        }
+      })
+    }
+
     this.registerKeys(wraparound)
 
     return new Promise<number>((resolve) => {
-      this.resolve = resolve
+      this.resolve = (index) => {
+        unlistenHover?.()
+        unlistenClick?.()
+        resolve(index)
+      }
     })
   }
 

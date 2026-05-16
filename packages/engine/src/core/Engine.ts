@@ -64,12 +64,13 @@ export class AsciiEngine {
     )
 
     this.mouseManager = new MouseManager(
-      this.renderer.root as HTMLElement,
+      this.renderer.root,
       this.renderer.tileMetrics,
       this.renderer.camera,
       this.contextManager,
     )
     this.mouseManager.setUILayer(this.renderer.uiLayer!)
+    this.renderer.uiLayer!.mouseManager = this.mouseManager
 
     const initPos = this.config.camera.initial_position
     const initCx = Math.floor(initPos[0] / CHUNK_SIZE)

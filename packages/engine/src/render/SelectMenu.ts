@@ -33,11 +33,11 @@ export class SelectMenu {
 
     const labels = this.entries.map((e) => e.label)
     const uiLayer = this.renderer.uiLayer
-    if (uiLayer == null) {
+    if (uiLayer === null) {
       Logger.error('Cannot Open Menu: No uiLayer in renderer')
       return -1
     }
-    const selected = await uiLayer.showSelectMenu(10, 10, labels)
+    const selected = await uiLayer!.showSelectMenu(10, 10, labels)
     if (selected >= 0 && selected < this.entries.length) {
       await this.entries[selected].action()
     }
@@ -53,11 +53,11 @@ export class SelectMenu {
     const previousTheme = currentTheme
 
     const uiLayer = this.renderer.uiLayer
-    if (uiLayer == null) {
+    if (uiLayer === null) {
       Logger.error('No uiLayer in renderer')
       return
     }
-    const roller = uiLayer.createSelectRollerMenu()
+    const roller = uiLayer!.createSelectRollerMenu()
 
     const unlisten = roller.onChange((selected) => {
       this.renderer.themeManager.set(themes[selected])
