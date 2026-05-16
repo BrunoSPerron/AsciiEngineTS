@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "world/Chunk.md",
+                "file": "world/Entity.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Chunk"
+              "title": "Entity"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "world/Chunk.md",
+                "file": "world/Entity.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Rétrolien pour Chunk"
+              "title": "Rétrolien pour Entity"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "world/Chunk.md",
+                "file": "world/Entity.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Liens sortants de Chunk"
+              "title": "Liens sortants de Entity"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "world/Chunk.md",
+                "file": "world/Entity.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Plan de Chunk"
+              "title": "Plan de Entity"
             }
           }
         ]
@@ -185,9 +185,9 @@
   },
   "active": "7c5d02114f5579dc",
   "lastOpenFiles": [
+    "world/Chunk.md",
     "guides/AddingATileStyle.md",
     "engine/Engine.md",
-    "world/Chunk.md",
     "input/MouseManager.md",
     "input/ContextManager.md",
     "input/ActionManager.md",
