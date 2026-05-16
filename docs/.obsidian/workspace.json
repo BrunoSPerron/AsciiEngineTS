@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300.5
+    "width": 227.5
   },
   "right": {
     "id": "9808187124e8d7e4",
@@ -186,6 +186,7 @@
   "active": "7c5d02114f5579dc",
   "lastOpenFiles": [
     "guides/AddingATileStyle.md",
+    "engine/Engine.md",
     "world/Chunk.md",
     "input/MouseManager.md",
     "input/ContextManager.md",
@@ -194,7 +195,6 @@
     "render/Theming.md",
     "world/Region.md",
     "world/Entity.md",
-    "engine/Engine.md",
     "Tile.md",
     "index.md",
     "contributing",

@@ -151,7 +151,7 @@ export class World {
     return this.getChunkXY(cx, cy).get(lx, ly)
   }
 
-  setTileStyle(style: string, positions: Array<[number, number]>): void {
+  setTilesStyle(style: string, positions: Array<[number, number]>): void {
     const dirtyChunks = new Set<Chunk>()
 
     for (const [wx, wy] of positions) {

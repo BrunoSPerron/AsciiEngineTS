@@ -20,10 +20,10 @@ Both `color` and `background-color` are optional — omit either to inherit from
 
 ### 2. Apply the style to tiles
 
-Use `world.setTileStyle()` to apply a style to one or more world-space positions:
+Use `world.setTilesStyle()` to apply a style to one or more world-space positions:
 
 ```ts
-world.setTileStyle('water', [
+world.setTilesStyle('water', [
   [10, 5],
   [11, 5],
   [12, 5],

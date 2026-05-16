@@ -39,12 +39,11 @@ export class Game {
     this.engine.world.setChunkGenerator((_cx, _cy, chunk) => {
       for (let y = 0; y < CHUNK_SIZE; y++) {
         for (let x = 0; x < CHUNK_SIZE; x++) {
-          const edge = x < 2 || y < 2 || x > CHUNK_SIZE - 2 || y > CHUNK_SIZE - 2
-          const i = y * CHUNK_SIZE + x
-          chunk.tiles[i] = {
-            glyph: edge ? '#' : ' ',
-            solid: edge,
-            style: edge ? 'wall' : undefined,
+          const edge = x < 2 || y < 2 || x >= CHUNK_SIZE - 2 || y >= CHUNK_SIZE - 2
+          if (edge) {
+            const tile = chunk.get(x, y)
+            tile.glyph = '#'
+            tile.solid = true
           }
         }
       }

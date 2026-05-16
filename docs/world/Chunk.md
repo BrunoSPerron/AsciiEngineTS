@@ -10,10 +10,10 @@ Chunks are the unit of loading and unloading. Only chunks within `chunk_view_dis
 
 Each chunk stores a flat array of 1024 tiles (32×32). A tile has three fields:
 
-| Field | Type | Description |
-|---|---|---|
-| `glyph` | `string` | The character rendered at this position |
-| `solid` | `boolean` | Whether entities are blocked by this tile |
+| Field   | Type      | Description                                     |
+| ------- | --------- | ----------------------------------------------- |
+| `glyph` | `string`  | The character rendered at this position         |
+| `solid` | `boolean` | Whether entities are blocked by this tile       |
 | `style` | `string?` | Optional CSS class suffix for per-tile coloring |
 
 See [[guides/AddingATileStyle]] for how to define and apply tile styles.
@@ -24,7 +24,8 @@ See [[guides/AddingATileStyle]] for how to define and apply tile styles.
 
 Chunks are created lazily — the first time any code refers to a chunk coordinate, that chunk is allocated and passed to the [[#Chunk generation|chunk generator]] if one is set. They are destroyed when they fall outside the active view distance.
 
-Chunks track a `dirty` flag. When set, the renderer re-renders the chunk's HTML on the next frame. Modifying tiles via `world.setTileStyle()` sets this flag automatically.
+Chunks track a `dirty` flag. When set, the renderer re-renders the chunk's HTML on the next frame.
+Modifying tiles via `world.setTilesStyle()` sets this flag automatically.
 
 ---
 
@@ -33,11 +34,15 @@ Chunks track a `dirty` flag. When set, the renderer re-renders the chunk's HTML 
 Register a generator on the world before the game starts:
 
 ```ts
-engine.world.setChunkGenerator((cx, cy, chunk) => {
-  for (let y = 0; y < 32; y++) {
-    for (let x = 0; x < 32; x++) {
-      const i = y * 32 + x
-      chunk.tiles[i] = { glyph: '.', solid: false }
+engine.world.setChunkGenerator((_cx, _cy, chunk) => {
+  for (let y = 0; y < CHUNK_SIZE; y++) {
+    for (let x = 0; x < CHUNK_SIZE; x++) {
+      const edge = x < 2 || y < 2 || x >= CHUNK_SIZE - 2 || y >= CHUNK_SIZE - 2
+      if (edge) {
+        const tile = chunk.get(x, y)
+        tile.glyph = '#'
+        tile.solid = true
+      }
     }
   }
 })
