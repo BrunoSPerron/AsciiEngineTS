@@ -16,11 +16,11 @@ initial_position = [20, 20]
 
 [bindings]
 pause   = ["Escape"]
-confirm = ["Enter"]
-up      = ["KeyW", "ArrowUp"]
-down    = ["KeyS", "ArrowDown"]
-left    = ["KeyA", "ArrowLeft"]
-right   = ["KeyD", "ArrowRight"]
+confirm = ["Enter", "NumpadEnter", "Space"]
+up      = ["KeyW", "ArrowUp", "Numpad7", "Numpad8", "Numpad9"]
+down    = ["KeyS", "ArrowDown", "Numpad1", "Numpad2", "Numpad3"]
+left    = ["KeyA", "ArrowLeft", "Numpad1", "Numpad4", "Numpad7"]
+right   = ["KeyD", "ArrowRight", "Numpad3", "Numpad6", "Numpad9"]
 ```
 
 | Section    | Key                   | Default         | Description                                        |

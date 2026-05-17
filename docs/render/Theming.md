@@ -218,4 +218,4 @@ All selectors should be scoped under `.ascii-engine` to avoid affecting elements
 
 - [[Assets]] — how theme files are discovered from the asset glob
 - [[Engine]] — `initial_theme` config key
-- [[guides/Adding a Tile Style]] — per-tile CSS styling
+- [[guides/Adding a Tile Style|Adding a Tile Style]] — per-tile CSS styling
