@@ -1,0 +1,33 @@
+## Configuration
+
+Place an `engine-settings.toml` file anywhere under your asset glob root. All fields are optional; missing fields fall back to engine defaults.
+
+```toml
+[game]
+title = "My Ascii Game"
+start_theme = "Flamingo"
+
+[world]
+chunk_view_distance = 3
+
+[camera]
+half_life = 400          # ms to close half the distance to target
+initial_position = [20, 20]
+
+[bindings]
+pause   = ["Escape"]
+confirm = ["Enter"]
+up      = ["KeyW", "ArrowUp"]
+down    = ["KeyS", "ArrowDown"]
+left    = ["KeyA", "ArrowLeft"]
+right   = ["KeyD", "ArrowRight"]
+```
+
+| Section    | Key                   | Default         | Description                                        |
+| ---------- | --------------------- | --------------- | -------------------------------------------------- |
+| `game`     | `title`               | `"AsciiEngine"` | Sets `document.title`                              |
+| `game`     | `start_theme`         | `"Copper"`      | Theme applied on load                              |
+| `world`    | `chunk_view_distance` | `3`             | Radius of loaded chunks around the player          |
+| `camera`   | `half_life`           | `400`           | Smoothing. ms to close half the distance to target |
+| `camera`   | `initial_position`    | `[0, 0]`        | Camera position before a target is assigned        |
+| `bindings` | _(any action)_        | see above       | Maps action names to key codes                     |

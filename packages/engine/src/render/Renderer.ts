@@ -104,6 +104,13 @@ export class Renderer {
       this.tileMetrics,
     )
 
+    if (assets.baseCssUrl) {
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = assets.baseCssUrl
+      document.head.appendChild(link)
+    }
+
     for (const { name, url } of assets.themes) {
       this.themeManager.register(name, url)
     }

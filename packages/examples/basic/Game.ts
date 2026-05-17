@@ -40,7 +40,13 @@ export class Game {
       for (let y = 0; y < CHUNK_SIZE; y++) {
         for (let x = 0; x < CHUNK_SIZE; x++) {
           const edge = x < 2 || y < 2 || x >= CHUNK_SIZE - 2 || y >= CHUNK_SIZE - 2
-          if (edge) {
+          if (
+            edge &&
+            !(
+              (y > CHUNK_SIZE / 2 - 3 && y < CHUNK_SIZE / 2 + 2) ||
+              (x > CHUNK_SIZE / 2 - 3 && x < CHUNK_SIZE / 2 + 2)
+            )
+          ) {
             const tile = chunk.get(x, y)
             tile.glyph = '#'
             tile.solid = true

@@ -1,0 +1,17 @@
+.ascii-engine .layer-ui::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 25%,
+    rgba(0, 0, 0, 0.15) 45%,
+    rgba(0, 0, 0, 0.55) 70%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+
+  mix-blend-mode: multiply;
+}
