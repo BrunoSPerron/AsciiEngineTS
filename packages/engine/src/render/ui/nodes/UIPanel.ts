@@ -1,5 +1,5 @@
 import type { TileMetricsData } from '../../tileMetrics'
-import { UINode, type ILineLike } from './UINode'
+import { UINode } from './UINode'
 import { Anchor, applyAnchorToEl } from '../anchor'
 
 const TOP_EL = 0
@@ -14,7 +14,7 @@ function waitAnimation(anim: Animation): Promise<void> {
   })
 }
 
-export class UIPanel extends UINode implements ILineLike {
+export class UIPanel extends UINode {
   containerEl: HTMLDivElement
 
   private _borderEls: [
@@ -62,65 +62,22 @@ export class UIPanel extends UINode implements ILineLike {
       make('ui-panel-bg'),
     ]
 
-    this._initChars()
     this._applyBorderTransforms()
-    this._applyBorderStyles()
-    this._refreshAll()
+    this._renderBorderGlyphs()
 
     applyAnchorToEl(this.containerEl, anchor)
-  }
-
-  // ==========================================================================
-  // ILineLike
-  // ==========================================================================
-
-  cellCoords(): Array<[number, number]> {
-    const coords: Array<[number, number]> = []
-    for (let i = 0; i < this.w; i++) coords.push([this.x + i, this.y])
-    for (let i = 0; i < this.w; i++) coords.push([this.x + i, this.y + this.h - 1])
-    for (let i = 1; i < this.h - 1; i++) coords.push([this.x, this.y + i])
-    for (let i = 1; i < this.h - 1; i++) coords.push([this.x + this.w - 1, this.y + i])
-    return coords
-  }
-
-  interiorCoords(): Array<[number, number]> {
-    const coords: Array<[number, number]> = []
-    for (let yy = this.y + 1; yy < this.y + this.h - 1; yy++) {
-      for (let xx = this.x + 1; xx < this.x + this.w - 1; xx++) {
-        coords.push([xx, yy])
-      }
-    }
-    return coords
-  }
-
-  charIndexFor(x: number, y: number): number {
-    const { x: px, y: py, w, h } = this
-    const inner = h - 2
-    if (y === py && x >= px && x < px + w) return x - px
-    if (x === px + w - 1 && y > py && y < py + h - 1) return w + (y - py - 1)
-    if (y === py + h - 1 && x >= px && x < px + w) return w + inner + (px + w - 1 - x)
-    if (x === px && y > py && y < py + h - 1) return w + inner + w + (py + h - 2 - y)
-    return -1
-  }
-
-  setCharAt(x: number, y: number, glyph: string): void {
-    const idx = this.charIndexFor(x, y)
-    if (idx === -1) return
-    this.chars[idx] = glyph
-    this._refreshBorderEls()
   }
 
   // ==========================================================================
   // UINode overrides
   // ==========================================================================
 
-  // Position the container; all border elements are relative to it.
   applyTransform() {
     this.containerEl.style.transform = `translate(${this.x * this.tileMetrics.w}px, ${this.y * this.tileMetrics.h}px)`
   }
 
   refresh() {
-    this._refreshAll()
+    this._renderBorderGlyphs()
   }
 
   // ==========================================================================
@@ -134,7 +91,6 @@ export class UIPanel extends UINode implements ILineLike {
       bg.appendChild(content)
     }
 
-    // All y coords are now relative to the container (panel-local), not the viewport.
     const midY = this.h / 2
 
     const topEl = this._borderEls[TOP_EL]
@@ -143,13 +99,9 @@ export class UIPanel extends UINode implements ILineLike {
     const rigEl = this._borderEls[RIGHT_EL]
     const bgEl = this._borderEls[BG_EL]
 
-    const savedFirst = this.chars[0]
-    const savedLast = this.chars[this.w - 1]
-
-    // phase 1
-    this.chars[0] = '╠'
-    this.chars[this.w - 1] = '╣'
-    this._refreshBorderEl(TOP_EL)
+    // phase 1 — horizontal expand of centre line
+    const savedTopRow = topEl.textContent ?? ''
+    topEl.textContent = '╠' + '═'.repeat(this.w - 2) + '╣'
 
     for (const el of [lefEl, rigEl, bgEl]) {
       el.style.transformOrigin = '50% 50%'
@@ -165,15 +117,14 @@ export class UIPanel extends UINode implements ILineLike {
 
     await waitAnimation(topAnim)
 
-    // phase 2
-    this.chars[0] = savedFirst
-    this.chars[this.w - 1] = savedLast
-    this._refreshBorderEl(TOP_EL)
+    // phase 2 — vertical reveal
+    topEl.textContent = savedTopRow
+    this._setElTranslate(topEl, 0, 0)
+    topEl.style.clipPath = ''
 
     this._animateVerticalSlide(topEl, 0, midY, 0, duration * UIPanel.PHASE1_RATIO)
 
     botEl.style.display = 'block'
-
     this._animateVerticalSlide(botEl, 0, midY, this.h - 1, duration * UIPanel.PHASE1_RATIO)
 
     const phase2Anims = [lefEl, rigEl, bgEl].map((el) =>
@@ -214,9 +165,7 @@ export class UIPanel extends UINode implements ILineLike {
     await waitAnimation(botAnim)
 
     botEl.style.display = 'none'
-    this.chars[0] = '═'
-    this.chars[this.w - 1] = '═'
-    this._refreshBorderEl(TOP_EL)
+    topEl.textContent = '═'.repeat(this.w)
 
     const phase2Anim = this._animateHorizontalCollapse(
       topEl,
@@ -231,34 +180,11 @@ export class UIPanel extends UINode implements ILineLike {
   }
 
   // ==========================================================================
-  // PRIVATE — init
-  // ==========================================================================
-
-  private _initChars() {
-    const { w, h } = this
-    const len = 2 * w + 2 * (h - 2)
-    this.chars = new Array<string>(len).fill(' ')
-
-    for (let i = 0; i < w; i++) this.chars[i] = '═'
-    const botStart = w + (h - 2)
-    for (let i = 0; i < w; i++) this.chars[botStart + i] = '═'
-    for (let i = 0; i < h - 2; i++) this.chars[w + i] = '║'
-    const lefStart = 2 * w + (h - 2)
-    for (let i = 0; i < h - 2; i++) this.chars[lefStart + i] = '║'
-
-    this.chars[0] = '╔'
-    this.chars[w - 1] = '╗'
-    this.chars[botStart] = '╝'
-    this.chars[botStart + w - 1] = '╚'
-  }
-
-  // ==========================================================================
-  // PRIVATE — layout helpers
+  // PRIVATE — layout
   // ==========================================================================
 
   private _applyBorderTransforms() {
     const { w, h } = this
-    // All positions are relative to the container's origin (the panel's top-left corner).
     this._setElTranslate(this._borderEls[TOP_EL], 0, 0)
     this._setElTranslate(this._borderEls[BOTTOM_EL], 0, h - 1)
     this._setElTranslate(this._borderEls[LEFT_EL], 0, 1)
@@ -269,55 +195,23 @@ export class UIPanel extends UINode implements ILineLike {
     bg.style.width = `${(w - 2) * this.tileMetrics.w}px`
     bg.style.height = `${(h - 2) * this.tileMetrics.h}px`
     bg.className = 'ui ui-panel'
-  }
 
-  private _applyBorderStyles() {
     this._borderEls[LEFT_EL].style.lineHeight = `${this.tileMetrics.h}px`
     this._borderEls[RIGHT_EL].style.lineHeight = `${this.tileMetrics.h}px`
   }
 
+  private _renderBorderGlyphs() {
+    const { w, h } = this
+    const inner = h - 2
+
+    this._borderEls[TOP_EL].textContent = '╔' + '═'.repeat(w - 2) + '╗'
+    this._borderEls[BOTTOM_EL].textContent = '╚' + '═'.repeat(w - 2) + '╝'
+    this._borderEls[LEFT_EL].textContent = Array(inner).fill('║').join('\n')
+    this._borderEls[RIGHT_EL].textContent = Array(inner).fill('║').join('\n')
+  }
+
   private _setElTranslate(el: HTMLElement, x: number, y: number) {
     el.style.transform = `translate(${x * this.tileMetrics.w}px, ${y * this.tileMetrics.h}px)`
-  }
-
-  // ==========================================================================
-  // PRIVATE — char mapping to border elements
-  // ==========================================================================
-
-  private _refreshAll() {
-    this._refreshBorderEls()
-  }
-
-  private _refreshBorderEls() {
-    for (let i = 0; i <= RIGHT_EL; i++) this._refreshBorderEl(i)
-  }
-
-  private _refreshBorderEl(elIdx: number) {
-    const { w, h } = this
-    const el = this._borderEls[elIdx]
-
-    switch (elIdx) {
-      case TOP_EL:
-        el.textContent = this.chars.slice(0, w).join('')
-        break
-      case BOTTOM_EL: {
-        const start = w + (h - 2)
-        const row = this.chars.slice(start, start + w).reverse()
-        el.textContent = row.join('')
-        break
-      }
-      case RIGHT_EL: {
-        const inner = this.chars.slice(w, w + (h - 2))
-        el.textContent = inner.join('\n')
-        break
-      }
-      case LEFT_EL: {
-        const start = 2 * w + (h - 2)
-        const inner = this.chars.slice(start, start + (h - 2))
-        el.textContent = inner.reverse().join('\n')
-        break
-      }
-    }
   }
 
   // ==========================================================================

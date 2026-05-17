@@ -1,17 +1,7 @@
 import { type TileMetricsData } from '../../tileMetrics'
 import { Anchor } from '../anchor'
 
-export type UIKind = 'text' | 'hline' | 'vline' | 'panel'
-
-export interface ILineLike {
-  cellCoords(): Array<[number, number]>
-  charIndexFor(x: number, y: number): number
-  setCharAt(x: number, y: number, glyph: string): void
-}
-
-export function isLineLike(node: UINode): node is UINode & ILineLike {
-  return node.kind === 'hline' || node.kind === 'vline' || node.kind === 'panel'
-}
+export type UIKind = 'text' | 'panel'
 
 export class UINode {
   id: number
@@ -58,10 +48,6 @@ export class UINode {
   }
 
   refresh() {
-    if (this.kind === 'vline') {
-      this.el.textContent = this.chars.join('\n')
-      return
-    }
     this.el.textContent = this.chars.join('')
   }
 }

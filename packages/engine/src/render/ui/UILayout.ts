@@ -1,11 +1,6 @@
 import type { TileMetricsData } from '../tileMetrics'
 import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
 
-// ---------------------------------------------------------------------------
-// Box-drawing glyph table (double-line only)
-// Bit mask: TOP=0b10000 RIGHT=0b01000 BOTTOM=0b00100 LEFT=0b00010 DOUBLE=0b00001
-// ---------------------------------------------------------------------------
-
 const TOP = 0b10000
 const RIGHT = 0b01000
 const BOTTOM = 0b00100
@@ -13,6 +8,8 @@ const LEFT = 0b00010
 const DOUBLE = 0b00001
 
 const GLYPHS: Record<number, string> = {
+  [0]: ' ',
+
   [DOUBLE | RIGHT | BOTTOM]: '╔',
   [DOUBLE | LEFT | BOTTOM]: '╗',
   [DOUBLE | TOP | RIGHT]: '╚',
@@ -28,6 +25,22 @@ const GLYPHS: Record<number, string> = {
   [DOUBLE | LEFT]: '═',
   [DOUBLE | TOP]: '║',
   [DOUBLE | BOTTOM]: '║',
+
+  [RIGHT | LEFT]: '─',
+  [LEFT]: '─',
+  [RIGHT]: '─',
+  [TOP | BOTTOM]: '│',
+  [TOP]: '│',
+  [BOTTOM]: '│',
+  [RIGHT | BOTTOM]: '┌',
+  [LEFT | BOTTOM]: '┐',
+  [TOP | RIGHT]: '└',
+  [TOP | LEFT]: '┘',
+  [TOP | RIGHT | BOTTOM]: '├',
+  [TOP | LEFT | BOTTOM]: '┤',
+  [RIGHT | LEFT | BOTTOM]: '┬',
+  [TOP | RIGHT | LEFT]: '┴',
+  [TOP | RIGHT | LEFT | BOTTOM]: '┼',
 }
 
 function maskToGlyph(mask: number): string {

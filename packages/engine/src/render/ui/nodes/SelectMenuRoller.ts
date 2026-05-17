@@ -143,7 +143,7 @@ export class SelectMenuRoller {
     if (!this.panel) {
       throw Error('Logic Error: Panel Closed too early')
     }
-    this.rendererUI.unregisterPanelEarly(this.panel)
+    // this.rendererUI.unregisterPanelEarly(this.panel)
     await this.panel.close()
     this._contextManager.popContext(`roller_menu_${this.panel.id}`)
     this.rendererUI.removePanel(this.panel)

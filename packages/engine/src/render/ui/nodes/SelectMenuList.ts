@@ -152,7 +152,7 @@ export class SelectMenuList {
       this.resolve(index)
       return
     }
-    this._rendererUI.unregisterPanelEarly(this._panel)
+    // this._rendererUI.unregisterPanelEarly(this._panel)
     await this._panel.close()
     this._rendererUI.removePanel(this._panel)
     this._panel = null
