@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "index.md",
+                "file": "engine/engine-settings.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "engine-settings"
             }
           }
         ]
@@ -183,22 +183,23 @@
       "bases:Create new base": false
     }
   },
-  "active": "de4d67c5623448fe",
+  "active": "fe0ee1a7efb0509b",
   "lastOpenFiles": [
-    "world/Region.md",
-    "world/Entity.md",
-    "world/Chunk.md",
+    "engine/Assets.md",
     "render/Theming.md",
+    "world/Entity.md",
+    "world/Region.md",
+    "world/Chunk.md",
+    "render/UI.md",
+    "render/ThemeManager.md",
+    "input/ContextManager.md",
+    "input/MouseManager.md",
     "input/ActionManager.md",
     "guides/Adding a Tile Style.md",
-    "engine/Assets.md",
-    "engine/Engine.md",
     "engine/engine-settings.md",
-    "render/UI.md",
-    "[Adding a Tile Style.md",
-    "input/MouseManager.md",
-    "input/ContextManager.md",
+    "engine/Engine.md",
     "index.md",
+    "[Adding a Tile Style.md",
     "World.md",
     "Sans titre.canvas",
     "Tile.md",

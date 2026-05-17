@@ -95,7 +95,7 @@ Listeners are registered on the **currently active** context. When a new context
 - `MouseHoverEnd` is emitted into the outgoing context for any currently hovered cell
 - When the context is later popped, `MouseHoverStart` is re-emitted into the restored context
 
-This means mouse listeners attached to `root` go silent while a menu context is active, and resume automatically when the menu closes — matching the behaviour of `ActionManager`.
+This means mouse listeners attached to `root` go silent while a menu context is active, and resume automatically when the menu closes.
 
 See [[input/ContextManager]] for how contexts work.
 

@@ -1,6 +1,6 @@
 ## Configuration
 
-Place an `engine-settings.toml` file anywhere under your asset glob root. All fields are optional; missing fields fall back to engine defaults.
+Place an `engine-settings.toml` file anywhere under your [[Assets|asset glob]] root. All fields are optional; missing fields fall back to engine defaults.
 
 ```toml
 [game]

@@ -69,7 +69,7 @@ The font size is set once in `base.css` and used throughout. Override it in your
 | `--font-size`   | `18px`             | Monospace glyph size                      |
 | `--line-height` | `var(--font-size)` | Row height — tied to font size by default |
 
-Changing `--font-size` affects tile metrics. If you do this, be aware that tile width and height are measured from a live DOM element after fonts are ready. The engine handles this, but any hardcoded pixel math in your own code will need to account for it.
+Changing `--font-size` affects tile metrics. If you do this, be aware that tile width and height are measured from a live DOM element after fonts are ready. The [[ThemeManager|theme manager]] handles this automatically on theme change.
 
 ---
 

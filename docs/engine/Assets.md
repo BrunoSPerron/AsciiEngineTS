@@ -30,10 +30,16 @@ See [[engine-settings]] for configurations
 
 ### base.css
 
-Any file whose path ends with `/base.css` is treated as the base game css and loaded in the page during initialization
+Any file whose path ends with `/base.css` is treated as the base game css and loaded in the page during initialization. Only the first match is used.
 
-Use this file to set default values for your [[Adding a Tile Style|custom tile styles]]
-Recommendation: Use css variables to simplify theme editing
+```
+assets/
+  base.css
+```
+
+Recommendations: 
+ - Use this file to set default values for your [[Adding a Tile Style|custom tile styles]]
+ - Use css variables to simplify [[Theming|theming]]
 
 See [[render/Theming|theming]] for how to write the base css file, it's the same.
 
@@ -56,16 +62,18 @@ See [[render/Theming|theming]] for how to write a theme file.
 
 ```
 assets/
+  base.css
   engine-settings.toml
   themes/
     My Theme.css
 ```
 
-Subdirectory depth doesn't matter — the engine matches by path shape, not by folder level. The following also works:
+Subdirectory depth doesn't matter, the engine matches by path shape, not by folder level. The following also works:
 
 ```
 assets/
   config/
+	base.css
     engine-settings.toml
   ui/
     themes/
