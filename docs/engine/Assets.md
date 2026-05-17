@@ -27,6 +27,16 @@ assets/
 ```
 
 See [[engine-settings]] for configurations
+
+### base.css
+
+Any file whose path ends with `/base.css` is treated as the base game css and loaded in the page during initialization
+
+Use this file to set default values for your [[Adding a Tile Style|custom tile styles]]
+Recommendation: Use css variables to simplify theme editing
+
+See [[render/Theming|theming]] for how to write the base css file, it's the same.
+
 ### Theme CSS files
 
 Any file whose path contains `/themes/` and ends with `.css` is registered as a theme. The filename (without `.css`) becomes the theme name.
@@ -38,7 +48,8 @@ assets/
     Another.css           →  theme name: "Another"
 ```
 
-Themes registered this way extend the built-in engine themes and can override them by name. See [[render/Theming|theming]] for how to write a theme file.
+Themes registered this way extend the built-in engine themes and can override them by name. 
+See [[render/Theming|theming]] for how to write a theme file.
 
 ---
 ## Recommended structure

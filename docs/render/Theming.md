@@ -132,7 +132,7 @@ engine.renderer.themeManager.current // string
 The built-in palette picker menu wires all of this up automatically if you register it:
 
 ```ts
-escapeMenu.registerPaletteSelect()
+mySelectMenu.registerPaletteSelect()
 ```
 
 ---
