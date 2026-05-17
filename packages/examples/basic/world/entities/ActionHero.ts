@@ -56,7 +56,7 @@ export class ActionHero extends Entity {
 
     this.pos.set(this._targetPos)
 
-    if (!resolved && this.isDiagonal(this._dir)) {
+    if (this.isDiagonal(this._dir)) {
       // GridVector use a simplified 1.5 unit for diagonal distance.
       // This is the actual ratio.
       return this.speed * 1.414
@@ -104,9 +104,13 @@ export class ActionHero extends Entity {
     const aIsSolid = world.getTileXY(a[0], a[1]).solid
     const bIsSolid = world.getTileXY(b[0], b[1]).solid
 
-    if (aIsSolid && !bIsSolid) this._targetPos.setXY(b[0], b[1])
-    else if (!aIsSolid && bIsSolid) this._targetPos.setXY(a[0], a[1])
-    else return false
+    if (aIsSolid && !bIsSolid) {
+      this._targetPos.setXY(b[0], b[1])
+      this._dir.setXY(b[0] - this.pos.x, b[1] - this.pos.y)
+    } else if (!aIsSolid && bIsSolid) {
+      this._targetPos.setXY(a[0], a[1])
+      this._dir.setXY(a[0] - this.pos.x, a[1] - this.pos.y)
+    } else return false
 
     return true
   }
