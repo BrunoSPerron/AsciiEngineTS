@@ -71,7 +71,7 @@ function makeSegmentEl(): HTMLPreElement {
  * Owns the viewport frame and all line-based UI layout.
  *
  * Single instance per RendererUI. RendererUI creates it inside init() after
- * tile metrics are measured, and wires onResize() into handleWindowState.
+ * tile metrics are measured.
  *
  * Responsibilities:
  *   - Four frame segments (top, right, bottom, left) drawn as <pre> elements
