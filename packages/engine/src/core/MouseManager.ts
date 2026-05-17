@@ -171,7 +171,7 @@ export class MouseManager implements ContextListener {
     const uiKey = `${cellX},${cellY}`
     const prevUI = this._hoveredUICell
 
-    if (nodeId !== null || this._uiLayer?.cellStack.has(uiKey)) {
+    /*if (nodeId !== null || this._uiLayer?.cellStack.has(uiKey)) {
       // Cursor is over a UI cell
       const sameCell =
         prevUI !== null && prevUI.x === cellX && prevUI.y === cellY && prevUI.nodeId === nodeId
@@ -189,7 +189,7 @@ export class MouseManager implements ContextListener {
         this._emitUIHover(nodeId, cellX, cellY)
       }
       return
-    }
+    }*/
 
     // No UI — clear UI hover if needed
     if (prevUI !== null) {
@@ -215,11 +215,11 @@ export class MouseManager implements ContextListener {
     const { cellX, cellY } = this._pixelToUICell(e)
     const uiKey = `${cellX},${cellY}`
 
-    if (this._uiLayer?.cellStack.has(uiKey)) {
+    /*if (this._uiLayer?.cellStack.has(uiKey)) {
       const nodeId = this._resolveUINode(cellX, cellY)
       this._emitUIMouseDown(nodeId, cellX, cellY, e.button)
       return
-    }
+    }*/
 
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
     this._emitWorldMouseDown(wx, wy, e.button)
@@ -229,11 +229,11 @@ export class MouseManager implements ContextListener {
     const { cellX, cellY } = this._pixelToUICell(e)
     const uiKey = `${cellX},${cellY}`
 
-    if (this._uiLayer?.cellStack.has(uiKey)) {
+    /*if (this._uiLayer?.cellStack.has(uiKey)) {
       const nodeId = this._resolveUINode(cellX, cellY)
       this._emitUIMouseUp(nodeId, cellX, cellY, e.button)
       return
-    }
+    }*/
 
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
     this._emitWorldMouseUp(wx, wy, e.button)
@@ -268,10 +268,11 @@ export class MouseManager implements ContextListener {
 
   // Returns the topmost node ID at a UI cell, or null if no node there
   private _resolveUINode(cellX: number, cellY: number): number | null {
-    if (!this._uiLayer) return null
+    return null
+    /*if (!this._uiLayer) return null
     const stack = this._uiLayer.cellStack.get(`${cellX},${cellY}`)
     if (!stack || stack.length === 0) return null
-    return stack[stack.length - 1]
+    return stack[stack.length - 1]*/
   }
 
   // --------------------------------------------------------------------------
