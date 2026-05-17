@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "cc3b859b53ca5385",
+        "id": "15f59a4d83b88a12",
         "type": "tabs",
         "children": [
           {
-            "id": "7c5d02114f5579dc",
+            "id": "fe0ee1a7efb0509b",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "world/Entity.md",
+                "file": "engine/Engine.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Entity"
+              "title": "Engine"
             }
           }
         ]
@@ -44,7 +44,7 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Explorateur de fichiers"
+              "title": "Files"
             }
           },
           {
@@ -61,7 +61,7 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Rechercher"
+              "title": "Search"
             }
           },
           {
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "world/Entity.md",
+                "file": "guides/AddingATileStyle.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Rétrolien pour Entity"
+              "title": "Rétrolien pour AddingATileStyle"
             }
           },
           {
@@ -113,12 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "world/Entity.md",
+                "file": "guides/AddingATileStyle.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Liens sortants de Entity"
+              "title": "Liens sortants de AddingATileStyle"
             }
           },
           {
@@ -156,13 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "world/Entity.md",
+                "file": "guides/AddingATileStyle.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Plan de Entity"
+              "title": "Plan de AddingATileStyle"
             }
           }
         ]
@@ -174,29 +174,31 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Ouvrir le sélecteur rapide": false,
-      "graph:Ouvrir la vue graphique": false,
-      "canvas:Créer une nouvelle toile": false,
-      "daily-notes:Ouvrir la note quotidienne": false,
-      "templates:Insérer le modèle": false,
-      "command-palette:Ouvrir la palette de commandes": false,
-      "bases:Créer une nouvelle base": false
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
     }
   },
-  "active": "7c5d02114f5579dc",
+  "active": "fe0ee1a7efb0509b",
   "lastOpenFiles": [
+    "world/Entity.md",
+    "world/Region.md",
     "world/Chunk.md",
-    "guides/AddingATileStyle.md",
-    "engine/Engine.md",
+    "render/UI.md",
+    "render/Theming.md",
     "input/MouseManager.md",
     "input/ContextManager.md",
     "input/ActionManager.md",
-    "render/UI.md",
-    "render/Theming.md",
-    "world/Region.md",
-    "world/Entity.md",
-    "Tile.md",
+    "guides/Adding a Tile Style.md",
+    "engine/Engine.md",
     "index.md",
+    "World.md",
+    "Sans titre.canvas",
+    "Tile.md",
     "contributing",
     "guides",
     "input",

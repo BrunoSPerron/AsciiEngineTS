@@ -1,6 +1,5 @@
-# Entity
 
-An Entity is a living object in the world — a player, an NPC, a projectile, anything that has a position, acts on a timer, and can move. Entities are the primary unit of gameplay logic in AsciiEngine.
+An Entity is a living object in the world: a player, an NPC, a projectile, anything that has a position, acts on a timer, and can move. Entities are the primary unit of gameplay logic in AsciiEngine.
 
 ---
 
@@ -13,7 +12,7 @@ import { Entity, GridVector } from 'ascii-engine'
 
 export class Goblin extends Entity {
   act(): number {
-    // Move one tile to the right every tick
+    // Move one tile to the right every action
     this.pos.x += 1
     return this.speed  // delay until next act(), in ms
   }
@@ -22,7 +21,7 @@ export class Goblin extends Entity {
 const goblin = new Goblin('g', new GridVector(10, 10), 500)
 ```
 
-The return value of `act()` controls how long the engine waits before calling it again. Returning `0` skips movement interpolation and schedules the next call immediately (useful for idle states).
+The return value of `act()` controls how long the engine waits before calling it again. The return value minimum is clamped to (16ms). `MIN_ACTION_INTERVAL`
 
 ---
 
@@ -111,24 +110,6 @@ act(): number {
 |`engine`|`AsciiEngine`|Reference to the engine. Available after `OnLoad()`.|
 
 ---
-
-## Smooth rendering and `visualPosition`
-
-The renderer calls `visualPosition(now)` each frame to compute the interpolated on-screen position between `previousPos` and `pos`. You don't call this directly, but it's what drives smooth motion — the entity visually slides from its old position to its new one over exactly `currentActMs` milliseconds.
-
-Returning a non-standard value from `act()` (e.g. a longer delay for diagonal movement) automatically adjusts the interpolation duration:
-
-```ts
-act(): number {
-  // Diagonal moves take ~41% longer to preserve visual speed
-  const isDiagonal = this._dir.x !== 0 && this._dir.y !== 0
-  this.pos.add(this._dir)
-  return isDiagonal ? this.speed * 1.414 : this.speed
-}
-```
-
----
-
 ## Move listeners
 
 Subscribe to an entity's movement with `onMove()`. The callback fires after each `act()` call where the position changed. Returns an unsubscribe function.
@@ -142,38 +123,10 @@ const unlisten = entity.onMove((e) => {
 unlisten()
 ```
 
-The camera uses this internally to track its target. You can use it to trigger sound, fog-of-war updates, or any position-dependent logic.
-
----
-
-## Scheduling
-
-Entities are driven by `setTimeout`-based scheduling. The engine accounts for timer drift, each callback measures how late it fired and subtracts that from the next interval.
-
-|Method|Description|
-|---|---|
-|`scheduleFirst(delay?)`|Starts the action loop. Called automatically on spawn.|
-|`unschedule()`|Stops the loop. Returns remaining ms until the next scheduled tick.|
-
-You generally don't call these directly. The engine calls them during spawn/despawn and pause/unpause.
-
----
-
-## Setting the camera target
-
-After spawning the player entity, point the camera at it:
-
-```ts
-const player = engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 20), 80))
-engine.renderer.camera.target = player
-```
-
-The camera will smoothly follow the player from that point on, with the lag controlled by `camera.half_life` in your config.
+You can use it to trigger sound, fog-of-war updates, or any position-dependent logic.
 
 ---
 
 ## Related
 
-- [[World]] — spawning, despawning, and querying entities
 - [[Engine]] — lifecycle, pause/unpause, and the action loop
-- [[guides/AddingATileStyle]] — per-tile styling for the world entities navigate
