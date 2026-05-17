@@ -46,7 +46,7 @@ export class AsciiEngine {
     this.renderer = new Renderer(gameContainer, camera, tileMetrics)
 
     document.addEventListener('visibilitychange', this.handleVisibility)
-    window.addEventListener('resize', this.handleWindowState)
+    window.addEventListener('resize', this.handleResize)
   }
 
   async init() {
@@ -90,7 +90,7 @@ export class AsciiEngine {
     this.mouseManager?.destroy()
 
     document.removeEventListener('visibilitychange', this.handleVisibility)
-    window.removeEventListener('resize', this.handleWindowState)
+    window.removeEventListener('resize', this.handleResize)
   }
 
   pause() {
@@ -126,7 +126,8 @@ export class AsciiEngine {
     if (!this.paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
   }
 
-  private handleWindowState = () => {
+  private handleResize = () => {
+    this.renderer.uiLayer?.onResize()
     const minimized = window.innerWidth === 0 || window.innerHeight === 0
     if (minimized || document.hidden) {
       this.suspend()

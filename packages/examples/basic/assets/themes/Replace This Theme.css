@@ -19,7 +19,7 @@
 }
 
 /*
- * any .tile-* for per tile styling (See doc)
+ * Add any .tile-* for per-tile styling (See doc)
  */
 .ascii-engine .tile-wall {
   color: #ed6f63;

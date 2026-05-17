@@ -19,7 +19,6 @@ export const DEFAULT_CONFIG = {
       'Flamingo',
       'Flower',
       'Grey and Beige',
-      'Linen',
       'Midnight',
       'Old Parchment',
       'Purple Space',

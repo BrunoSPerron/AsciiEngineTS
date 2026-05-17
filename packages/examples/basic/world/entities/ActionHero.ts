@@ -50,7 +50,7 @@ export class ActionHero extends Entity {
 
     let resolved = false
     if (target.solid) {
-      resolved = this.resolveDiagonalCollision(this._dir)
+      resolved = this.resolveCollision(this._dir)
       if (!resolved) return 0
     }
 
@@ -68,49 +68,46 @@ export class ActionHero extends Entity {
     return Math.abs(v.x) === 1 && Math.abs(v.y) === 1
   }
 
-  private resolveDiagonalCollision(dir: GridVector): boolean {
+  private resolveCollision(dir: GridVector): boolean {
     const { x, y } = this.pos
     const world = this.engine.world
 
-    const upTile = () => world.getTileXY(x, y - 1)
-    const downTile = () => world.getTileXY(x, y + 1)
-    const leftTile = () => world.getTileXY(x - 1, y)
-    const rightTile = () => world.getTileXY(x + 1, y)
-
-    this._targetPos.setXY(x, y)
-
+    let a, b
     if (dir.equal(GridVector.UP_LEFT)) {
-      const u = upTile()
-      const l = leftTile()
-      if (u.solid && !l.solid) this._targetPos.x -= 1
-      else if (!u.solid && l.solid) this._targetPos.y -= 1
-      else return false
-      return true
+      a = [x, y - 1]
+      b = [x - 1, y]
+    } else if (dir.equal(GridVector.UP_RIGHT)) {
+      a = [x, y - 1]
+      b = [x + 1, y]
+    } else if (dir.equal(GridVector.DOWN_LEFT)) {
+      a = [x, y + 1]
+      b = [x - 1, y]
+    } else if (dir.equal(GridVector.DOWN_RIGHT)) {
+      a = [x, y + 1]
+      b = [x + 1, y]
+    } else if (dir.equal(GridVector.UP)) {
+      a = [x - 1, y - 1]
+      b = [x + 1, y - 1]
+    } else if (dir.equal(GridVector.RIGHT)) {
+      a = [x + 1, y - 1]
+      b = [x + 1, y + 1]
+    } else if (dir.equal(GridVector.LEFT)) {
+      a = [x - 1, y - 1]
+      b = [x - 1, y + 1]
+    } else if (dir.equal(GridVector.DOWN)) {
+      a = [x - 1, y + 1]
+      b = [x + 1, y + 1]
+    } else {
+      return false
     }
-    if (dir.equal(GridVector.UP_RIGHT)) {
-      const u = upTile()
-      const r = rightTile()
-      if (u.solid && !r.solid) this._targetPos.x += 1
-      else if (!u.solid && r.solid) this._targetPos.y -= 1
-      else return false
-      return true
-    }
-    if (dir.equal(GridVector.DOWN_LEFT)) {
-      const d = downTile()
-      const l = leftTile()
-      if (d.solid && !l.solid) this._targetPos.x -= 1
-      else if (!d.solid && l.solid) this._targetPos.y += 1
-      else return false
-      return true
-    }
-    if (dir.equal(GridVector.DOWN_RIGHT)) {
-      const d = downTile()
-      const r = rightTile()
-      if (d.solid && !r.solid) this._targetPos.x += 1
-      else if (!d.solid && r.solid) this._targetPos.y += 1
-      else return false
-      return true
-    }
-    return false
+
+    const aIsSolid = world.getTileXY(a[0], a[1]).solid
+    const bIsSolid = world.getTileXY(b[0], b[1]).solid
+
+    if (aIsSolid && !bIsSolid) this._targetPos.setXY(b[0], b[1])
+    else if (!aIsSolid && bIsSolid) this._targetPos.setXY(a[0], a[1])
+    else return false
+
+    return true
   }
 }
