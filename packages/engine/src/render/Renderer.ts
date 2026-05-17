@@ -119,6 +119,7 @@ export class Renderer {
     this.themeManager.set(config.game.initial_theme)
 
     this.setTileHAndW()
+    this.uiLayer?.drawFrame()
     this.bindWorld(world)
     this.camera.onFrame((now) => this._onCameraFrame(now))
   }

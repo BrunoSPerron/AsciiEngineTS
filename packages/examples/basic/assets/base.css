@@ -15,3 +15,7 @@
 
   mix-blend-mode: multiply;
 }
+
+.ascii-engine .ui-layout-line {
+  z-index: 1;
+}
