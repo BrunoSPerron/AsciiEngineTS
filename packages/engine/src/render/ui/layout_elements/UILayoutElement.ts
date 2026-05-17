@@ -1,4 +1,4 @@
-import type { TileMetricsData } from '../tileMetrics'
+import type { TileMetricsData } from '../../tileMetrics'
 
 export type UILayoutElementConfig = {
   id: number

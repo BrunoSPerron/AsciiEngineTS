@@ -1,5 +1,5 @@
 import type { TileMetricsData } from '../tileMetrics'
-import { UILayoutElement, type UILayoutElementConfig } from './UILayoutElement'
+import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
 
 // ---------------------------------------------------------------------------
 // Box-drawing glyph table (double-line only)
