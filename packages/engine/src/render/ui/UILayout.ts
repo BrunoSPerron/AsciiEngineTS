@@ -82,7 +82,9 @@ function makeSegmentEl(): HTMLPreElement {
  * All glyph writes go through _setCell() which keeps _chars and DOM in sync.
  */
 export class UILayout {
+  private parentRoot: HTMLDivElement
   private root: HTMLDivElement
+  private inlayEl: HTMLDivElement
   tileMetrics: TileMetricsData
 
   /** Viewport size in tiles, measured on each drawFrame() */
@@ -111,7 +113,18 @@ export class UILayout {
   private _lineCells = new Map<string, Segment>()
 
   constructor(root: HTMLDivElement, tileMetrics: TileMetricsData) {
-    this.root = root
+    this.parentRoot = root
+
+    const uiLayoutRoot = document.createElement('div')
+    uiLayoutRoot.className = 'ui-layout-root'
+    root.appendChild(uiLayoutRoot)
+    this.root = uiLayoutRoot
+
+    const inlayEl = document.createElement('div')
+    inlayEl.className = 'ui-layout-inlay'
+    root.appendChild(inlayEl)
+    this.inlayEl = inlayEl
+
     this.tileMetrics = tileMetrics
   }
 
@@ -125,8 +138,16 @@ export class UILayout {
    * via onResize().
    */
   drawFrame(): void {
-    const cols = Math.floor(this.root.clientWidth / this.tileMetrics.w)
-    const rows = Math.floor(this.root.clientHeight / this.tileMetrics.h)
+    const rawCols = this.parentRoot.clientWidth / this.tileMetrics.w
+    const rawRows = this.parentRoot.clientHeight / this.tileMetrics.h
+    const cols = Math.floor(rawCols)
+    const rows = Math.floor(rawRows)
+
+    const paddingX = (rawCols - cols) * this.tileMetrics.w
+    const paddingY = (rawRows - rows) * this.tileMetrics.h
+
+    this.root.style.padding = `${paddingY / 2}px ${paddingX / 2}px`
+    this.inlayEl.style.boxShadow = `inset 0 0 0 ${Math.max(paddingX, paddingY)}px var(--ui-bg)`
 
     if (this._frame && cols === this._cols && rows === this._rows) return
 

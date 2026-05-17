@@ -1,4 +1,4 @@
-.ascii-engine .layer-ui::after {
+.ascii-engine .layer-ui::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -14,8 +14,9 @@
   );
 
   mix-blend-mode: multiply;
+  z-index: -1;
 }
 
-.ascii-engine .ui-layout-line {
-  z-index: 1;
+.ascii-engine .ui-layout-root {
+  position: absolute;
 }
