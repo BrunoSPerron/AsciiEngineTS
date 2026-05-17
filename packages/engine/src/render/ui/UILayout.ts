@@ -252,7 +252,6 @@ export class UILayout {
   private _buildElementSegments(element: UILayoutElement): void {
     const { w, h } = this.tileMetrics
 
-    // Border is 1 tile outside the interior on all sides
     const bx = element.x - 1
     const by = element.y - 1
     const bw = element.w + 2
