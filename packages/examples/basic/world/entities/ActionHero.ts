@@ -52,22 +52,19 @@ export class ActionHero extends Entity {
       resolved = this.resolveDiagonalCollision(this._dir)
       if (!resolved) return 0
     }
-    let mult = 1
-    if (
-      !resolved &&
-      (this._dir.equal(GridVector.DOWN_LEFT) ||
-        this._dir.equal(GridVector.DOWN_RIGHT) ||
-        this._dir.equal(GridVector.UP_LEFT) ||
-        this._dir.equal(GridVector.UP_RIGHT))
-    ) {
-      // GridVector use a simplified 1.5 unit for diagonal distance
-      // This is the actual ratio
-      mult = 1.414
-    }
 
     this.pos.set(this._targetPos)
 
-    return this.speed * mult
+    if (!resolved && this.isDiagonal(this._dir)) {
+      // GridVector use a simplified 1.5 unit for diagonal distance.
+      // This is the actual ratio.
+      return this.speed * 1.414
+    }
+    return this.speed
+  }
+
+  private isDiagonal(v: GridVector) {
+    return Math.abs(v.x) === 1 && Math.abs(v.y) === 1
   }
 
   private resolveDiagonalCollision(dir: GridVector): boolean {

@@ -3,6 +3,7 @@ import type { ActionManager } from '../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
 import type { MouseManager } from '../../core/MouseManager'
+import { Anchor } from '../anchor'
 
 export class SelectMenuList {
   private _rendererUI: RendererUI
@@ -36,6 +37,7 @@ export class SelectMenuList {
     paddingX: number = 0,
     paddingY: number = 0,
     wraparound: boolean = true,
+    anchor: Anchor = Anchor.MiddleCenter,
   ): Promise<number> {
     const container = document.createElement('div')
     container.style.position = 'relative'
@@ -56,10 +58,19 @@ export class SelectMenuList {
 
     const panelId = this._rendererUI.reserveId()
     this._contextManager.pushContext(`select_menu_${panelId}`)
-    this._panel = await this._rendererUI.drawPanel(x, y, w, h, container, undefined, panelId)
+    this._panel = await this._rendererUI.drawPanel(
+      x,
+      y,
+      w,
+      h,
+      container,
+      undefined,
+      panelId,
+      anchor,
+    )
 
-    let unlistenHover: (() => void) | null
-    let unlistenClick: (() => void) | null
+    let unlistenHover: (() => void) | null = null
+    let unlistenClick: (() => void) | null = null
     if (this._mouseManager) {
       unlistenHover = this._mouseManager.onUIHover((_nodeId, cellX, cellY) => {
         const interiorX0 = x + 1

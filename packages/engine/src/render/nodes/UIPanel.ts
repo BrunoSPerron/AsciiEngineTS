@@ -1,17 +1,7 @@
 import type { TileMetricsData } from '../tileMetrics'
 import { UINode, type ILineLike } from './UINode'
+import { Anchor, applyAnchorToEl } from '../anchor'
 
-// Border cell layout for a panel at (x, y) with size (w, h):
-//
-//   top row:    y,     x .. x+w-1   (hline)
-//   bottom row: y+h-1, x .. x+w-1  (hline)
-//   left col:   x,     y .. y+h-1  (vline)
-//   right col:  x+w-1, y .. y+h-1  (vline)
-//
-// Corners are shared between an hline and a vline cell — the reconciler
-// picks the topmost node owning that cell, same as for LineNode.
-
-// Per-border element indices into UIPanel._borderEls
 const TOP_EL = 0
 const BOTTOM_EL = 1
 const LEFT_EL = 2
@@ -27,24 +17,13 @@ function waitAnimation(anim: Animation): Promise<void> {
 export class UIPanel extends UINode implements ILineLike {
   containerEl: HTMLDivElement
 
-  // Raw div elements — one per border side + background.
-  // Managed directly instead of going through LineNode so the panel
-  // fully owns its DOM without creating extra entries in RendererUI.nodes.
   private _borderEls: [
-    HTMLDivElement, // top
-    HTMLDivElement, // bottom
-    HTMLDivElement, // left
-    HTMLDivElement, // right
-    HTMLDivElement, // background
+    HTMLDivElement,
+    HTMLDivElement,
+    HTMLDivElement,
+    HTMLDivElement,
+    HTMLDivElement,
   ]
-
-  // chars stores the border glyphs in reading order around the perimeter:
-  //   [0 .. w-1]           → top row,    left→right
-  //   [w .. w+h-1]         → right col,  top→bottom   (includes corners)
-  //   [w+h .. 2w+h-1]      → bottom row, right→left
-  //   [2w+h .. 2w+2h-1]    → left col,   bottom→top   (includes corners)
-  //
-  // This gives each border cell a unique index that charIndexFor() can map to.
 
   protected openingPromise: Promise<Animation[]> = Promise.resolve([])
 
@@ -60,6 +39,7 @@ export class UIPanel extends UINode implements ILineLike {
     w: number,
     h: number,
     tileMetrics: TileMetricsData,
+    anchor: Anchor = Anchor.MiddleCenter,
   ) {
     super(id, 'panel', el, x, y, w, h, [], tileMetrics)
     this.containerEl = containerEl
@@ -86,27 +66,23 @@ export class UIPanel extends UINode implements ILineLike {
     this._applyBorderTransforms()
     this._applyBorderStyles()
     this._refreshAll()
+
+    applyAnchorToEl(this.containerEl, anchor)
   }
 
   // ==========================================================================
   // ILineLike
   // ==========================================================================
 
-  /** All perimeter cells — registered into lineCells by RendererUI. */
   cellCoords(): Array<[number, number]> {
     const coords: Array<[number, number]> = []
-    // top
     for (let i = 0; i < this.w; i++) coords.push([this.x + i, this.y])
-    // bottom
     for (let i = 0; i < this.w; i++) coords.push([this.x + i, this.y + this.h - 1])
-    // left (excluding corners)
     for (let i = 1; i < this.h - 1; i++) coords.push([this.x, this.y + i])
-    // right (excluding corners)
     for (let i = 1; i < this.h - 1; i++) coords.push([this.x + this.w - 1, this.y + i])
     return coords
   }
 
-  /** Interior cells — registered as panel-type into cellStack by RendererUI. */
   interiorCoords(): Array<[number, number]> {
     const coords: Array<[number, number]> = []
     for (let yy = this.y + 1; yy < this.y + this.h - 1; yy++) {
@@ -119,14 +95,10 @@ export class UIPanel extends UINode implements ILineLike {
 
   charIndexFor(x: number, y: number): number {
     const { x: px, y: py, w, h } = this
-    const inner = h - 2 // number of inner rows (excl corners)
-    // top row:    indices 0 .. w-1
+    const inner = h - 2
     if (y === py && x >= px && x < px + w) return x - px
-    // right col inner: indices w .. w+inner-1  (top→bottom, excl corners)
     if (x === px + w - 1 && y > py && y < py + h - 1) return w + (y - py - 1)
-    // bottom row: indices w+inner .. 2w+inner-1  (stored right→left)
     if (y === py + h - 1 && x >= px && x < px + w) return w + inner + (px + w - 1 - x)
-    // left col inner: indices 2w+inner .. 2w+2*inner-1  (stored bottom→top, excl corners)
     if (x === px && y > py && y < py + h - 1) return w + inner + w + (py + h - 2 - y)
     return -1
   }
@@ -142,9 +114,9 @@ export class UIPanel extends UINode implements ILineLike {
   // UINode overrides
   // ==========================================================================
 
+  // Position the container; all border elements are relative to it.
   applyTransform() {
-    // The panel container sits at inset:0 in the layer, so individual elements
-    // use absolute coords. Nothing to do on the container el itself.
+    this.containerEl.style.transform = `translate(${this.x * this.tileMetrics.w}px, ${this.y * this.tileMetrics.h}px)`
   }
 
   refresh() {
@@ -162,7 +134,8 @@ export class UIPanel extends UINode implements ILineLike {
       bg.appendChild(content)
     }
 
-    const midY = this.y + this.h / 2
+    // All y coords are now relative to the container (panel-local), not the viewport.
+    const midY = this.h / 2
 
     const topEl = this._borderEls[TOP_EL]
     const botEl = this._borderEls[BOTTOM_EL]
@@ -174,7 +147,6 @@ export class UIPanel extends UINode implements ILineLike {
     const savedLast = this.chars[this.w - 1]
 
     // phase 1
-
     this.chars[0] = '╠'
     this.chars[this.w - 1] = '╣'
     this._refreshBorderEl(TOP_EL)
@@ -187,34 +159,22 @@ export class UIPanel extends UINode implements ILineLike {
     topEl.style.clipPath = 'inset(0 50% 0 50%)'
     botEl.style.display = 'none'
 
-    this._setElTranslate(topEl, this.x, midY)
+    this._setElTranslate(topEl, 0, midY)
 
-    const topAnim = this._animateHorizontalExpand(
-      topEl,
-      this.x,
-      midY,
-      duration * UIPanel.PHASE2_RATIO,
-    )
+    const topAnim = this._animateHorizontalExpand(topEl, 0, midY, duration * UIPanel.PHASE2_RATIO)
 
     await waitAnimation(topAnim)
 
     // phase 2
-
     this.chars[0] = savedFirst
     this.chars[this.w - 1] = savedLast
     this._refreshBorderEl(TOP_EL)
 
-    this._animateVerticalSlide(topEl, this.x, midY, this.y, duration * UIPanel.PHASE1_RATIO)
+    this._animateVerticalSlide(topEl, 0, midY, 0, duration * UIPanel.PHASE1_RATIO)
 
     botEl.style.display = 'block'
 
-    this._animateVerticalSlide(
-      botEl,
-      this.x,
-      midY,
-      this.y + this.h - 1,
-      duration * UIPanel.PHASE1_RATIO,
-    )
+    this._animateVerticalSlide(botEl, 0, midY, this.h - 1, duration * UIPanel.PHASE1_RATIO)
 
     const phase2Anims = [lefEl, rigEl, bgEl].map((el) =>
       this._animateVerticalClipReveal(el, duration * UIPanel.PHASE1_RATIO),
@@ -225,7 +185,8 @@ export class UIPanel extends UINode implements ILineLike {
 
   async close(duration = 500): Promise<void> {
     await this.openingPromise
-    const midY = this.y + this.h / 2
+
+    const midY = this.h / 2
 
     const topEl = this._borderEls[TOP_EL]
     const botEl = this._borderEls[BOTTOM_EL]
@@ -239,12 +200,12 @@ export class UIPanel extends UINode implements ILineLike {
       this._animateVerticalClipCollapse(el, phase1Duration)
     }
 
-    this._animateVerticalSlide(topEl, this.x, this.y, midY, phase1Duration, 'ease-in')
+    this._animateVerticalSlide(topEl, 0, 0, midY, phase1Duration, 'ease-in')
 
     const botAnim = this._animateVerticalSlide(
       botEl,
-      this.x,
-      this.y + this.h - 1,
+      0,
+      this.h - 1,
       midY,
       phase1Duration,
       'ease-in',
@@ -259,7 +220,7 @@ export class UIPanel extends UINode implements ILineLike {
 
     const phase2Anim = this._animateHorizontalCollapse(
       topEl,
-      this.x,
+      0,
       midY,
       duration * UIPanel.PHASE2_RATIO,
     )
@@ -275,29 +236,20 @@ export class UIPanel extends UINode implements ILineLike {
 
   private _initChars() {
     const { w, h } = this
-    // perimeter length: top(w) + right(h-1, excl top-right corner) + bottom(w) + left(h-1, excl both corners)
-    // but we store corners only once (in top and bottom rows), left/right exclude both corners
-    // total = w + (h-2) + w + (h-2) = 2w + 2h - 4  ... plus the 4 corners already in top/bottom
-    // simplest: top(w) + right_inner(h-2) + bottom(w) + left_inner(h-2) = 2w + 2(h-2)
     const len = 2 * w + 2 * (h - 2)
     this.chars = new Array<string>(len).fill(' ')
 
-    // top row
     for (let i = 0; i < w; i++) this.chars[i] = '═'
-    // bottom row (stored right→left)
     const botStart = w + (h - 2)
     for (let i = 0; i < w; i++) this.chars[botStart + i] = '═'
-    // right col inner
     for (let i = 0; i < h - 2; i++) this.chars[w + i] = '║'
-    // left col inner (stored bottom→top)
     const lefStart = 2 * w + (h - 2)
     for (let i = 0; i < h - 2; i++) this.chars[lefStart + i] = '║'
 
-    // Corners
-    this.chars[0] = '╔' // top-left
-    this.chars[w - 1] = '╗' // top-right
-    this.chars[botStart] = '╝' // bottom-right (stored right→left, so index 0 = right)
-    this.chars[botStart + w - 1] = '╚' // bottom-left
+    this.chars[0] = '╔'
+    this.chars[w - 1] = '╗'
+    this.chars[botStart] = '╝'
+    this.chars[botStart + w - 1] = '╚'
   }
 
   // ==========================================================================
@@ -305,14 +257,15 @@ export class UIPanel extends UINode implements ILineLike {
   // ==========================================================================
 
   private _applyBorderTransforms() {
-    const { x, y, w, h } = this
-    this._setElTranslate(this._borderEls[TOP_EL], x, y)
-    this._setElTranslate(this._borderEls[BOTTOM_EL], x, y + h - 1)
-    this._setElTranslate(this._borderEls[LEFT_EL], x, y + 1)
-    this._setElTranslate(this._borderEls[RIGHT_EL], x + w - 1, y + 1)
+    const { w, h } = this
+    // All positions are relative to the container's origin (the panel's top-left corner).
+    this._setElTranslate(this._borderEls[TOP_EL], 0, 0)
+    this._setElTranslate(this._borderEls[BOTTOM_EL], 0, h - 1)
+    this._setElTranslate(this._borderEls[LEFT_EL], 0, 1)
+    this._setElTranslate(this._borderEls[RIGHT_EL], w - 1, 1)
 
     const bg = this._borderEls[BG_EL]
-    bg.style.transform = `translate(${(x + 1) * this.tileMetrics.w}px, ${(y + 1) * this.tileMetrics.h}px)`
+    bg.style.transform = `translate(${1 * this.tileMetrics.w}px, ${1 * this.tileMetrics.h}px)`
     bg.style.width = `${(w - 2) * this.tileMetrics.w}px`
     bg.style.height = `${(h - 2) * this.tileMetrics.h}px`
     bg.className = 'ui ui-panel'
@@ -331,15 +284,8 @@ export class UIPanel extends UINode implements ILineLike {
   // PRIVATE — char mapping to border elements
   // ==========================================================================
 
-  // chars layout:
-  //   [0 .. w-1]               top,   left→right
-  //   [w .. w+(h-2)-1]         right, top→bottom  (inner only)
-  //   [w+(h-2) .. 2w+(h-2)-1]  bottom,right→left
-  //   [2w+(h-2) .. 2w+2(h-2)-1] left, bottom→top  (inner only)
-
   private _refreshAll() {
     this._refreshBorderEls()
-    // bg has no text content — it's a background block
   }
 
   private _refreshBorderEls() {
@@ -356,7 +302,6 @@ export class UIPanel extends UINode implements ILineLike {
         break
       case BOTTOM_EL: {
         const start = w + (h - 2)
-        // stored right→left, display left→right
         const row = this.chars.slice(start, start + w).reverse()
         el.textContent = row.join('')
         break
@@ -369,7 +314,6 @@ export class UIPanel extends UINode implements ILineLike {
       case LEFT_EL: {
         const start = 2 * w + (h - 2)
         const inner = this.chars.slice(start, start + (h - 2))
-        // stored bottom→top, display top→bottom
         el.textContent = inner.reverse().join('\n')
         break
       }

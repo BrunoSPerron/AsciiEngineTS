@@ -7,6 +7,7 @@ import type { TileMetricsData } from './tileMetrics'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
 import type { MouseManager } from '../core/MouseManager'
+import { Anchor } from './anchor'
 
 export class RendererUI {
   root: HTMLDivElement
@@ -79,8 +80,9 @@ export class RendererUI {
     content?: HTMLDivElement,
     duration?: number,
     reservedId?: number,
+    anchor: Anchor = Anchor.MiddleCenter,
   ): Promise<UIPanel> {
-    const panel = this.buildPanel(x, y, w, h, reservedId)
+    const panel = this.buildPanel(x, y, w, h, reservedId, anchor)
     this.registerLineLike(panel)
     this.reconcileFootprint(panel)
     this.reconcileNeighborsPanelBorder(panel)
@@ -176,6 +178,7 @@ export class RendererUI {
     paddingX = 1,
     paddingY = 0,
     wraparound = true,
+    anchor: Anchor = Anchor.MiddleCenter,
   ): Promise<number> {
     const maxLen = Math.max(...items.map((s) => s.length))
     const w = maxLen + paddingX * 2 + 2
@@ -186,7 +189,7 @@ export class RendererUI {
       this._actionManager,
       this._contextManager,
       this.mouseManager,
-    ).open(x, y, w, h, items, paddingX, paddingY, wraparound)
+    ).open(x, y, w, h, items, paddingX, paddingY, wraparound, anchor)
   }
 
   showSelectRollerMenu(x: number, y: number, items: string[], paddingX = 1): Promise<number> {
@@ -524,7 +527,14 @@ export class RendererUI {
     return node
   }
 
-  private buildPanel(x: number, y: number, w: number, h: number, reservedId?: number): UIPanel {
+  private buildPanel(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    reservedId?: number,
+    anchor: Anchor = Anchor.MiddleCenter,
+  ): UIPanel {
     const containerEl = document.createElement('div')
     containerEl.className = 'ui-panel-container'
     containerEl.style.position = 'absolute'
@@ -533,7 +543,7 @@ export class RendererUI {
 
     const el = document.createElement('div')
     const id = reservedId ?? this.nextId++
-    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.tileMetrics)
+    const panel = new UIPanel(id, el, containerEl, x, y, w, h, this.tileMetrics, anchor)
 
     this.nodes.set(panel.id, panel)
     this.pushBorderCells(panel)

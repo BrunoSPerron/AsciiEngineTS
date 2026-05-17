@@ -1,4 +1,5 @@
 import { type TileMetricsData } from '../tileMetrics'
+import { Anchor } from '../anchor'
 
 export type UIKind = 'text' | 'hline' | 'vline' | 'panel'
 
@@ -26,6 +27,8 @@ export class UINode {
 
   tileMetrics: TileMetricsData
 
+  protected _anchor: Anchor
+
   constructor(
     id: number,
     kind: UIKind,
@@ -36,6 +39,7 @@ export class UINode {
     h: number,
     chars: string[] = [],
     tileMetrics: TileMetricsData,
+    anchor: Anchor = Anchor.MiddleCenter,
   ) {
     this.id = id
     this.kind = kind
@@ -46,6 +50,7 @@ export class UINode {
     this.h = h
     this.chars = chars
     this.tileMetrics = tileMetrics
+    this._anchor = anchor
   }
 
   applyTransform() {

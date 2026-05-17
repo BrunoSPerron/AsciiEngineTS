@@ -37,7 +37,7 @@ export class SelectMenu {
       Logger.error('Cannot Open Menu: No uiLayer in renderer')
       return -1
     }
-    const selected = await uiLayer!.showSelectMenu(10, 10, labels)
+    const selected = await uiLayer!.showSelectMenu(0, 0, labels)
     if (selected >= 0 && selected < this.entries.length) {
       await this.entries[selected].action()
     }

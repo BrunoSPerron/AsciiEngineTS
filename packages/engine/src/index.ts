@@ -13,6 +13,7 @@ export type { Tile } from './world/Tile'
 
 export { Camera } from './render/Camera'
 export { SelectMenu } from './render/SelectMenu'
+export { Anchor } from './render/anchor'
 
 export { GridVector } from './math/GridVector'
 export { clamp, lerp } from './math/utils'
