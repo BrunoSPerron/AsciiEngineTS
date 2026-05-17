@@ -5,7 +5,7 @@ Place an `engine-settings.toml` file anywhere under your asset glob root. All fi
 ```toml
 [game]
 title = "My Ascii Game"
-start_theme = "Flamingo"
+initial_theme = "Flamingo"
 
 [world]
 chunk_view_distance = 3
@@ -26,7 +26,7 @@ right   = ["KeyD", "ArrowRight"]
 | Section    | Key                   | Default         | Description                                        |
 | ---------- | --------------------- | --------------- | -------------------------------------------------- |
 | `game`     | `title`               | `"AsciiEngine"` | Sets `document.title`                              |
-| `game`     | `start_theme`         | `"Copper"`      | Theme applied on load                              |
+| `game`     | `initial_theme`       | `"Copper"`      | Theme applied on load                              |
 | `world`    | `chunk_view_distance` | `3`             | Radius of loaded chunks around the player          |
 | `camera`   | `half_life`           | `400`           | Smoothing. ms to close half the distance to target |
 | `camera`   | `initial_position`    | `[0, 0]`        | Camera position before a target is assigned        |

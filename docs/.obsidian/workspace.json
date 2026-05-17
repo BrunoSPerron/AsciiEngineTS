@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "render/Theming.md",
+                "file": "world/Entity.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Theming"
+              "title": "Entity"
             }
           }
         ]
@@ -185,18 +185,18 @@
   },
   "active": "fe0ee1a7efb0509b",
   "lastOpenFiles": [
+    "world/Region.md",
+    "world/Entity.md",
+    "world/Chunk.md",
+    "render/Theming.md",
+    "input/ContextManager.md",
+    "render/UI.md",
     "engine/Assets.md",
     "engine/Engine.md",
     "engine/engine-settings.md",
-    "render/Theming.md",
-    "render/UI.md",
     "input/MouseManager.md",
-    "input/ContextManager.md",
     "input/ActionManager.md",
     "guides/Adding a Tile Style.md",
-    "world/Chunk.md",
-    "world/Entity.md",
-    "world/Region.md",
     "index.md",
     "World.md",
     "Sans titre.canvas",

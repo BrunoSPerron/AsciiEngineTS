@@ -8,7 +8,7 @@ import { Logger } from './Logger'
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',
-    start_theme: 'Copper',
+    initial_theme: 'Copper',
   },
   world: {
     chunk_view_distance: 3,

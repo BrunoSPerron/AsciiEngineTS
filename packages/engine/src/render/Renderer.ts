@@ -114,7 +114,7 @@ export class Renderer {
     for (const { name, url } of assets.themes) {
       this.themeManager.register(name, url)
     }
-    this.themeManager.set(config.game.start_theme)
+    this.themeManager.set(config.game.initial_theme)
 
     this.setTileHAndW()
     this.bindWorld(world)

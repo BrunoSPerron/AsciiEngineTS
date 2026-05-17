@@ -3,7 +3,7 @@
 
 [game]
 title = "My Ascii Game"
-start_theme = "Flamingo"
+initial_theme = "Flamingo"
 
 [world]
 chunk_view_distance = 3

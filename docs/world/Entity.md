@@ -1,8 +1,6 @@
-
 An Entity is a living object in the world: a player, an NPC, a projectile, anything that has a position, acts on a timer, and can move. Entities are the primary unit of gameplay logic in AsciiEngine.
 
 ---
-
 ## Creating an entity
 
 Subclass `Entity` and override `act()` to define behavior. The constructor takes a glyph, a starting position, and a speed in milliseconds.
@@ -24,13 +22,12 @@ const goblin = new Goblin('g', new GridVector(10, 10), 500)
 The return value of `act()` controls how long the engine waits before calling it again. The return value minimum is clamped to (16ms). `MIN_ACTION_INTERVAL`
 
 ---
-
 ## Spawning and despawning
 
 Entities must be added to the world through `world.spawnEntity()`. This registers the entity, calls `OnLoad()`, and starts its action timer.
 
 ```ts
-const hero = engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 20), 80))
+const goblin = engine.world.spawnEntity(new Goblin('☺', new GridVector(20, 20), 80))
 ```
 
 `spawnEntity` returns the same entity, typed correctly, so you can hold a reference to it.
@@ -38,7 +35,6 @@ const hero = engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 2
 To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls `OnUnload()`, removes it from the world, and fires despawn listeners for the renderer to clean up.
 
 ---
-
 ## Lifecycle hooks
 
 |Method|When it's called|
@@ -49,7 +45,7 @@ To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls 
 Use `OnLoad()` to register input listeners and start any entity-specific logic. Use `OnUnload()` to clean up those listeners.
 
 ```ts
-export class ActionHero extends Entity {
+export class PlayerEntity extends Entity {
   private _unlisten: () => void = () => {}
 
   OnLoad(): void {
@@ -67,7 +63,6 @@ export class ActionHero extends Entity {
 The `engine` property is injected before `OnLoad()` is called, so it's safe to access `this.engine` inside both hooks.
 
 ---
-
 ## Movement
 
 Move the entity by mutating `this.pos` inside `act()`. The engine smoothly interpolates the rendered position between `previousPos` and `pos` based on elapsed time and `currentActMs`.
@@ -96,7 +91,6 @@ act(): number {
 ```
 
 ---
-
 ## Properties
 
 |Property|Type|Description|

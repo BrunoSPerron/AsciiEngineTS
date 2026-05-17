@@ -3,7 +3,6 @@ A Chunk is a fixed-size square section of the world, 32×32 tiles. The world is 
 Chunks are the unit of loading and unloading. Only chunks within `chunk_view_distance` of the player's current chunk are kept in memory at any time. See [[Engine]] for how to configure view distance.
 
 ---
-
 ## Tiles
 
 Each chunk stores a flat array of 1024 tiles (32×32). A tile has three fields:
@@ -17,7 +16,6 @@ Each chunk stores a flat array of 1024 tiles (32×32). A tile has three fields:
 See [[Adding a Tile Style|adding a tile style]] for how to define and apply tile styles.
 
 ---
-
 ## Lifecycle
 
 Chunks are created lazily. The first time any code refers to a chunk coordinate, that chunk is allocated and passed to the [[#Chunk generation|chunk generator]] if one is set. They are destroyed when they fall outside the active view distance.
@@ -26,7 +24,6 @@ Chunks track a `dirty` flag. When set, the renderer re-renders the chunk's HTML 
 Modifying tiles via `world.setTilesStyle()` sets this flag automatically.
 
 ---
-
 ## Chunk generation
 
 Register a generator on the world before the game starts:
@@ -53,7 +50,6 @@ The generator receives the chunk coordinates and the blank chunk. All tiles defa
 The generator is a plain function, so you can close over any state you need: noise functions, region maps, seed values, and so on.
 
 ---
-
 ## Related
 
 - [[Region]] — logical groupings of chunks
