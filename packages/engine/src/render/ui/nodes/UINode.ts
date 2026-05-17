@@ -1,4 +1,4 @@
-import { type TileMetricsData } from '../tileMetrics'
+import { type TileMetricsData } from '../../tileMetrics'
 import { Anchor } from '../anchor'
 
 export type UIKind = 'text' | 'hline' | 'vline' | 'panel'

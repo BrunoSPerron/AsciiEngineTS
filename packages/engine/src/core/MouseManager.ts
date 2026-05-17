@@ -1,5 +1,5 @@
 import type { ContextManager, ContextListener } from './ContextManager'
-import type { RendererUI } from '../render/RendererUI'
+import type { RendererUI } from '../render/ui/RendererUI'
 import type { Camera } from '../render/Camera'
 import type { TileMetricsData } from '../render/tileMetrics'
 

@@ -1,9 +1,6 @@
 /*
-css files in root/themes are loaded automatically as themes
-Note: These changes affect the whole page. All css here should start with '.ascii-engine'
-      unless you want the style to affect non-engine elements
-This'll extend and overrides the css defined in ./engine/render/css/base.css
-*/
+ * css files in /themes are loaded automatically as selectable themes
+ */
 
 .ascii-engine {
   --color-bg: #0a174e;
@@ -22,13 +19,16 @@ This'll extend and overrides the css defined in ./engine/render/css/base.css
 }
 
 /*
-any .tile-*
-*/
+ * any .tile-* for per tile styling (See doc)
+ */
 .ascii-engine .tile-wall {
   color: #ed6f63;
   background-color: #2d2926;
 }
 
+/*
+ * And any fancy css you want
+ */
 .ascii-engine .layer-ui::before {
   content: '';
   position: fixed;

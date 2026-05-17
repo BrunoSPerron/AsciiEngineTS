@@ -1,8 +1,8 @@
-import type { ContextManager } from '../../core/ContextManager'
-import type { ActionManager } from '../../core/ActionManager'
+import type { ContextManager } from '../../../core/ContextManager'
+import type { ActionManager } from '../../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
-import type { MouseManager } from '../../core/MouseManager'
+import type { MouseManager } from '../../../core/MouseManager'
 import { Anchor } from '../anchor'
 
 export class SelectMenuList {

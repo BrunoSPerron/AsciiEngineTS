@@ -8,6 +8,7 @@ export class ThemeManager {
   private link: HTMLLinkElement
 
   private _current: string = ''
+  private _engineThemeWhitelist: string[] = []
 
   get current(): string {
     return this._current
@@ -17,7 +18,10 @@ export class ThemeManager {
     this.link = document.createElement('link')
     this.link.rel = 'stylesheet'
     document.head.appendChild(this.link)
+  }
 
+  init(engineThemeWhitelist: string[]) {
+    this._engineThemeWhitelist = engineThemeWhitelist
     this.registerEngineThemes()
     this.preloadAllThemes()
   }
@@ -56,7 +60,6 @@ export class ThemeManager {
 
   private registerFile(path: string, url: string) {
     const name = path.split('/').pop()!.replace('.css', '')
-
-    this.register(name, url)
+    if (this._engineThemeWhitelist.includes(name)) this.register(name, url)
   }
 }

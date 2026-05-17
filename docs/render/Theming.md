@@ -165,7 +165,6 @@ The engine ships these themes out of the box:
 | Flamingo       | `#1e3756`  | `#ea8a7a` |
 | Flower         | `#2b1760`  | `#fa78be` |
 | Grey and Beige | `#323043`  | `#d2ceb1` |
-| Linen          | `#646662`  | `#e1ddd5` |
 | Midnight       | `#19243a`  | `#7487a2` |
 | Old Parchment  | `#a07855`  | `#d4b996` |
 | Purple Space   | `#331b3f`  | `#acc7b4` |

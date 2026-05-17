@@ -8,7 +8,25 @@ import { Logger } from './Logger'
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',
-    initial_theme: 'Copper',
+    initial_theme: 'Grey',
+    engine_themes: [
+      'Baby Blue',
+      'Burgundy Pink',
+      'Chiffon',
+      'Copper',
+      'Creamy Pink',
+      'Deep Sea',
+      'Flamingo',
+      'Flower',
+      'Grey and Beige',
+      'Linen',
+      'Midnight',
+      'Old Parchment',
+      'Purple Space',
+      'Raspberry',
+      'Retro Gold',
+      'Saphire Peach',
+    ],
   },
   world: {
     chunk_view_distance: 3,

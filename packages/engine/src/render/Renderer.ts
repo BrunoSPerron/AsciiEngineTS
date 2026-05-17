@@ -2,7 +2,7 @@ import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
 import type { World } from '../world/World'
 import { type Camera } from './Camera'
-import { RendererUI } from './RendererUI'
+import { RendererUI } from './ui/RendererUI'
 import { ThemeManager } from './ThemeManager'
 import { type TileMetricsData } from './tileMetrics'
 import baseCssUrl from './css/base.css?url'
@@ -93,6 +93,8 @@ export class Renderer {
     config: EngineConfig,
     assets: GameAssets,
   ) {
+    this.themeManager.init(config.game.engine_themes)
+
     this.camera.halfLife = config.camera.half_life
     this.camera.setInitialPosition(...config.camera.initial_position)
     this.viewDistance = config.world.chunk_view_distance
