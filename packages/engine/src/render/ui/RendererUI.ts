@@ -8,12 +8,14 @@ import type { ActionManager } from '../../core/ActionManager'
 import type { ContextManager } from '../../core/ContextManager'
 import type { MouseManager } from '../../core/MouseManager'
 import { Anchor } from './anchor'
+import { UILayout } from './UILayout'
 
 export class RendererUI {
   root: HTMLDivElement
   _actionManager: ActionManager
   _contextManager: ContextManager
   public mouseManager: MouseManager | null = null
+  uiLayout: UILayout | null = null
 
   tileMetrics: TileMetricsData
 
@@ -37,6 +39,7 @@ export class RendererUI {
     this._contextManager = contextManager
     this.root = root
     this.tileMetrics = tileMetrics
+    this.uiLayout = new UILayout(root, tileMetrics)
   }
 
   reserveId(): number {
@@ -48,6 +51,14 @@ export class RendererUI {
     this.nodes.clear()
     this.cellStack.clear()
     this.lineCells.clear()
+  }
+
+  drawFrame(): void {
+    this.uiLayout?.drawFrame()
+  }
+
+  onResize(): void {
+    this.uiLayout?.onResize()
   }
 
   // ---------- primitive draw calls ------------------------------------------

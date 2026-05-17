@@ -168,3 +168,14 @@
 .ascii-engine .ui-roller.fade-high {
   opacity: 0.2;
 }
+
+/* ----- UI layout ----- */
+
+.ascii-engine .ui-layout-line {
+  position: absolute;
+  font-family: monospace;
+  font-size: var(--font-size);
+  line-height: var(--line-height);
+  color: var(--color-text);
+  pointer-events: none;
+}
