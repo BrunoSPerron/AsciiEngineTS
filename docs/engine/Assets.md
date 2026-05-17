@@ -1,6 +1,6 @@
 The engine discovers its assets through a Vite glob passed to the `AsciiEngine` constructor. The glob must be eager and resolve to URLs
 
-NOTE: If not using vite it should be possible to replicate this blob.
+NOTE: If not using Vite it should be possible to replicate this blob.
 
 ```ts
 const assets: Record<string, string> = import.meta.glob('./assets/**/*', {
@@ -12,7 +12,7 @@ const assets: Record<string, string> = import.meta.glob('./assets/**/*', {
 const engine = new AsciiEngine(container, assets)
 ```
 
-The engine scans the resulting path→URL map at construction time and picks out the files it recognises by path shape. Everything else in the glob is ignored.
+The engine scans the resulting path → URL map at construction time and picks out the files it recognises by path shape. Everything else in the glob is ignored.
 
 ---
 ## Recognised files

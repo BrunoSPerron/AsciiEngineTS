@@ -192,7 +192,7 @@ Your theme file is a full CSS file — it can contain anything beyond variable d
   background-color: #2d2926;
 }
 
-.ascii-engine .layer-world::before {
+.ascii-engine .layer-ui::before {
   content: '';
   position: fixed;
   inset: 0;

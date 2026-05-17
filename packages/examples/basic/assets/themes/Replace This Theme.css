@@ -29,7 +29,7 @@ any .tile-*
   background-color: #2d2926;
 }
 
-.ascii-engine .layer-world::before {
+.ascii-engine .layer-ui::before {
   content: '';
   position: fixed;
   inset: 0;
