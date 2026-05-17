@@ -1,6 +1,6 @@
-import type { AsciiEngine } from '../core/Engine'
-import { Logger } from '../core/Logger'
-import type { Renderer } from './Renderer'
+import type { AsciiEngine } from '../../core/Engine'
+import { Logger } from '../../core/Logger'
+import type { Renderer } from './../Renderer'
 
 type MenuEntry = {
   label: string
@@ -59,7 +59,7 @@ export class SelectMenu {
     }
     const roller = uiLayer!.createSelectRollerMenu()
 
-    const unlisten = roller.onChange((selected) => {
+    const unlisten = roller.onChange((selected: number) => {
       this.renderer.themeManager.set(themes[selected])
     })
 

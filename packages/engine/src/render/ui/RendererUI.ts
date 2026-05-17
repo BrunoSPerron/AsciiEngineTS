@@ -3,10 +3,10 @@ import { LineNode, maskToGlyph, TOP, RIGHT, BOTTOM, LEFT, DOUBLE } from './nodes
 import { UIPanel } from './nodes/UIPanel'
 import { SelectMenuList } from './nodes/SelectMenuList'
 import { SelectMenuRoller } from './nodes/SelectMenuRoller'
-import type { TileMetricsData } from './tileMetrics'
-import type { ActionManager } from '../core/ActionManager'
-import type { ContextManager } from '../core/ContextManager'
-import type { MouseManager } from '../core/MouseManager'
+import type { TileMetricsData } from '../tileMetrics'
+import type { ActionManager } from '../../core/ActionManager'
+import type { ContextManager } from '../../core/ContextManager'
+import type { MouseManager } from '../../core/MouseManager'
 import { Anchor } from './anchor'
 
 export class RendererUI {

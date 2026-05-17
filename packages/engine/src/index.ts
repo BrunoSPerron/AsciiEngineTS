@@ -12,8 +12,8 @@ export { type Chunk, CHUNK_SIZE } from './world/Chunk'
 export type { Tile } from './world/Tile'
 
 export { Camera } from './render/Camera'
-export { SelectMenu } from './render/SelectMenu'
-export { Anchor } from './render/anchor'
+export { SelectMenu } from './render/ui/SelectMenu'
+export { Anchor } from './render/ui/anchor'
 
 export { GridVector } from './math/GridVector'
 export { clamp, lerp } from './math/utils'
