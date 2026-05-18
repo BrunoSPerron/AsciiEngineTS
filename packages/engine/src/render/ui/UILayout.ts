@@ -183,8 +183,11 @@ export class UILayout {
     element.reflow(this._cols, this._rows)
 
     this._elements.set(id, element)
-    this._buildElementSegments(element)
-    this._reconcileBorderNeighbors(element)
+
+    if (!element.hidden) {
+      this._buildElementSegments(element)
+      this._reconcileBorderNeighbors(element)
+    }
 
     return element
   }
@@ -304,7 +307,9 @@ export class UILayout {
     }
     for (const element of this._elements.values()) {
       element.reflow(this._cols, this._rows)
-      this._buildElementSegments(element)
+      if (!element.hidden) {
+        this._buildElementSegments(element)
+      }
     }
   }
 

@@ -23,7 +23,9 @@ export class Game {
     //UILayout test
     const uiLayout = this.engine.renderer.uiLayer!.uiLayout
     uiLayout.createElement({
-      w: 10,
+      x: 20,
+      y: 20,
+      w: 30,
       h: 10,
       xPercent: 25,
       yPercent: 25,

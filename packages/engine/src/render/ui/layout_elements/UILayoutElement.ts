@@ -2,7 +2,7 @@ import type { TileMetricsData } from '../../tileMetrics'
 
 export type UILayoutElementConfig = {
   id: number
-  /** Viewport-local tile coords of the element's interior (excludes its border) */
+  /** Viewport-local tile offset applied on top of percent-based position (or absolute position when no percent is set) */
   x?: number
   y?: number
   w: number
@@ -11,7 +11,9 @@ export type UILayoutElementConfig = {
   minW?: number
   minH?: number
 
+  /** Position the element's center at this percentage of the container width */
   xPercent?: number
+  /** Position the element's center at this percentage of the container height */
   yPercent?: number
   maxHPercent?: number
   maxWPercent?: number
@@ -26,6 +28,14 @@ export type UILayoutElementConfig = {
  * UILayoutElement is only responsible for rendering content inside its interior.
  *
  * Coordinates are viewport-local tile grid coordinates.
+ *
+ * Positioning:
+ *   - When xPercent / yPercent are set they pin the **center** of the element
+ *     to that percentage of the container. x / y are then treated as a tile
+ *     offset added on top of that centered position.
+ *   - When only x / y are set they are used as the top-left corner directly.
+ *   - The element is always clamped to the layout bounds. If after clamping
+ *     the available space is smaller than minW / minH the element is hidden.
  */
 export class UILayoutElement {
   readonly id: number
@@ -46,7 +56,13 @@ export class UILayoutElement {
   maxHPercent: number | undefined
   maxWPercent: number | undefined
 
+  private _xPercentOffset: number = 0
+  private _yPercentOffset: number = 0
+
   priority: number
+
+  /** True when the element was hidden because it could not fit in the layout */
+  private _hidden = false
 
   protected tileMetrics: TileMetricsData
 
@@ -71,7 +87,14 @@ export class UILayoutElement {
     this.maxWPercent = config.maxWPercent
     this.maxHPercent = config.maxHPercent
 
+    this._xPercentOffset = this.x
+    this._yPercentOffset = this.y
+
     this.tileMetrics = tileMetrics
+  }
+
+  get hidden(): boolean {
+    return this._hidden
   }
 
   /**
@@ -79,24 +102,71 @@ export class UILayoutElement {
    * Resolves percent-based config against container dimensions, then calls layout().
    */
   reflow(containerCols: number, containerRows: number): void {
-    const x =
-      this.xPercent !== undefined ? Math.round((containerCols * this.xPercent) / 100) : this.x
-
-    const y =
-      this.yPercent !== undefined ? Math.round((containerRows * this.yPercent) / 100) : this.y
+    // 1. Resolve max size
+    let maxW = this.maxW
+    let maxH = this.maxH
 
     if (this.maxWPercent !== undefined) {
-      this.maxW = Math.floor((containerCols * this.maxWPercent) / 100)
+      maxW = Math.min(Math.floor((containerCols * this.maxWPercent) / 100), this.maxW)
     }
 
     if (this.maxHPercent !== undefined) {
-      this.maxH = Math.floor((containerRows * this.maxHPercent) / 100)
+      maxH = Math.min(Math.floor((containerRows * this.maxHPercent) / 100), this.maxH)
     }
 
-    const w = Math.max(this.minW, Math.min(this.w, this.maxW))
-    const h = Math.max(this.minH, Math.min(this.h, this.maxH))
+    // 2. Desired size (clamped between min and max)
+    const w = Math.max(this.minW, Math.min(this.maxW, maxW))
+    const h = Math.max(this.minH, Math.min(this.maxH, maxH))
 
-    this.layout(x, y, w, h)
+    // ---------------------------------------------------------------------------
+    // 3. Resolve position
+    //    xPercent / yPercent pin the *center* of the element; x / y are offsets.
+    //    Without percent, x / y are the absolute top-left tile position.
+    // ---------------------------------------------------------------------------
+    const offsetX = this._xPercentOffset
+    const offsetY = this._yPercentOffset
+
+    let x: number
+    let y: number
+
+    if (this.xPercent !== undefined) {
+      const centerX = (containerCols * this.xPercent) / 100
+      x = Math.round(centerX - w / 2) + offsetX
+    } else {
+      x = offsetX
+    }
+
+    if (this.yPercent !== undefined) {
+      const centerY = (containerRows * this.yPercent) / 100
+      y = Math.round(centerY - h / 2) + offsetY
+    } else {
+      y = offsetY
+    }
+
+    // ---------------------------------------------------------------------------
+    // 4. Clamp to layout bounds (border occupies 1-tile perimeter outside x/y)
+    //    The border extends 1 tile in every direction, so the element's interior
+    //    must stay within [1, containerCols - 2] / [1, containerRows - 2].
+    // ---------------------------------------------------------------------------
+    const minX = 0
+    const minY = 0
+    // Right / bottom edge: interior end = x + w; border end = x + w + 1 ≤ containerCols - 1
+    const maxX = containerCols - w - 2
+    const maxY = containerRows - h - 2
+
+    const clampedX = Math.max(minX, Math.min(x, maxX))
+    const clampedY = Math.max(minY, Math.min(y, maxY))
+
+    // ---------------------------------------------------------------------------
+    // 5. Hide if there's no room even at minimum size
+    // ---------------------------------------------------------------------------
+    if (maxX < minX || maxY < minY) {
+      this._setHidden(true)
+      return
+    }
+
+    this._setHidden(false)
+    this.layout(clampedX, clampedY, w, h)
   }
 
   /**
@@ -149,5 +219,15 @@ export class UILayoutElement {
       coords.push([bx + bw - 1, row])
     }
     return coords
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  private _setHidden(hide: boolean): void {
+    if (this._hidden === hide) return
+    this._hidden = hide
+    this.el.style.display = hide ? 'none' : ''
   }
 }
