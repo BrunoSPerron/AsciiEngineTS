@@ -131,14 +131,14 @@ export class UILayoutElement {
 
     if (this.xPercent !== undefined) {
       const centerX = (containerCols * this.xPercent) / 100
-      x = Math.round(centerX - w / 2) + offsetX
+      x = Math.round(centerX - w / 2) + offsetX - 1
     } else {
       x = offsetX
     }
 
     if (this.yPercent !== undefined) {
       const centerY = (containerRows * this.yPercent) / 100
-      y = Math.round(centerY - h / 2) + offsetY
+      y = Math.round(centerY - h / 2) + offsetY - 1
     } else {
       y = offsetY
     }
@@ -148,6 +148,8 @@ export class UILayoutElement {
     //    The border extends 1 tile in every direction, so the element's interior
     //    must stay within [1, containerCols - 2] / [1, containerRows - 2].
     // ---------------------------------------------------------------------------
+    // TODO move minX, minY to attributes, they will no longer default to zero once
+    //  we implement sidepanels
     const minX = 0
     const minY = 0
     // Right / bottom edge: interior end = x + w; border end = x + w + 1 ≤ containerCols - 1

@@ -15,21 +15,31 @@ export class Game {
     this.setupUi()
     this.setupWorld()
     this.spawnPlayer()
+    this.bindGameControl()
   }
 
-  private setupUi() {
-    this.setupEscapeMenu()
-
-    //UILayout test
-    const uiLayout = this.engine.renderer.uiLayer!.uiLayout
-    uiLayout.createElement({
-      x: 20,
-      y: 20,
-      w: 30,
-      h: 10,
-      xPercent: 25,
-      yPercent: 25,
-      minH: 5,
+  private bindGameControl() {
+    this.engine.actionManager.onActionKeyDown((action) => {
+      switch (action) {
+        case 'pause':
+          void this._escapeMenu.open()
+          break
+        case 'menu_test':
+          //UILayout test
+          const uiLayout = this.engine.renderer.uiLayer!.uiLayout
+          uiLayout.createElement({
+            y: 0,
+            w: 45,
+            h: 10,
+            xPercent: 50,
+            yPercent: 100,
+            minH: 5,
+            minW: 5,
+          })
+          break
+        default:
+          break
+      }
     })
   }
 
@@ -43,12 +53,10 @@ export class Game {
     this._escapeMenu.register('Option 2', () => {
       // TODO
     })
+  }
 
-    this.engine.actionManager.onActionKeyDown((action) => {
-      if (action === 'pause') {
-        void this._escapeMenu.open()
-      }
-    })
+  private setupUi() {
+    this.setupEscapeMenu()
   }
 
   private setupWorld() {
