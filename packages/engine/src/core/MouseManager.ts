@@ -287,7 +287,6 @@ export class MouseManager implements ContextListener {
   }
 
   private _emitWorldHover(wx: number, wy: number): void {
-    //console.log(`x: ${wx}, y: ${wy}`)
     for (const fn of this._activeMouseCtx().worldHoverListeners.values()) {
       fn(wx, wy)
     }

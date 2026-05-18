@@ -11,18 +11,17 @@ import { CHUNK_SIZE } from '../world/Chunk'
 
 export class AsciiEngine {
   assets: GameAssets
-
-  world: World
-
-  contextManager: ContextManager
-  actionManager!: ActionManager
-  mouseManager!: MouseManager
-  renderer: Renderer
-
   config!: EngineConfig
 
-  running = false
-  paused = false
+  world: World
+  renderer: Renderer
+
+  actionManager!: ActionManager
+  mouseManager: MouseManager
+  contextManager: ContextManager
+
+  private _running = false
+  private _paused = false
 
   private environmentReady = false
   private pausedTimeouts: Map<number, number> = new Map()
@@ -34,19 +33,21 @@ export class AsciiEngine {
     gameContainer.classList.add('ascii-engine')
     root.appendChild(gameContainer)
 
-    this.world = new World(this)
-
-    this.contextManager = new ContextManager()
-
     const tileMetrics = { w: 19.90625, h: 18 }
-
     const camera = new Camera(gameContainer, tileMetrics)
-    camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
 
+    this.world = new World(this)
+    this.contextManager = new ContextManager()
     this.renderer = new Renderer(gameContainer, camera, tileMetrics)
+    this.mouseManager = new MouseManager(gameContainer, tileMetrics, camera, this.contextManager)
 
+    camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleResize)
+  }
+
+  get paused() {
+    return this._paused || !this._running
   }
 
   async init() {
@@ -58,19 +59,11 @@ export class AsciiEngine {
     this.renderer.init(
       this.world,
       this.actionManager,
+      this.mouseManager,
       this.contextManager,
       this.config,
       this.assets,
     )
-
-    this.mouseManager = new MouseManager(
-      this.renderer.root,
-      this.renderer.tileMetrics,
-      this.renderer.camera,
-      this.contextManager,
-    )
-    this.renderer.uiLayer!.mouseManager = this.mouseManager
-    this.renderer.uiLayer!.drawFrame()
   }
 
   start() {
@@ -94,36 +87,36 @@ export class AsciiEngine {
   }
 
   pause() {
-    if (this.paused) return
+    if (this._paused) return
     this.pausedTimeouts.clear()
-    this.paused = true
+    this._paused = true
     this.world.local.entities.forEach((e) => {
       this.pausedTimeouts.set(e.uid, e.unschedule())
     })
   }
 
   unpause() {
-    if (!this.paused) return
-    this.paused = false
+    if (!this._paused) return
+    this._paused = false
     this.world.local.entities.forEach((e) => {
       e.scheduleFirst(this.pausedTimeouts.get(e.uid))
     })
   }
 
   private suspend = () => {
-    if (!this.running) return
-    this.running = false
+    if (!this._running) return
+    this._running = false
     this.renderer.camera.suspend()
     this.world.local.entities.forEach((e) => e.unschedule())
   }
 
   private schedule = () => {
-    if (this.running) return
+    if (this._running) return
     if (document.hidden) return
     if (!this.environmentReady) return
-    this.running = true
+    this._running = true
     this.renderer.camera.resume()
-    if (!this.paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
+    if (!this._paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
   }
 
   private handleResize = () => {

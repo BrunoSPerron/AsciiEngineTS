@@ -11,9 +11,10 @@ import { UILayout } from './UILayout'
 
 export class RendererUI {
   root: HTMLDivElement
-  _actionManager: ActionManager
-  _contextManager: ContextManager
-  uiLayout: UILayout | null = null
+  private _actionManager: ActionManager
+  private _contextManager: ContextManager
+  private _mouseManager: MouseManager
+  private _uiLayout: UILayout
 
   tileMetrics: TileMetricsData
 
@@ -23,19 +24,26 @@ export class RendererUI {
 
   constructor(
     root: HTMLDivElement,
+    uiLayoutRoot: HTMLDivElement,
     actionManager: ActionManager,
     contextManager: ContextManager,
+    mouseManager: MouseManager,
     tileMetrics: TileMetricsData,
   ) {
     this._actionManager = actionManager
     this._contextManager = contextManager
+    this._mouseManager = mouseManager
     this.root = root
     this.tileMetrics = tileMetrics
-    this.uiLayout = new UILayout(root, tileMetrics)
+    this._uiLayout = new UILayout(root, uiLayoutRoot, tileMetrics)
   }
 
-  set mouseManager(value: MouseManager) {
-    this.uiLayout!.mouseManager = value
+  get mouseManager(): MouseManager {
+    return this._mouseManager
+  }
+
+  get uiLayout(): UILayout {
+    return this._uiLayout
   }
 
   reserveId(): number {
@@ -48,11 +56,11 @@ export class RendererUI {
   }
 
   drawFrame(): void {
-    this.uiLayout?.drawFrame()
+    this._uiLayout.drawFrame()
   }
 
   onResize(): void {
-    this.uiLayout?.onResize()
+    this._uiLayout.onResize()
   }
 
   // ---------- draw calls ----------------------------------------------------
@@ -124,7 +132,7 @@ export class RendererUI {
       this,
       this._actionManager,
       this._contextManager,
-      this.mouseManager,
+      this._mouseManager,
     ).open(x, y, w, h, items, paddingX, paddingY, wraparound, anchor)
   }
 

@@ -86,8 +86,8 @@ Once initialised, subsystems are accessible as properties:
 ## State flags
 
 ```ts
-engine.running // true while the game loop is active
-engine.paused // true between pause() and unpause()
+// true between pause() and unpause(), or when the game loop is inactive
+engine.paused
 ```
 
 ---

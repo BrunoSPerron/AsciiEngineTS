@@ -1,4 +1,3 @@
-import type { MouseManager } from '../../core/MouseManager'
 import type { TileMetricsData } from '../tileMetrics'
 import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
 
@@ -9,8 +8,6 @@ const LEFT = 0b00010
 const DOUBLE = 0b00001
 
 const GLYPHS: Record<number, string> = {
-  [0]: ' ',
-
   [DOUBLE | RIGHT]: '═',
   [DOUBLE | LEFT]: '═',
   [DOUBLE | RIGHT | LEFT]: '═',
@@ -84,14 +81,13 @@ function makeSegmentEl(): HTMLPreElement {
 /**
  * Owns the viewport frame and all line-based UI layout.
  *
- * Single instance per RendererUI. RendererUI creates it inside init() after
- * tile metrics are measured.
+ * Single instance per RendererUI. Receives a pre-built root element from
+ * the caller.
  *
  * Responsibilities:
  *   - Four frame segments (top, right, bottom, left) drawn as <pre> elements
  *   - UILayoutElement instances with their own border segments
  *   - Line cell tracking (_lineCells) and local reconciliation
- *   - No knowledge of world coords, world entities, or legacy UINodes
  *
  * All glyph writes go through _setCell() which keeps _chars and DOM in sync.
  */
@@ -100,13 +96,10 @@ export class UILayout {
   private root: HTMLDivElement
   private inlayEl: HTMLDivElement
   tileMetrics: TileMetricsData
-  private _mouseManager: MouseManager | null = null
 
-  /** Viewport size in tiles, measured on each drawFrame() */
   private _cols = 0
   private _rows = 0
 
-  /** The four frame segments — null before drawFrame() */
   private _frame: {
     top: Segment
     right: Segment
@@ -127,25 +120,15 @@ export class UILayout {
    */
   private _lineCells = new Map<string, Segment>()
 
-  constructor(root: HTMLDivElement, tileMetrics: TileMetricsData) {
-    this.parentRoot = root
+  constructor(parentRoot: HTMLDivElement, root: HTMLDivElement, tileMetrics: TileMetricsData) {
+    this.parentRoot = parentRoot
+    this.root = root
+    this.tileMetrics = tileMetrics
 
     const inlayEl = document.createElement('div')
     inlayEl.className = 'ui-layout-inlay'
-    root.appendChild(inlayEl)
+    parentRoot.appendChild(inlayEl)
     this.inlayEl = inlayEl
-
-    const uiLayoutRoot = document.createElement('div')
-    uiLayoutRoot.className = 'ui-layout-root'
-    root.appendChild(uiLayoutRoot)
-    this.root = uiLayoutRoot
-
-    this.tileMetrics = tileMetrics
-  }
-
-  set mouseManager(value: MouseManager) {
-    this._mouseManager = value
-    this._mouseManager.registerUIRoot(this.root)
   }
 
   // ---------------------------------------------------------------------------

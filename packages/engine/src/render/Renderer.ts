@@ -10,6 +10,7 @@ import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
+import type { MouseManager } from '../core/MouseManager'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (ch: string): string => HTML_ESC[ch] ?? ch
@@ -89,6 +90,7 @@ export class Renderer {
   init(
     world: World,
     actionManager: ActionManager,
+    mouseManager: MouseManager,
     contextManager: ContextManager,
     config: EngineConfig,
     assets: GameAssets,
@@ -99,10 +101,18 @@ export class Renderer {
     this.camera.setInitialPosition(...config.camera.initial_position)
     this.viewDistance = config.world.chunk_view_distance
 
+    const uiLayerEl = this._makeLayer('layer-ui')
+    const uiLayoutRoot = document.createElement('div')
+    uiLayoutRoot.className = 'ui-layout-root'
+    uiLayerEl.appendChild(uiLayoutRoot)
+    mouseManager.registerUIRoot(uiLayoutRoot)
+
     this.uiLayer = new RendererUI(
-      this._makeLayer('layer-ui'),
+      uiLayerEl,
+      uiLayoutRoot,
       actionManager,
       contextManager,
+      mouseManager,
       this.tileMetrics,
     )
 
@@ -121,6 +131,8 @@ export class Renderer {
     this.setTileHAndW()
     this.bindWorld(world)
     this.camera.onFrame((now) => this._onCameraFrame(now))
+
+    this.uiLayer.drawFrame()
   }
 
   setTileHAndW() {
