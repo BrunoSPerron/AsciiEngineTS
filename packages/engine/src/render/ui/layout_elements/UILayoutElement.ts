@@ -3,10 +3,20 @@ import type { TileMetricsData } from '../../tileMetrics'
 export type UILayoutElementConfig = {
   id: number
   /** Viewport-local tile coords of the element's interior (excludes its border) */
-  x: number
-  y: number
+  x: number | undefined
+  y: number | undefined
   w: number
   h: number
+
+  minW: number | undefined
+  minH: number | undefined
+
+  xPercent: number | undefined
+  yPercent: number | undefined
+  maxHPercent: number | undefined
+  maxWPercent: number | undefined
+
+  priority: number | undefined
 }
 
 /**
@@ -26,15 +36,41 @@ export class UILayoutElement {
   w: number
   h: number
 
+  minW: number
+  maxW: number
+  minH: number
+  maxH: number
+
+  xPercent: number | undefined
+  yPercent: number | undefined
+  maxHPercent: number | undefined
+  maxWPercent: number | undefined
+
+  priority: number
+
   protected tileMetrics: TileMetricsData
 
   constructor(config: UILayoutElementConfig, el: HTMLDivElement, tileMetrics: TileMetricsData) {
     this.id = config.id
     this.el = el
-    this.x = config.x
-    this.y = config.y
+
+    this.priority = config.priority ?? 0
+
+    this.x = config.x ?? 0
+    this.y = config.y ?? 0
     this.w = config.w
     this.h = config.h
+
+    this.minW = config.minW != undefined ? config.minW : config.w
+    this.minH = config.minH != undefined ? config.minH : config.h
+    this.maxW = config.w
+    this.maxH = config.h
+
+    this.xPercent = config.xPercent
+    this.yPercent = config.yPercent
+    this.maxWPercent = config.maxWPercent
+    this.maxHPercent = config.maxHPercent
+
     this.tileMetrics = tileMetrics
   }
 

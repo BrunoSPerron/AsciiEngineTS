@@ -180,7 +180,7 @@ export class UILayout {
     this.root.appendChild(el)
 
     const element = new UILayoutElement({ ...config, id }, el, this.tileMetrics)
-    element.layout(config.x, config.y, config.w, config.h)
+    element.layout(config.x ?? 0, config.y ?? 0, config.w, config.h)
 
     this._elements.set(id, element)
     this._buildElementSegments(element)
