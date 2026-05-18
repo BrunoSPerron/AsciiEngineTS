@@ -10,6 +10,7 @@ export class SelectMenuList {
   private _actionManager: ActionManager
   private _contextManager: ContextManager
   private _mouseManager: MouseManager | null
+  private _mouseDisposers: Array<() => void> = []
   private _itemEls: HTMLDivElement[] = []
   private _currentIndex: number = 0
   private _panel: UIPanel | null = null
@@ -43,14 +44,31 @@ export class SelectMenuList {
     container.style.position = 'relative'
     const pad = ' '.repeat(paddingX)
 
-    this._itemEls = items.map((text, i) => {
+    this._itemEls = items.map((text, index) => {
       const el = document.createElement('div')
       el.className = 'selectable'
-      el.textContent = `${pad}${text}${pad}` + ' '.repeat(w - text.length)
+      el.textContent = `${pad}${text}${pad}` + ' '.repeat(Math.max(0, w - text.length))
+
       el.style.position = 'absolute'
-      el.style.top = `${(paddingY + i) * this._rendererUI.tileMetrics.h}px`
+      el.style.top = `${(paddingY + index) * this._rendererUI.tileMetrics.h}px`
       el.style.whiteSpace = 'pre'
+      el.style.cursor = 'pointer'
       container.appendChild(el)
+
+      if (this._mouseManager) {
+        const dispose = this._mouseManager.registerUIElement(el, {
+          hover: () => {
+            this.setSelected(index)
+          },
+
+          mouseDown: (button) => {
+            if (button !== 0) return
+            void this.close(index)
+          },
+        })
+
+        this._mouseDisposers.push(dispose)
+      }
       return el
     })
 
@@ -69,51 +87,23 @@ export class SelectMenuList {
       anchor,
     )
 
-    let unlistenHover: (() => void) | null = null
-    let unlistenClick: (() => void) | null = null
-    if (this._mouseManager) {
-      unlistenHover = this._mouseManager.onUIHover((_nodeId, cellX, cellY) => {
-        const interiorX0 = x + 1
-        const interiorX1 = x + w - 2
-        const itemY0 = y + 1 + paddingY
-
-        if (cellX < interiorX0 || cellX > interiorX1) return
-        const itemIndex = cellY - itemY0
-        if (itemIndex >= 0 && itemIndex < items.length) {
-          this.setSelected(itemIndex)
-        }
-      })
-      unlistenClick = this._mouseManager.onUIMouseDown((_nodeId, cellX, cellY, button) => {
-        if (button !== 0) return
-        const interiorX0 = x + 1
-        const interiorX1 = x + w - 2
-        const itemY0 = y + 1 + paddingY
-        if (cellX < interiorX0 || cellX > interiorX1) return
-        const itemIndex = cellY - itemY0
-        if (itemIndex >= 0 && itemIndex < items.length) {
-          void this.close(itemIndex)
-        }
-      })
-    }
-
     this.registerKeys(wraparound)
 
     return new Promise<number>((resolve) => {
       this.resolve = (index) => {
-        unlistenHover?.()
-        unlistenClick?.()
+        this._cleanupMouse()
         resolve(index)
       }
     })
   }
 
-  private setSelected(index: number) {
+  private setSelected(index: number): void {
     this._itemEls[this._currentIndex]?.classList.remove('selected')
     this._currentIndex = index
     this._itemEls[this._currentIndex]?.classList.add('selected')
   }
 
-  private move(delta: number, wraparound: boolean) {
+  private move(delta: number, wraparound: boolean): void {
     const count = this._itemEls.length
     let next = this._currentIndex + delta
 
@@ -126,7 +116,7 @@ export class SelectMenuList {
     this.setSelected(next)
   }
 
-  private registerKeys(wraparound: boolean) {
+  private registerKeys(wraparound: boolean): void {
     this._actionManager.onActionKeyDown((action) => {
       switch (action) {
         case 'up':
@@ -145,18 +135,26 @@ export class SelectMenuList {
     })
   }
 
-  private async close(index: number) {
+  private async close(index: number): Promise<void> {
     const ctxName = `select_menu_${this._panel?.id ?? ''}`
+    this._cleanupMouse()
+
     if (!this._panel) {
       this._contextManager.popContext(ctxName)
       this.resolve(index)
       return
     }
-    // this._rendererUI.unregisterPanelEarly(this._panel)
     await this._panel.close()
     this._rendererUI.removePanel(this._panel)
     this._panel = null
     this._contextManager.popContext(ctxName)
     this.resolve(index)
+  }
+
+  private _cleanupMouse(): void {
+    for (const dispose of this._mouseDisposers) {
+      dispose()
+    }
+    this._mouseDisposers.length = 0
   }
 }

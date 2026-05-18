@@ -13,7 +13,6 @@ export class RendererUI {
   root: HTMLDivElement
   _actionManager: ActionManager
   _contextManager: ContextManager
-  public mouseManager: MouseManager | null = null
   uiLayout: UILayout | null = null
 
   tileMetrics: TileMetricsData
@@ -33,6 +32,10 @@ export class RendererUI {
     this.root = root
     this.tileMetrics = tileMetrics
     this.uiLayout = new UILayout(root, tileMetrics)
+  }
+
+  set mouseManager(value: MouseManager) {
+    this.uiLayout!.mouseManager = value
   }
 
   reserveId(): number {

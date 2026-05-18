@@ -1,22 +1,20 @@
 import type { ContextManager, ContextListener } from './ContextManager'
-import type { RendererUI } from '../render/ui/RendererUI'
 import type { Camera } from '../render/Camera'
 import type { TileMetricsData } from '../render/tileMetrics'
-
-type UIMouseHandler = (nodeId: number | null, x: number, y: number, button: number) => void
-type UIHoverHandler = (nodeId: number | null, x: number, y: number) => void
-type UIHoverEndHandler = (nodeId: number | null, x: number, y: number) => void
 
 type WorldMouseHandler = (wx: number, wy: number, button: number) => void
 type WorldHoverHandler = (wx: number, wy: number) => void
 type WorldHoverEndHandler = (wx: number, wy: number) => void
 
+type UIHandlers = {
+  hover?: () => void
+  hoverEnd?: () => void
+  mouseDown?: (button: number) => void
+  mouseUp?: (button: number) => void
+}
+
 type MouseContext = {
   name: string
-  uiHoverListeners: Map<string, UIHoverHandler>
-  uiHoverEndListeners: Map<string, UIHoverEndHandler>
-  uiMouseDownListeners: Map<string, UIMouseHandler>
-  uiMouseUpListeners: Map<string, UIMouseHandler>
   worldHoverListeners: Map<string, WorldHoverHandler>
   worldHoverEndListeners: Map<string, WorldHoverEndHandler>
   worldMouseDownListeners: Map<string, WorldMouseHandler>
@@ -28,98 +26,129 @@ export class MouseManager implements ContextListener {
   private _contextManager: ContextManager
   private _tileMetrics: TileMetricsData
   private _camera: Camera
-  private _uiLayer: RendererUI | null = null
 
   private _mouseContexts = new Map<string, MouseContext>()
   private _idCounter = 0
 
-  private _hoveredUICell: { x: number; y: number; nodeId: number | null } | null = null
   private _hoveredWorldCell: { x: number; y: number } | null = null
+
+  /**
+   * Prevent world hover while hovering UI.
+   * Uses a depth counter to safely support nested DOM.
+   */
+  private _uiHoverDepth = 0
 
   constructor(
     container: HTMLElement,
     tileMetrics: TileMetricsData,
     camera: Camera,
     contextManager: ContextManager,
-    uiLayer: RendererUI,
   ) {
     this._container = container
     this._tileMetrics = tileMetrics
     this._camera = camera
     this._contextManager = contextManager
-    this._uiLayer = uiLayer
 
     this._ensureMouseContext('root')
     contextManager.registerListener(this)
 
-    container.addEventListener('mousemove', this._onMouseMove)
-    container.addEventListener('mousedown', this._onMouseDown)
-    container.addEventListener('mouseup', this._onMouseUp)
-    container.addEventListener('mouseleave', this._onMouseLeave)
+    container.addEventListener('pointermove', this._onPointerMove)
+    container.addEventListener('pointerdown', this._onPointerDown)
+    container.addEventListener('pointerup', this._onPointerUp)
+    container.addEventListener('pointerleave', this._onPointerLeave)
   }
 
   // --------------------------------------------------------------------------
-  // ContextListener implementation
+  // ContextListener
   // --------------------------------------------------------------------------
 
-  onPush(_outgoing: string, _incoming: string): void {
-    // Fire end events on the outgoing context for current hover state,
-    // preserve the state so we can re-fire on pop
+  onPush(_outgoing: string, incoming: string): void {
     this._emitHoverEnd()
-    this._ensureMouseContext(_incoming)
+    this._ensureMouseContext(incoming)
   }
 
-  onPop(_outgoing: string, _incoming: string): void {
-    this._mouseContexts.delete(_outgoing)
-    // Re-fire hover start events into the restored context
+  onPop(outgoing: string, _incoming: string): void {
+    this._mouseContexts.delete(outgoing)
     this._emitHoverStart()
   }
 
   // --------------------------------------------------------------------------
-  // UI event listeners
+  // UI Registration
   // --------------------------------------------------------------------------
 
-  onUIHover(fn: UIHoverHandler): () => void {
-    const key = this._nextId()
-    this._activeMouseCtx().uiHoverListeners.set(key, fn)
+  registerUIElement(el: HTMLElement, handlers: UIHandlers): () => void {
+    const onEnter = (): void => {
+      this._uiHoverDepth++
+
+      // entering UI cancels world hover
+      if (this._hoveredWorldCell) {
+        this._emitWorldHoverEnd(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
+        this._hoveredWorldCell = null
+      }
+
+      handlers.hover?.()
+    }
+
+    const onLeave = (): void => {
+      this._uiHoverDepth = Math.max(0, this._uiHoverDepth - 1)
+      handlers.hoverEnd?.()
+    }
+
+    const onDown = (e: PointerEvent): void => {
+      handlers.mouseDown?.(e.button)
+    }
+
+    const onUp = (e: PointerEvent): void => {
+      handlers.mouseUp?.(e.button)
+    }
+
+    el.addEventListener('pointerenter', onEnter)
+    el.addEventListener('pointerleave', onLeave)
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointerup', onUp)
+
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.uiHoverListeners.delete(key)
+      el.removeEventListener('pointerenter', onEnter)
+      el.removeEventListener('pointerleave', onLeave)
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointerup', onUp)
     }
   }
 
-  onUIHoverEnd(fn: UIHoverEndHandler): () => void {
-    const key = this._nextId()
-    this._activeMouseCtx().uiHoverEndListeners.set(key, fn)
-    return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.uiHoverEndListeners.delete(key)
-    }
-  }
+  registerUIRoot(el: HTMLElement): () => void {
+    const onEnter = (): void => {
+      this._uiHoverDepth++
 
-  onUIMouseDown(fn: UIMouseHandler): () => void {
-    const key = this._nextId()
-    this._activeMouseCtx().uiMouseDownListeners.set(key, fn)
-    return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.uiMouseDownListeners.delete(key)
+      if (this._hoveredWorldCell) {
+        this._emitWorldHoverEnd(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
+        this._hoveredWorldCell = null
+      }
     }
-  }
 
-  onUIMouseUp(fn: UIMouseHandler): () => void {
-    const key = this._nextId()
-    this._activeMouseCtx().uiMouseUpListeners.set(key, fn)
+    const onLeave = (): void => {
+      this._uiHoverDepth = Math.max(0, this._uiHoverDepth - 1)
+    }
+
+    el.addEventListener('pointerenter', onEnter)
+    el.addEventListener('pointerleave', onLeave)
+
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.uiMouseUpListeners.delete(key)
+      el.removeEventListener('pointerenter', onEnter)
+      el.removeEventListener('pointerleave', onLeave)
     }
   }
 
   // --------------------------------------------------------------------------
-  // World event listeners
+  // World Event Listeners
   // --------------------------------------------------------------------------
 
   onWorldHover(fn: WorldHoverHandler): () => void {
     const key = this._nextId()
     this._activeMouseCtx().worldHoverListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.worldHoverListeners.delete(key)
+      for (const ctx of this._mouseContexts.values()) {
+        ctx.worldHoverListeners.delete(key)
+      }
     }
   }
 
@@ -127,7 +156,9 @@ export class MouseManager implements ContextListener {
     const key = this._nextId()
     this._activeMouseCtx().worldHoverEndListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.worldHoverEndListeners.delete(key)
+      for (const ctx of this._mouseContexts.values()) {
+        ctx.worldHoverEndListeners.delete(key)
+      }
     }
   }
 
@@ -135,7 +166,9 @@ export class MouseManager implements ContextListener {
     const key = this._nextId()
     this._activeMouseCtx().worldMouseDownListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.worldMouseDownListeners.delete(key)
+      for (const ctx of this._mouseContexts.values()) {
+        ctx.worldMouseDownListeners.delete(key)
+      }
     }
   }
 
@@ -143,7 +176,9 @@ export class MouseManager implements ContextListener {
     const key = this._nextId()
     this._activeMouseCtx().worldMouseUpListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) ctx.worldMouseUpListeners.delete(key)
+      for (const ctx of this._mouseContexts.values()) {
+        ctx.worldMouseUpListeners.delete(key)
+      }
     }
   }
 
@@ -152,107 +187,76 @@ export class MouseManager implements ContextListener {
   // --------------------------------------------------------------------------
 
   destroy(): void {
-    this._container.removeEventListener('mousemove', this._onMouseMove)
-    this._container.removeEventListener('mousedown', this._onMouseDown)
-    this._container.removeEventListener('mouseup', this._onMouseUp)
-    this._container.removeEventListener('mouseleave', this._onMouseLeave)
+    this._container.removeEventListener('pointermove', this._onPointerMove)
+    this._container.removeEventListener('pointerdown', this._onPointerDown)
+    this._container.removeEventListener('pointerup', this._onPointerUp)
+    this._container.removeEventListener('pointerleave', this._onPointerLeave)
+
     this._mouseContexts.clear()
   }
 
   // --------------------------------------------------------------------------
-  // Private — event handlers
+  // Pointer Events
   // --------------------------------------------------------------------------
 
-  private _onMouseMove = (e: MouseEvent): void => {
+  private _onPointerMove = (e: PointerEvent): void => {
+    // UI owns pointer while hovered
+    if (this._uiHoverDepth > 0) return
+
     const { cellX, cellY } = this._pixelToUICell(e)
-
-    // --- UI layer first ---
-    const nodeId = this._resolveUINode(cellX, cellY)
-    const uiKey = `${cellX},${cellY}`
-    const prevUI = this._hoveredUICell
-
-    /*if (nodeId !== null || this._uiLayer?.cellStack.has(uiKey)) {
-      // Cursor is over a UI cell
-      const sameCell =
-        prevUI !== null && prevUI.x === cellX && prevUI.y === cellY && prevUI.nodeId === nodeId
-
-      if (!sameCell) {
-        if (prevUI !== null) {
-          this._emitUIHoverEnd(prevUI.nodeId, prevUI.x, prevUI.y)
-        }
-        // Also clear world hover if we're moving onto UI
-        if (this._hoveredWorldCell !== null) {
-          this._emitWorldHoverEnd(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
-          this._hoveredWorldCell = null
-        }
-        this._hoveredUICell = { x: cellX, y: cellY, nodeId }
-        this._emitUIHover(nodeId, cellX, cellY)
-      }
-      return
-    }*/
-
-    // No UI — clear UI hover if needed
-    if (prevUI !== null) {
-      this._emitUIHoverEnd(prevUI.nodeId, prevUI.x, prevUI.y)
-      this._hoveredUICell = null
-    }
-
-    // --- World layer ---
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
-    const prevWorld = this._hoveredWorldCell
 
-    const sameWorld = prevWorld !== null && prevWorld.x === wx && prevWorld.y === wy
-    if (!sameWorld) {
-      if (prevWorld !== null) {
-        this._emitWorldHoverEnd(prevWorld.x, prevWorld.y)
-      }
-      this._hoveredWorldCell = { x: wx, y: wy }
-      this._emitWorldHover(wx, wy)
+    const prev = this._hoveredWorldCell
+
+    const sameWorld = prev !== null && prev.x === wx && prev.y === wy
+
+    if (sameWorld) return
+
+    if (prev !== null) {
+      this._emitWorldHoverEnd(prev.x, prev.y)
     }
+
+    this._hoveredWorldCell = {
+      x: wx,
+      y: wy,
+    }
+
+    this._emitWorldHover(wx, wy)
   }
 
-  private _onMouseDown = (e: MouseEvent): void => {
+  private _onPointerDown = (e: PointerEvent): void => {
+    if (this._uiHoverDepth > 0) return
+
     const { cellX, cellY } = this._pixelToUICell(e)
-    const uiKey = `${cellX},${cellY}`
-
-    /*if (this._uiLayer?.cellStack.has(uiKey)) {
-      const nodeId = this._resolveUINode(cellX, cellY)
-      this._emitUIMouseDown(nodeId, cellX, cellY, e.button)
-      return
-    }*/
-
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
+
     this._emitWorldMouseDown(wx, wy, e.button)
   }
 
-  private _onMouseUp = (e: MouseEvent): void => {
+  private _onPointerUp = (e: PointerEvent): void => {
+    if (this._uiHoverDepth > 0) return
+
     const { cellX, cellY } = this._pixelToUICell(e)
-    const uiKey = `${cellX},${cellY}`
-
-    /*if (this._uiLayer?.cellStack.has(uiKey)) {
-      const nodeId = this._resolveUINode(cellX, cellY)
-      this._emitUIMouseUp(nodeId, cellX, cellY, e.button)
-      return
-    }*/
-
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
+
     this._emitWorldMouseUp(wx, wy, e.button)
   }
 
-  private _onMouseLeave = (): void => {
+  private _onPointerLeave = (): void => {
     this._emitHoverEnd()
-    this._hoveredUICell = null
     this._hoveredWorldCell = null
   }
 
   // --------------------------------------------------------------------------
-  // Private — coordinate conversion
+  // Coordinate Conversion
   // --------------------------------------------------------------------------
 
-  private _pixelToUICell(e: MouseEvent): { cellX: number; cellY: number } {
+  private _pixelToUICell(e: PointerEvent): { cellX: number; cellY: number } {
     const rect = this._container.getBoundingClientRect()
-    const px = e.clientX - rect.left
-    const py = e.clientY - rect.top
+
+    const px = e.clientX - rect.left + this._camera.pos.x * this._tileMetrics.w
+    const py = e.clientY - rect.top + this._camera.pos.y * this._tileMetrics.h
+
     return {
       cellX: Math.floor(px / this._tileMetrics.w),
       cellY: Math.floor(py / this._tileMetrics.h),
@@ -266,89 +270,66 @@ export class MouseManager implements ContextListener {
     }
   }
 
-  // Returns the topmost node ID at a UI cell, or null if no node there
-  private _resolveUINode(cellX: number, cellY: number): number | null {
-    return null
-    /*if (!this._uiLayer) return null
-    const stack = this._uiLayer.cellStack.get(`${cellX},${cellY}`)
-    if (!stack || stack.length === 0) return null
-    return stack[stack.length - 1]*/
-  }
-
   // --------------------------------------------------------------------------
-  // Private — context-aware emit helpers
+  // Emit Helpers
   // --------------------------------------------------------------------------
 
   private _emitHoverEnd(): void {
-    if (this._hoveredUICell !== null) {
-      this._emitUIHoverEnd(this._hoveredUICell.nodeId, this._hoveredUICell.x, this._hoveredUICell.y)
-    }
     if (this._hoveredWorldCell !== null) {
       this._emitWorldHoverEnd(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
     }
   }
 
   private _emitHoverStart(): void {
-    if (this._hoveredUICell !== null) {
-      this._emitUIHover(this._hoveredUICell.nodeId, this._hoveredUICell.x, this._hoveredUICell.y)
-    }
     if (this._hoveredWorldCell !== null) {
       this._emitWorldHover(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
     }
   }
 
-  private _emitUIHover(nodeId: number | null, x: number, y: number): void {
-    for (const fn of this._activeMouseCtx().uiHoverListeners.values()) fn(nodeId, x, y)
-  }
-
-  private _emitUIHoverEnd(nodeId: number | null, x: number, y: number): void {
-    for (const fn of this._activeMouseCtx().uiHoverEndListeners.values()) fn(nodeId, x, y)
-  }
-
-  private _emitUIMouseDown(nodeId: number | null, x: number, y: number, button: number): void {
-    for (const fn of this._activeMouseCtx().uiMouseDownListeners.values()) fn(nodeId, x, y, button)
-  }
-
-  private _emitUIMouseUp(nodeId: number | null, x: number, y: number, button: number): void {
-    for (const fn of this._activeMouseCtx().uiMouseUpListeners.values()) fn(nodeId, x, y, button)
-  }
-
   private _emitWorldHover(wx: number, wy: number): void {
-    for (const fn of this._activeMouseCtx().worldHoverListeners.values()) fn(wx, wy)
+    //console.log(`x: ${wx}, y: ${wy}`)
+    for (const fn of this._activeMouseCtx().worldHoverListeners.values()) {
+      fn(wx, wy)
+    }
   }
 
   private _emitWorldHoverEnd(wx: number, wy: number): void {
-    for (const fn of this._activeMouseCtx().worldHoverEndListeners.values()) fn(wx, wy)
+    for (const fn of this._activeMouseCtx().worldHoverEndListeners.values()) {
+      fn(wx, wy)
+    }
   }
 
   private _emitWorldMouseDown(wx: number, wy: number, button: number): void {
-    for (const fn of this._activeMouseCtx().worldMouseDownListeners.values()) fn(wx, wy, button)
+    for (const fn of this._activeMouseCtx().worldMouseDownListeners.values()) {
+      fn(wx, wy, button)
+    }
   }
 
   private _emitWorldMouseUp(wx: number, wy: number, button: number): void {
-    for (const fn of this._activeMouseCtx().worldMouseUpListeners.values()) fn(wx, wy, button)
+    for (const fn of this._activeMouseCtx().worldMouseUpListeners.values()) {
+      fn(wx, wy, button)
+    }
   }
 
   // --------------------------------------------------------------------------
-  // Private — context helpers
+  // Context Helpers
   // --------------------------------------------------------------------------
 
   private _ensureMouseContext(name: string): MouseContext {
     let ctx = this._mouseContexts.get(name)
+
     if (!ctx) {
       ctx = {
         name,
-        uiHoverListeners: new Map(),
-        uiHoverEndListeners: new Map(),
-        uiMouseDownListeners: new Map(),
-        uiMouseUpListeners: new Map(),
         worldHoverListeners: new Map(),
         worldHoverEndListeners: new Map(),
         worldMouseDownListeners: new Map(),
         worldMouseUpListeners: new Map(),
       }
+
       this._mouseContexts.set(name, ctx)
     }
+
     return ctx
   }
 

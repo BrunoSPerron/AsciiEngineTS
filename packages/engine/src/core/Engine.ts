@@ -68,9 +68,9 @@ export class AsciiEngine {
       this.renderer.tileMetrics,
       this.renderer.camera,
       this.contextManager,
-      this.renderer.uiLayer!,
     )
     this.renderer.uiLayer!.mouseManager = this.mouseManager
+    this.renderer.uiLayer!.drawFrame()
   }
 
   start() {

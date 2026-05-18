@@ -171,16 +171,6 @@
 
 /* ----- UI layout ----- */
 
-.ascii-engine .ui-layout-root {
-  height: 100%;
-  width: 100%;
-}
-
-.ascii-engine .ui-layout-inlay {
-  height: 100%;
-  width: 100%;
-}
-
 .ascii-engine .ui-layout-line {
   position: absolute;
   font-size: var(--font-size);

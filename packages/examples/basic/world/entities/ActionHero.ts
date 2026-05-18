@@ -48,11 +48,7 @@ export class ActionHero extends Entity {
     this._targetPos.set(this.pos).add(this._dir)
     const target = this.engine.world.getTile(this._targetPos)
 
-    let resolved = false
-    if (target.solid) {
-      resolved = this.resolveCollision(this._dir)
-      if (!resolved) return 0
-    }
+    if (target.solid && !this.resolveCollision(this._dir)) return 0
 
     this.pos.set(this._targetPos)
 

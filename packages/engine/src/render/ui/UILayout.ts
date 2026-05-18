@@ -1,3 +1,4 @@
+import type { MouseManager } from '../../core/MouseManager'
 import type { TileMetricsData } from '../tileMetrics'
 import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
 
@@ -99,6 +100,7 @@ export class UILayout {
   private root: HTMLDivElement
   private inlayEl: HTMLDivElement
   tileMetrics: TileMetricsData
+  private _mouseManager: MouseManager | null = null
 
   /** Viewport size in tiles, measured on each drawFrame() */
   private _cols = 0
@@ -139,6 +141,11 @@ export class UILayout {
     this.inlayEl = inlayEl
 
     this.tileMetrics = tileMetrics
+  }
+
+  set mouseManager(value: MouseManager) {
+    this._mouseManager = value
+    this._mouseManager.registerUIRoot(this.root)
   }
 
   // ---------------------------------------------------------------------------
