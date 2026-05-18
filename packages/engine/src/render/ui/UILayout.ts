@@ -130,15 +130,15 @@ export class UILayout {
   constructor(root: HTMLDivElement, tileMetrics: TileMetricsData) {
     this.parentRoot = root
 
-    const uiLayoutRoot = document.createElement('div')
-    uiLayoutRoot.className = 'ui-layout-root'
-    root.appendChild(uiLayoutRoot)
-    this.root = uiLayoutRoot
-
     const inlayEl = document.createElement('div')
     inlayEl.className = 'ui-layout-inlay'
     root.appendChild(inlayEl)
     this.inlayEl = inlayEl
+
+    const uiLayoutRoot = document.createElement('div')
+    uiLayoutRoot.className = 'ui-layout-root'
+    root.appendChild(uiLayoutRoot)
+    this.root = uiLayoutRoot
 
     this.tileMetrics = tileMetrics
   }

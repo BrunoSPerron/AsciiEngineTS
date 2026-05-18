@@ -171,6 +171,11 @@
 
 /* ----- UI layout ----- */
 
+.ascii-engine .ui-layout-inlay {
+  position: absolute;
+  inset: 0px;
+}
+
 .ascii-engine .ui-layout-line {
   position: absolute;
   font-size: var(--font-size);

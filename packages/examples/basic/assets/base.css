@@ -14,9 +14,4 @@
   );
 
   mix-blend-mode: multiply;
-  z-index: -1;
-}
-
-.ascii-engine .ui-layout-root {
-  position: absolute;
 }
