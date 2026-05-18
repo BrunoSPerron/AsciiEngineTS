@@ -127,7 +127,7 @@ export class UILayout {
 
     const inlayEl = document.createElement('div')
     inlayEl.className = 'ui-layout-inlay'
-    parentRoot.appendChild(inlayEl)
+    parentRoot.prepend(inlayEl)
     this.inlayEl = inlayEl
   }
 
@@ -180,7 +180,7 @@ export class UILayout {
     this.root.appendChild(el)
 
     const element = new UILayoutElement({ ...config, id }, el, this.tileMetrics)
-    element.layout(config.x ?? 0, config.y ?? 0, config.w, config.h)
+    element.reflow(this._cols, this._rows)
 
     this._elements.set(id, element)
     this._buildElementSegments(element)
@@ -255,8 +255,8 @@ export class UILayout {
   private _buildElementSegments(element: UILayoutElement): void {
     const { w, h } = this.tileMetrics
 
-    const bx = element.x - 1
-    const by = element.y - 1
+    const bx = element.x
+    const by = element.y
     const bw = element.w + 2
     const bh = element.h + 2
 
@@ -303,6 +303,7 @@ export class UILayout {
       this._teardownElementSegments(id)
     }
     for (const element of this._elements.values()) {
+      element.reflow(this._cols, this._rows)
       this._buildElementSegments(element)
     }
   }
@@ -404,10 +405,9 @@ export class UILayout {
 
     for (const [cx, cy] of element.borderCoords()) {
       affected.add(this._key(cx, cy))
-      affected.add(this._key(cx - 1, cy))
       affected.add(this._key(cx + 1, cy))
-      affected.add(this._key(cx, cy - 1))
       affected.add(this._key(cx, cy + 1))
+      affected.add(this._key(cx + 1, cy + 1))
     }
 
     for (const key of affected) {

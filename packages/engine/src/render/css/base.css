@@ -153,6 +153,10 @@
   z-index: 1;
 }
 
+.ascii-engine .ui-layout-element {
+  background-color: var(--ui-bg);
+}
+
 /* ----- UI Roller menu ----- */
 
 .ascii-engine .ui-roller {

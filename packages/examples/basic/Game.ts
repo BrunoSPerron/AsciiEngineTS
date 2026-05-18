@@ -12,12 +12,26 @@ export class Game {
   }
 
   init() {
-    this.setupMenu()
+    this.setupUi()
     this.setupWorld()
     this.spawnPlayer()
   }
 
-  private setupMenu() {
+  private setupUi() {
+    this.setupEscapeMenu()
+
+    //UILayout test
+    const uiLayout = this.engine.renderer.uiLayer!.uiLayout
+    uiLayout.createElement({
+      w: 10,
+      h: 10,
+      xPercent: 25,
+      yPercent: 25,
+      minH: 5,
+    })
+  }
+
+  private setupEscapeMenu() {
     this._escapeMenu.register('Option 1', () => {
       // TODO
     })
