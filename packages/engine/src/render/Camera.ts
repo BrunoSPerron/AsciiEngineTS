@@ -108,8 +108,8 @@ export class Camera {
   private _update(now: number, delta: number) {
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2
-    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2
+    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2 + 0.5
+    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2 + 0.5
     const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
     this.pos.x = lerp(this.pos.x, tx, alpha)
     this.pos.y = lerp(this.pos.y, ty, alpha)

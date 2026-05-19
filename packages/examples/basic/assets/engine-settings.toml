@@ -7,7 +7,6 @@ initial_theme = "Saphire Peach"
 engine_themes = ["Burgundy Pink", "Copper", "Deep Sea", "Midnight",
                  "Purple Space", "Retro Gold", "Saphire Peach"]
 
-
 [world]
 chunk_view_distance = 3
 
