@@ -84,6 +84,17 @@ export class ActionManager implements ContextListener {
     }
   }
 
+  clearAllKeyDown() {
+    const ctx = this._activeInputCtx()
+    if (ctx) {
+      for (const [action, count] of this.actionPressCount.entries()) {
+        if (count > 0) this._emitAction(ctx.actionUpListeners, action)
+      }
+      this.keyDownState.clear()
+      this.actionPressCount.clear()
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Action listeners — registered on the currently active context
   // --------------------------------------------------------------------------

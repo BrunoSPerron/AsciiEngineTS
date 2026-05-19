@@ -10,8 +10,10 @@ import { loadGameAssets, type GameAssets } from './GameAssets'
 import { CHUNK_SIZE } from '../world/Chunk'
 
 export class AsciiEngine {
+  private _container: HTMLDivElement
   assets: GameAssets
   private _config!: EngineConfig
+  private _boundContextMenu: ((e: PointerEvent) => void) | null = null
 
   world: World
   renderer: Renderer
@@ -27,6 +29,7 @@ export class AsciiEngine {
   private pausedTimeouts: Map<number, number> = new Map()
 
   constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
+    this._container = root
     this.assets = loadGameAssets(glob)
     root.classList.add('ascii-engine-host')
     const gameContainer = document.createElement('div')
@@ -64,6 +67,7 @@ export class AsciiEngine {
       this._config,
       this.assets,
     )
+    this._setupContextMenu(this._config.game.disable_context_menu)
   }
 
   start() {
@@ -117,6 +121,23 @@ export class AsciiEngine {
     this._running = true
     this.renderer.camera.resume()
     if (!this._paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
+  }
+
+  private _setupContextMenu(disabled: boolean): void {
+    if (this._boundContextMenu) {
+      this._container.removeEventListener('contextmenu', this._boundContextMenu)
+      this._boundContextMenu = null
+    }
+    if (disabled) {
+      this._boundContextMenu = (e: PointerEvent) => {
+        e.preventDefault()
+      }
+    } else {
+      this._boundContextMenu = () => {
+        this.actionManager.clearAllKeyDown()
+      }
+    }
+    this._container.addEventListener('contextmenu', this._boundContextMenu)
   }
 
   private handleResize = () => {

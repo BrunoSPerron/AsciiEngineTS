@@ -3,6 +3,7 @@
 
 [game]
 title = "Ascii Engine - action game"
+disable_context_menu = true
 initial_theme = "Saphire Peach"
 engine_themes = ["Burgundy Pink", "Copper", "Deep Sea", "Midnight",
                  "Purple Space", "Retro Gold", "Saphire Peach"]

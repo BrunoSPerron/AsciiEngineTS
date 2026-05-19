@@ -8,6 +8,7 @@ import { Logger } from './Logger'
 export const DEFAULT_CONFIG = {
   game: {
     title: 'AsciiEngine',
+    disable_context_menu: false,
     initial_theme: 'Grey',
     engine_themes: [
       'Baby Blue',
