@@ -181,7 +181,6 @@
 }
 
 .ascii-engine .ui-layout-line {
-  margin-block: 0;
   position: absolute;
   font-size: var(--font-size);
   line-height: var(--line-height);

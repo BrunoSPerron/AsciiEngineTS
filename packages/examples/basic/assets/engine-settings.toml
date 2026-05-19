@@ -2,7 +2,7 @@
 # All fields are optional. Missing fields fall back to engine defaults.
 
 [game]
-title = "My Ascii Game"
+title = "Ascii Engine - action game"
 initial_theme = "Saphire Peach"
 engine_themes = ["Burgundy Pink", "Copper", "Deep Sea", "Midnight",
                  "Purple Space", "Retro Gold", "Saphire Peach"]
