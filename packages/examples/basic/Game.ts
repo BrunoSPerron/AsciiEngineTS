@@ -25,17 +25,19 @@ export class Game {
           void this._escapeMenu.open()
           break
         case 'menu_test':
-          //UILayout test
-          const uiLayout = this.engine.renderer.uiLayer!.uiLayout
-          uiLayout.createElement({
-            y: 0,
-            w: 45,
-            h: 10,
-            xPercent: 50,
-            yPercent: 100,
-            minH: 5,
-            minW: 5,
-          })
+          {
+            //UILayout test
+            const uiLayout = this.engine.renderer.uiLayer!.uiLayout
+            uiLayout.createElement({
+              y: 0,
+              w: 45,
+              h: 10,
+              xPercent: 50,
+              yPercent: 100,
+              minH: 5,
+              minW: 50,
+            })
+          }
           break
         default:
           break

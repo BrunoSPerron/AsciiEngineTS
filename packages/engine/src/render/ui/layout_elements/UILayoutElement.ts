@@ -102,7 +102,6 @@ export class UILayoutElement {
    * Resolves percent-based config against container dimensions, then calls layout().
    */
   reflow(containerCols: number, containerRows: number): void {
-    // 1. Resolve max size
     let maxW = this.maxW
     let maxH = this.maxH
 
@@ -114,15 +113,9 @@ export class UILayoutElement {
       maxH = Math.min(Math.floor((containerRows * this.maxHPercent) / 100), this.maxH)
     }
 
-    // 2. Desired size (clamped between min and max)
     const w = Math.max(this.minW, Math.min(this.maxW, maxW))
     const h = Math.max(this.minH, Math.min(this.maxH, maxH))
 
-    // ---------------------------------------------------------------------------
-    // 3. Resolve position
-    //    xPercent / yPercent pin the *center* of the element; x / y are offsets.
-    //    Without percent, x / y are the absolute top-left tile position.
-    // ---------------------------------------------------------------------------
     const offsetX = this._xPercentOffset
     const offsetY = this._yPercentOffset
 
@@ -143,32 +136,25 @@ export class UILayoutElement {
       y = offsetY
     }
 
-    // ---------------------------------------------------------------------------
-    // 4. Clamp to layout bounds (border occupies 1-tile perimeter outside x/y)
-    //    The border extends 1 tile in every direction, so the element's interior
-    //    must stay within [1, containerCols - 2] / [1, containerRows - 2].
-    // ---------------------------------------------------------------------------
-    // TODO move minX, minY to attributes, they will no longer default to zero once
-    //  we implement sidepanels
     const minX = 0
     const minY = 0
-    // Right / bottom edge: interior end = x + w; border end = x + w + 1 ≤ containerCols - 1
     const maxX = containerCols - w - 2
     const maxY = containerRows - h - 2
 
     const clampedX = Math.max(minX, Math.min(x, maxX))
     const clampedY = Math.max(minY, Math.min(y, maxY))
 
-    // ---------------------------------------------------------------------------
-    // 5. Hide if there's no room even at minimum size
-    // ---------------------------------------------------------------------------
-    if (maxX < minX || maxY < minY) {
+    // Hide only if the element can't fit even at minimum size
+    const minFitX = containerCols - this.minW - 2
+    const minFitY = containerRows - this.minH - 2
+
+    if (minFitX < minX || minFitY < minY) {
       this._setHidden(true)
       return
     }
 
     this._setHidden(false)
-    this.layout(clampedX, clampedY, w, h)
+    this.layout(clampedX, clampedY, Math.min(w, containerCols - 2), Math.min(h, containerRows - 2))
   }
 
   /**
