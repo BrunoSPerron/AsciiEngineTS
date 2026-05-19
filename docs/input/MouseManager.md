@@ -1,6 +1,6 @@
-`MouseManager` translates raw mouse events into two parallel streams: **UI events** (cell coordinates in the fixed UI grid) and **world events** (tile coordinates in the scrolling world, accounting for camera position). Like `ActionManager`, it is context-aware and implements `ContextListener`.
+`PointerManager` translates raw pointer events into two parallel streams: **UI events** (cell coordinates in the fixed UI grid) and **world events** (tile coordinates in the scrolling world, accounting for camera position). Like `ActionManager`, it is context-aware and implements `ContextListener`.
 
-Available after `engine.init()` resolves, at `engine.mouseManager`.
+Available after `engine.init()` resolves, at `engine.pointerManager`.
 
 ---
 
@@ -8,10 +8,10 @@ Available after `engine.init()` resolves, at `engine.mouseManager`.
 
 All callbacks receive pre-converted coordinates — you never deal with raw pixels.
 
-|Stream|X / Y meaning|
-|---|---|
-|UI|Column / row in the UI grid (origin: top-left of the viewport)|
-|World|World-space tile position, offset by `camera.pos`|
+| Stream | X / Y meaning                                                  |
+| ------ | -------------------------------------------------------------- |
+| UI     | Column / row in the UI grid (origin: top-left of the viewport) |
+| World  | World-space tile position, offset by `camera.pos`              |
 
 Hover and click on a UI cell suppresses the world event for that position — UI always takes priority.
 
@@ -24,7 +24,7 @@ Fired when the cursor is over a cell that has at least one UI node registered in
 ### `onUIHover(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onUIHover((nodeId, cellX, cellY) => {
+const unlisten = engine.pointerManager.onUIHover((nodeId, cellX, cellY) => {
   // nodeId: topmost node ID at this cell, or null
   // cellX, cellY: UI grid position
 })
@@ -35,15 +35,15 @@ Fires when the cursor enters a new UI cell. Does **not** repeat while the cursor
 ### `onUIHoverEnd(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onUIHoverEnd((nodeId, cellX, cellY) => {
+const unlisten = engine.pointerManager.onUIHoverEnd((nodeId, cellX, cellY) => {
   // fired when the cursor leaves a UI cell
 })
 ```
 
-### `onUIMouseDown(fn)` / `onUIMouseUp(fn)`
+### `onUIPointerDown(fn)` / `onUIPointerUp(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onUIMouseDown((nodeId, cellX, cellY, button) => {
+const unlisten = engine.pointerManager.onUIPointerDown((nodeId, cellX, cellY, button) => {
   // button: 0 = left, 1 = middle, 2 = right
 })
 ```
@@ -57,7 +57,7 @@ Fired when the cursor is over a position not covered by any UI node.
 ### `onWorldHover(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onWorldHover((wx, wy) => {
+const unlisten = engine.pointerManager.onWorldHover((wx, wy) => {
   // wx, wy: world-space tile coordinates
 })
 ```
@@ -65,13 +65,13 @@ const unlisten = engine.mouseManager.onWorldHover((wx, wy) => {
 ### `onWorldHoverEnd(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onWorldHoverEnd((wx, wy) => {})
+const unlisten = engine.pointerManager.onWorldHoverEnd((wx, wy) => {})
 ```
 
-### `onWorldMouseDown(fn)` / `onWorldMouseUp(fn)`
+### `onWorldPointerDown(fn)` / `onWorldPointerUp(fn)`
 
 ```ts
-const unlisten = engine.mouseManager.onWorldMouseDown((wx, wy, button) => {
+const unlisten = engine.pointerManager.onWorldPointerDown((wx, wy, button) => {
   if (button === 0) inspect(wx, wy)
 })
 ```
@@ -81,7 +81,7 @@ const unlisten = engine.mouseManager.onWorldMouseDown((wx, wy, button) => {
 ## All listeners return an unsubscribe function
 
 ```ts
-const unlisten = engine.mouseManager.onWorldMouseDown(handler)
+const unlisten = engine.pointerManager.onWorldPointerDown(handler)
 // ...
 unlisten() // remove the listener
 ```
@@ -92,16 +92,16 @@ unlisten() // remove the listener
 
 Listeners are registered on the **currently active** context. When a new context is pushed:
 
-- `MouseHoverEnd` is emitted into the outgoing context for any currently hovered cell
-- When the context is later popped, `MouseHoverStart` is re-emitted into the restored context
+- `PointerHoverEnd` is emitted into the outgoing context for any currently hovered cell
+- When the context is later popped, `PointerHoverStart` is re-emitted into the restored context
 
-This means mouse listeners attached to `root` go silent while a menu context is active, and resume automatically when the menu closes.
+This means pointer listeners attached to `root` go silent while a menu context is active, and resume automatically when the menu closes.
 
 See [[input/ContextManager]] for how contexts work.
 
 ---
 
-## Mouse leave
+## Pointer leave
 
 When the cursor leaves the game container entirely, both UI and world hover-end events fire and the tracked hover state is cleared. No further events fire until the cursor re-enters.
 
@@ -109,7 +109,7 @@ When the cursor leaves the game container entirely, both UI and world hover-end 
 
 ## Lifecycle
 
-`MouseManager` attaches its listeners to the game container element passed at construction. Call `engine.mouseManager.destroy()` (or `engine.destroy()`) to remove them.
+`PointerManager` attaches its listeners to the game container element passed at construction. Call `engine.pointerManager.destroy()` (or `engine.destroy()`) to remove them.
 
 ---
 
@@ -117,4 +117,4 @@ When the cursor leaves the game container entirely, both UI and world hover-end 
 
 - [[input/ContextManager|Context Manager]] — context stack that scopes event delivery
 - [[input/ActionManager|Action Manager]] — keyboard counterpart, same context model
-- [[engine/Engine|Engine]] — `mouseManager` is available after `init()` resolves
+- [[engine/Engine|Engine]] — `pointerManager` is available after `init()` resolves

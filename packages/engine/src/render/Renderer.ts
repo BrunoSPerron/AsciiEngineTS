@@ -10,7 +10,7 @@ import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
-import type { MouseManager } from '../core/MouseManager'
+import type { PointerManager } from '../core/PointerManager'
 import type { UILayout } from './ui/UILayout'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
@@ -91,7 +91,7 @@ export class Renderer {
   init(
     world: World,
     actionManager: ActionManager,
-    mouseManager: MouseManager,
+    pointerManager: PointerManager,
     contextManager: ContextManager,
     config: EngineConfig,
     assets: GameAssets,
@@ -106,14 +106,14 @@ export class Renderer {
     const uiLayoutRoot = document.createElement('div')
     uiLayoutRoot.className = 'ui-layout-root'
     uiLayerEl.appendChild(uiLayoutRoot)
-    mouseManager.registerUIRoot(uiLayoutRoot)
+    pointerManager.registerUIRoot(uiLayoutRoot)
 
     this.uiLayer = new RendererUI(
       uiLayerEl,
       uiLayoutRoot,
       actionManager,
       contextManager,
-      mouseManager,
+      pointerManager,
       this.tileMetrics,
     )
 

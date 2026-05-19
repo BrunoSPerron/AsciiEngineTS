@@ -199,7 +199,7 @@
     "guides/Adding a Tile Style.md",
     "render/Theming.md",
     "input/ContextManager.md",
-    "input/MouseManager.md",
+    "input/PointerManager.md",
     "input/ActionManager.md",
     "[Adding a Tile Style.md",
     "World.md",

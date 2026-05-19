@@ -5,7 +5,7 @@ import { SelectMenuRoller } from './nodes/SelectMenuRoller'
 import type { TileMetricsData } from '../tileMetrics'
 import type { ActionManager } from '../../core/ActionManager'
 import type { ContextManager } from '../../core/ContextManager'
-import type { MouseManager } from '../../core/MouseManager'
+import type { PointerManager } from '../../core/PointerManager'
 import { Anchor } from './anchor'
 import { UILayout } from './UILayout'
 
@@ -13,7 +13,7 @@ export class RendererUI {
   root: HTMLDivElement
   private _actionManager: ActionManager
   private _contextManager: ContextManager
-  private _mouseManager: MouseManager
+  private _pointerManager: PointerManager
   private _uiLayout: UILayout
 
   tileMetrics: TileMetricsData
@@ -27,19 +27,19 @@ export class RendererUI {
     uiLayoutRoot: HTMLDivElement,
     actionManager: ActionManager,
     contextManager: ContextManager,
-    mouseManager: MouseManager,
+    pointerManager: PointerManager,
     tileMetrics: TileMetricsData,
   ) {
     this._actionManager = actionManager
     this._contextManager = contextManager
-    this._mouseManager = mouseManager
+    this._pointerManager = pointerManager
     this.root = root
     this.tileMetrics = tileMetrics
     this._uiLayout = new UILayout(root, uiLayoutRoot, tileMetrics)
   }
 
-  get mouseManager(): MouseManager {
-    return this._mouseManager
+  get pointerManager(): PointerManager {
+    return this._pointerManager
   }
 
   get uiLayout(): UILayout {
@@ -132,7 +132,7 @@ export class RendererUI {
       this,
       this._actionManager,
       this._contextManager,
-      this._mouseManager,
+      this._pointerManager,
     ).open(x, y, w, h, items, paddingX, paddingY, wraparound, anchor)
   }
 

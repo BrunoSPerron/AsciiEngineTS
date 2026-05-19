@@ -4,7 +4,7 @@ export type { GameAssets } from './core/GameAssets'
 
 export { ActionManager } from './core/ActionManager'
 export { ContextManager } from './core/ContextManager'
-export { MouseManager } from './core/MouseManager'
+export { PointerManager } from './core/PointerManager'
 
 export { World } from './world/World'
 export { Entity } from './world/entities/Entity'

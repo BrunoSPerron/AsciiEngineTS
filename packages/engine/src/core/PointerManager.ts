@@ -2,32 +2,32 @@ import type { ContextManager, ContextListener } from './ContextManager'
 import type { Camera } from '../render/Camera'
 import type { TileMetricsData } from '../render/tileMetrics'
 
-type WorldMouseHandler = (wx: number, wy: number, button: number) => void
+type WorldPointerHandler = (wx: number, wy: number, button: number) => void
 type WorldHoverHandler = (wx: number, wy: number) => void
 type WorldHoverEndHandler = (wx: number, wy: number) => void
 
 type UIHandlers = {
   hover?: () => void
   hoverEnd?: () => void
-  mouseDown?: (button: number) => void
-  mouseUp?: (button: number) => void
+  pointerDown?: (button: number) => void
+  pointerUp?: (button: number) => void
 }
 
-type MouseContext = {
+type PointerContext = {
   name: string
   worldHoverListeners: Map<string, WorldHoverHandler>
   worldHoverEndListeners: Map<string, WorldHoverEndHandler>
-  worldMouseDownListeners: Map<string, WorldMouseHandler>
-  worldMouseUpListeners: Map<string, WorldMouseHandler>
+  worldPointerDownListeners: Map<string, WorldPointerHandler>
+  worldPointerUpListeners: Map<string, WorldPointerHandler>
 }
 
-export class MouseManager implements ContextListener {
+export class PointerManager implements ContextListener {
   private _container: HTMLElement
   private _contextManager: ContextManager
   private _tileMetrics: TileMetricsData
   private _camera: Camera
 
-  private _mouseContexts = new Map<string, MouseContext>()
+  private _pointerContexts = new Map<string, PointerContext>()
   private _idCounter = 0
 
   private _hoveredWorldCell: { x: number; y: number } | null = null
@@ -49,7 +49,7 @@ export class MouseManager implements ContextListener {
     this._camera = camera
     this._contextManager = contextManager
 
-    this._ensureMouseContext('root')
+    this._ensurePointerContext('root')
     contextManager.registerListener(this)
 
     container.addEventListener('pointermove', this._onPointerMove)
@@ -64,11 +64,11 @@ export class MouseManager implements ContextListener {
 
   onPush(_outgoing: string, incoming: string): void {
     this._emitHoverEnd()
-    this._ensureMouseContext(incoming)
+    this._ensurePointerContext(incoming)
   }
 
   onPop(outgoing: string, _incoming: string): void {
-    this._mouseContexts.delete(outgoing)
+    this._pointerContexts.delete(outgoing)
     this._emitHoverStart()
   }
 
@@ -95,11 +95,11 @@ export class MouseManager implements ContextListener {
     }
 
     const onDown = (e: PointerEvent): void => {
-      handlers.mouseDown?.(e.button)
+      handlers.pointerDown?.(e.button)
     }
 
     const onUp = (e: PointerEvent): void => {
-      handlers.mouseUp?.(e.button)
+      handlers.pointerUp?.(e.button)
     }
 
     el.addEventListener('pointerenter', onEnter)
@@ -144,9 +144,9 @@ export class MouseManager implements ContextListener {
 
   onWorldHover(fn: WorldHoverHandler): () => void {
     const key = this._nextId()
-    this._activeMouseCtx().worldHoverListeners.set(key, fn)
+    this._activePointerCtx().worldHoverListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) {
+      for (const ctx of this._pointerContexts.values()) {
         ctx.worldHoverListeners.delete(key)
       }
     }
@@ -154,30 +154,30 @@ export class MouseManager implements ContextListener {
 
   onWorldHoverEnd(fn: WorldHoverEndHandler): () => void {
     const key = this._nextId()
-    this._activeMouseCtx().worldHoverEndListeners.set(key, fn)
+    this._activePointerCtx().worldHoverEndListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) {
+      for (const ctx of this._pointerContexts.values()) {
         ctx.worldHoverEndListeners.delete(key)
       }
     }
   }
 
-  onWorldMouseDown(fn: WorldMouseHandler): () => void {
+  onWorldPointerDown(fn: WorldPointerHandler): () => void {
     const key = this._nextId()
-    this._activeMouseCtx().worldMouseDownListeners.set(key, fn)
+    this._activePointerCtx().worldPointerDownListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) {
-        ctx.worldMouseDownListeners.delete(key)
+      for (const ctx of this._pointerContexts.values()) {
+        ctx.worldPointerDownListeners.delete(key)
       }
     }
   }
 
-  onWorldMouseUp(fn: WorldMouseHandler): () => void {
+  onWorldPointerUp(fn: WorldPointerHandler): () => void {
     const key = this._nextId()
-    this._activeMouseCtx().worldMouseUpListeners.set(key, fn)
+    this._activePointerCtx().worldPointerUpListeners.set(key, fn)
     return () => {
-      for (const ctx of this._mouseContexts.values()) {
-        ctx.worldMouseUpListeners.delete(key)
+      for (const ctx of this._pointerContexts.values()) {
+        ctx.worldPointerUpListeners.delete(key)
       }
     }
   }
@@ -192,7 +192,7 @@ export class MouseManager implements ContextListener {
     this._container.removeEventListener('pointerup', this._onPointerUp)
     this._container.removeEventListener('pointerleave', this._onPointerLeave)
 
-    this._mouseContexts.clear()
+    this._pointerContexts.clear()
   }
 
   // --------------------------------------------------------------------------
@@ -230,7 +230,7 @@ export class MouseManager implements ContextListener {
     const { cellX, cellY } = this._pixelToUICell(e)
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
 
-    this._emitWorldMouseDown(wx, wy, e.button)
+    this._emitWorldPointerDown(wx, wy, e.button)
   }
 
   private _onPointerUp = (e: PointerEvent): void => {
@@ -239,7 +239,7 @@ export class MouseManager implements ContextListener {
     const { cellX, cellY } = this._pixelToUICell(e)
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
 
-    this._emitWorldMouseUp(wx, wy, e.button)
+    this._emitWorldPointerUp(wx, wy, e.button)
   }
 
   private _onPointerLeave = (): void => {
@@ -287,25 +287,25 @@ export class MouseManager implements ContextListener {
   }
 
   private _emitWorldHover(wx: number, wy: number): void {
-    for (const fn of this._activeMouseCtx().worldHoverListeners.values()) {
+    for (const fn of this._activePointerCtx().worldHoverListeners.values()) {
       fn(wx, wy)
     }
   }
 
   private _emitWorldHoverEnd(wx: number, wy: number): void {
-    for (const fn of this._activeMouseCtx().worldHoverEndListeners.values()) {
+    for (const fn of this._activePointerCtx().worldHoverEndListeners.values()) {
       fn(wx, wy)
     }
   }
 
-  private _emitWorldMouseDown(wx: number, wy: number, button: number): void {
-    for (const fn of this._activeMouseCtx().worldMouseDownListeners.values()) {
+  private _emitWorldPointerDown(wx: number, wy: number, button: number): void {
+    for (const fn of this._activePointerCtx().worldPointerDownListeners.values()) {
       fn(wx, wy, button)
     }
   }
 
-  private _emitWorldMouseUp(wx: number, wy: number, button: number): void {
-    for (const fn of this._activeMouseCtx().worldMouseUpListeners.values()) {
+  private _emitWorldPointerUp(wx: number, wy: number, button: number): void {
+    for (const fn of this._activePointerCtx().worldPointerUpListeners.values()) {
       fn(wx, wy, button)
     }
   }
@@ -314,26 +314,26 @@ export class MouseManager implements ContextListener {
   // Context Helpers
   // --------------------------------------------------------------------------
 
-  private _ensureMouseContext(name: string): MouseContext {
-    let ctx = this._mouseContexts.get(name)
+  private _ensurePointerContext(name: string): PointerContext {
+    let ctx = this._pointerContexts.get(name)
 
     if (!ctx) {
       ctx = {
         name,
         worldHoverListeners: new Map(),
         worldHoverEndListeners: new Map(),
-        worldMouseDownListeners: new Map(),
-        worldMouseUpListeners: new Map(),
+        worldPointerDownListeners: new Map(),
+        worldPointerUpListeners: new Map(),
       }
 
-      this._mouseContexts.set(name, ctx)
+      this._pointerContexts.set(name, ctx)
     }
 
     return ctx
   }
 
-  private _activeMouseCtx(): MouseContext {
-    return this._ensureMouseContext(this._contextManager.active)
+  private _activePointerCtx(): PointerContext {
+    return this._ensurePointerContext(this._contextManager.active)
   }
 
   private _nextId(): string {

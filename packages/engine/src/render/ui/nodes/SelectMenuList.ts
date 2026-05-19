@@ -2,15 +2,15 @@ import type { ContextManager } from '../../../core/ContextManager'
 import type { ActionManager } from '../../../core/ActionManager'
 import type { RendererUI } from '../RendererUI'
 import type { UIPanel } from './UIPanel'
-import type { MouseManager } from '../../../core/MouseManager'
+import type { PointerManager } from '../../../core/PointerManager'
 import { Anchor } from '../anchor'
 
 export class SelectMenuList {
   private _rendererUI: RendererUI
   private _actionManager: ActionManager
   private _contextManager: ContextManager
-  private _mouseManager: MouseManager | null
-  private _mouseDisposers: Array<() => void> = []
+  private _pointerManager: PointerManager | null
+  private _pointerDisposers: Array<() => void> = []
   private _itemEls: HTMLDivElement[] = []
   private _currentIndex: number = 0
   private _panel: UIPanel | null = null
@@ -21,12 +21,12 @@ export class SelectMenuList {
     rendererUI: RendererUI,
     actionManager: ActionManager,
     contextManager: ContextManager,
-    mouseManager: MouseManager | null = null,
+    pointerManager: PointerManager | null = null,
   ) {
     this._rendererUI = rendererUI
     this._actionManager = actionManager
     this._contextManager = contextManager
-    this._mouseManager = mouseManager
+    this._pointerManager = pointerManager
   }
 
   async open(
@@ -55,19 +55,19 @@ export class SelectMenuList {
       el.style.cursor = 'pointer'
       container.appendChild(el)
 
-      if (this._mouseManager) {
-        const dispose = this._mouseManager.registerUIElement(el, {
+      if (this._pointerManager) {
+        const dispose = this._pointerManager.registerUIElement(el, {
           hover: () => {
             this.setSelected(index)
           },
 
-          mouseDown: (button) => {
+          pointerDown: (button) => {
             if (button !== 0) return
             void this.close(index)
           },
         })
 
-        this._mouseDisposers.push(dispose)
+        this._pointerDisposers.push(dispose)
       }
       return el
     })
@@ -91,7 +91,7 @@ export class SelectMenuList {
 
     return new Promise<number>((resolve) => {
       this.resolve = (index) => {
-        this._cleanupMouse()
+        this._cleanupPointer()
         resolve(index)
       }
     })
@@ -137,7 +137,7 @@ export class SelectMenuList {
 
   private async close(index: number): Promise<void> {
     const ctxName = `select_menu_${this._panel?.id ?? ''}`
-    this._cleanupMouse()
+    this._cleanupPointer()
 
     if (!this._panel) {
       this._contextManager.popContext(ctxName)
@@ -151,10 +151,10 @@ export class SelectMenuList {
     this.resolve(index)
   }
 
-  private _cleanupMouse(): void {
-    for (const dispose of this._mouseDisposers) {
+  private _cleanupPointer(): void {
+    for (const dispose of this._pointerDisposers) {
       dispose()
     }
-    this._mouseDisposers.length = 0
+    this._pointerDisposers.length = 0
   }
 }

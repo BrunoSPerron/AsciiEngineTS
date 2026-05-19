@@ -1,4 +1,4 @@
-`ContextManager` maintains a stack of named contexts that controls which input listeners are active at any given moment. When a menu opens it pushes a context; when it closes it pops. Both `ActionManager` and `MouseManager` implement `ContextListener` and respond to these transitions automatically.
+`ContextManager` maintains a stack of named contexts that controls which input listeners are active at any given moment. When a menu opens it pushes a context; when it closes it pops. Both `ActionManager` and `PointerManager` implement `ContextListener` and respond to these transitions automatically.
 
 Available at `engine.contextManager`.
 
@@ -6,7 +6,7 @@ Available at `engine.contextManager`.
 
 ## The context stack
 
-The stack always starts with `"root"` at the bottom. The topmost entry is the **active context** — the one that receives keyboard and mouse events.
+The stack always starts with `"root"` at the bottom. The topmost entry is the **active context** — the one that receives keyboard and pointer events.
 
 ```
 [ "root", "select_menu_3" ]
@@ -20,8 +20,8 @@ Pushing a new context suspends the layer below it. Popping restores it. If you p
 ## Reading the active context
 
 ```ts
-engine.contextManager.active   // string — the topmost context name
-engine.contextManager.stack    // readonly string[] — full stack, bottom to top
+engine.contextManager.active // string — the topmost context name
+engine.contextManager.stack // readonly string[] — full stack, bottom to top
 ```
 
 ---
@@ -51,4 +51,4 @@ For your own contexts, use descriptive names scoped to the feature: `inventory`,
 ## Related
 
 - [[input/ActionManager|Action Manager]] — scopes keyboard listeners to the active context
-- [[input/MouseManager|Mouse Manager]] — scopes mouse listeners to the active context
+- [[input/PointerManager|Pointer Manager]] — scopes pointer listeners to the active context

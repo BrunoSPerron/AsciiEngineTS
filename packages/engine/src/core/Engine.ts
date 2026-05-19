@@ -2,7 +2,7 @@ import { World } from '../world/World'
 import { Camera } from '../render/Camera'
 import { ActionManager } from './ActionManager'
 import { ContextManager } from './ContextManager'
-import { MouseManager } from './MouseManager'
+import { PointerManager } from './PointerManager'
 import { Renderer } from '../render/Renderer'
 import { loadConfig } from './Config'
 import type { EngineConfig } from './Config'
@@ -19,7 +19,7 @@ export class AsciiEngine {
   renderer: Renderer
 
   actionManager!: ActionManager
-  mouseManager: MouseManager
+  pointerManager: PointerManager
   contextManager: ContextManager
 
   private _running = false
@@ -42,7 +42,12 @@ export class AsciiEngine {
     this.world = new World(this)
     this.contextManager = new ContextManager()
     this.renderer = new Renderer(gameContainer, camera, tileMetrics)
-    this.mouseManager = new MouseManager(gameContainer, tileMetrics, camera, this.contextManager)
+    this.pointerManager = new PointerManager(
+      gameContainer,
+      tileMetrics,
+      camera,
+      this.contextManager,
+    )
 
     camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
     document.addEventListener('visibilitychange', this.handleVisibility)
@@ -62,7 +67,7 @@ export class AsciiEngine {
     this.renderer.init(
       this.world,
       this.actionManager,
-      this.mouseManager,
+      this.pointerManager,
       this.contextManager,
       this._config,
       this.assets,
@@ -84,7 +89,7 @@ export class AsciiEngine {
   destroy() {
     this.suspend()
     this.world.local.entities.forEach((e) => e.unschedule())
-    this.mouseManager?.destroy()
+    this.pointerManager?.destroy()
 
     document.removeEventListener('visibilitychange', this.handleVisibility)
     window.removeEventListener('resize', this.handleResize)
