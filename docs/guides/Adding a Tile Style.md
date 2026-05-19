@@ -14,8 +14,7 @@ Add your style to your base.css or theme file under `.ascii-engine`. The class n
 }
 ```
 
-Technical note for advanced user: The class is applied on each row in `<span>` element containing all adjacent glyphs with the same style
-
+Technical note: The class is applied using `<span>` elements containing all adjacent glyphs with the same style on each row
 ### 2. Apply the style to tiles
 
 #### Option A - Use engine methods
@@ -31,7 +30,7 @@ world.setTilesStyle('water', [
 
 Any method exposed by the engine handles chunk invalidation automatically, no need to touch `chunk.dirty` directly.
 #### Option B - Change the style directly on the tiles
-Style can be updated directly on the [[Chunk#Tiles|tile]] but doing so outside [[Chunk#Chunk generation|chunk generation]] requires to set `chunk.dirty = true` to update the html.
+Style can be updated directly on the [[Chunk#Tiles|tile]] but doing so outside [[Chunk#Chunk generation|chunk generation]] requires setting `chunk.dirty = true` to update the html.
 
 ---
 ## CSS variable integration

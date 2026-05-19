@@ -69,15 +69,15 @@ The engine suspends itself automatically when the page is hidden (`visibilitycha
 
 Once initialised, subsystems are accessible as properties:
 
-| Property                | Type             | Description                          |
-| ----------------------- | ---------------- | ------------------------------------ |
-| `engine.world`          | `World`          | Chunk and entity management          |
-| `engine.renderer`       | `Renderer`       | Background, actor, and UI rendering  |
-| `engine.actionManager`  | `ActionManager`  | Keyboard input and action bindings   |
-| `engine.mouseManager`   | `MouseManager`   | Mouse events for UI and world layers |
-| `engine.contextManager` | `ContextManager` | Input context stack                  |
-| `engine.config`         | `EngineConfig`   | Loaded and merged config values      |
-| `engine.assets`         | `GameAssets`     | Resolved asset URLs from the glob    |
+| Property                   | Type             | Description                          |
+| -------------------------- | ---------------- | ------------------------------------ |
+| `engine.world`             | `World`          | Chunk and entity management          |
+| `engine.renderer`          | `Renderer`       | Background, actor, and UI rendering  |
+| `engine.renderer.uiLayout` | `UILayout`       | Grid-based UI overlay                |
+| `engine.actionManager`     | `ActionManager`  | Keyboard input and action bindings   |
+| `engine.mouseManager`      | `MouseManager`   | Mouse events for UI and world layers |
+| `engine.contextManager`    | `ContextManager` | Input context stack                  |
+| `engine.assets`            | `GameAssets`     | Resolved asset URLs from the glob    |
 
 `actionManager`, `mouseManager`, and `config` are only available after `init()` resolves.
 
@@ -94,8 +94,12 @@ engine.paused
 
 ## Related
 
-- [[world/Chunk]] — chunk loading and generation
-- [[world/Entity]] — entity lifecycle and movement
-- [[input/ActionManager]] — bindings and input contexts
-- [[input/ContextManager]] — context stack
-- [[render/Theming]] — themes and CSS variables
+- [[world/Chunk|Chunk]] — chunk loading and generation
+- [[world/Entity|Entity]] — entity lifecycle and movement
+- [[render/Theming|Theming]] — themes and CSS 
+
+- [[render/UiLayout|UI Layout]] — Default UI, Grid-based overlay
+- [[input/ActionManager|Action Manager]] — bindings and input event controller
+- [[input/MouseManager|Mouse Manager]] — bindings and mouse input event controller
+- [[input/ContextManager|Context Manager]] — input context stack
+- [[engine/Assets|Assets]] — game assets

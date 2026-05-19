@@ -11,7 +11,7 @@ import { CHUNK_SIZE } from '../world/Chunk'
 
 export class AsciiEngine {
   assets: GameAssets
-  config!: EngineConfig
+  private _config!: EngineConfig
 
   world: World
   renderer: Renderer
@@ -51,17 +51,17 @@ export class AsciiEngine {
   }
 
   async init() {
-    this.config = await loadConfig(this.assets.configUrl)
-    document.title = this.config.game.title
+    this._config = await loadConfig(this.assets.configUrl)
+    document.title = this._config.game.title
     await document.fonts.ready
 
-    this.actionManager = new ActionManager(this.config.bindings, this.contextManager)
+    this.actionManager = new ActionManager(this._config.bindings, this.contextManager)
     this.renderer.init(
       this.world,
       this.actionManager,
       this.mouseManager,
       this.contextManager,
-      this.config,
+      this._config,
       this.assets,
     )
   }

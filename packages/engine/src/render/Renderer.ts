@@ -11,6 +11,7 @@ import type { GameAssets } from '../core/GameAssets'
 import type { ActionManager } from '../core/ActionManager'
 import type { ContextManager } from '../core/ContextManager'
 import type { MouseManager } from '../core/MouseManager'
+import type { UILayout } from './ui/UILayout'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (ch: string): string => HTML_ESC[ch] ?? ch
@@ -171,6 +172,11 @@ export class Renderer {
       this._world?.updateActiveChunks(cx, cy, this.viewDistance)
       this.invalidateChunks()
     })
+  }
+
+  get uiLayout(): UILayout {
+    if (!this.uiLayer) throw Error('')
+    return this.uiLayer.uiLayout
   }
 
   private _registerActor(entity: Entity) {
