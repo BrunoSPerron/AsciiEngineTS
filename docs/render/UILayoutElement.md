@@ -7,7 +7,7 @@
 Elements are created through `UILayout`, never directly:
 
 ```ts
-const el = engine.renderer.uiLayout.createElement({
+const el = engine.renderer.ui.addElement(myElement, {
   w: 40,
   h: 10,
   xPercent: 50,
@@ -45,7 +45,7 @@ All fields except `w` and `h` are optional.
 `UILayoutElement` exposes an `el` property — a plain `HTMLDivElement` sized to the element's interior. Append whatever DOM nodes you need into it.
 
 ```ts
-const panel = engine.renderer.uiLayout.createElement({
+const panel = engine.renderer.ui.addElement(myElement, {
   w: 30,
   h: 6,
   xPercent: 50,
@@ -81,7 +81,7 @@ panel.el.appendChild(p)
 ### Removal
 
 ```ts
-engine.renderer.uiLayout.removeElement(panel.id)
+engine.renderer.ui.removeElement(panel.id)
 ```
 
 This removes the border from the layout, reconciles intersections, and calls `destroy()` on the element, which removes `el` from the DOM.
@@ -132,4 +132,4 @@ All coordinates are in **viewport-local tile grid coordinates** — (0, 0) is th
 ## Related
 
 - [[UiLayout]] — creates and manages UILayoutElements, handles positioning and border reconciliation
-- [[engine/Engine|Engine]] — `engine.renderer.uiLayout` access point
+- [[engine/Engine|Engine]] — `engine.renderer.ui` access point

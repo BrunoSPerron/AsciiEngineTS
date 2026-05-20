@@ -70,15 +70,15 @@ The engine suspends itself automatically when the page is hidden (`visibilitycha
 
 Once initialised, subsystems are accessible as properties:
 
-| Property                   | Type             | Description                            |
-| -------------------------- | ---------------- | -------------------------------------- |
-| `engine.world`             | `World`          | Chunk and entity management            |
-| `engine.renderer`          | `Renderer`       | Background, actor, and UI rendering    |
-| `engine.renderer.uiLayout` | `UILayout`       | Grid-based UI overlay                  |
-| `engine.actionManager`     | `ActionManager`  | Keyboard input and action bindings     |
-| `engine.pointerManager`    | `PointerManager` | Pointer events for UI and world layers |
-| `engine.contextManager`    | `ContextManager` | Input context stack                    |
-| `engine.assets`            | `GameAssets`     | Resolved asset URLs from the glob      |
+| Property                | Type             | Description                            |
+| ----------------------- | ---------------- | -------------------------------------- |
+| `engine.world`          | `World`          | Chunk and entity management            |
+| `engine.renderer`       | `Renderer`       | Background, actor, and UI rendering    |
+| `engine.renderer.ui`    | `UILayout`       | Grid-based UI overlay management       |
+| `engine.actionManager`  | `ActionManager`  | Keyboard input and action bindings     |
+| `engine.pointerManager` | `PointerManager` | Pointer events for UI and world layers |
+| `engine.contextManager` | `ContextManager` | Input context stack                    |
+| `engine.assets`         | `GameAssets`     | Resolved asset URLs from the glob      |
 
 `actionManager`, `pointerManager`, and `config` are only available after `init()` resolves.
 
