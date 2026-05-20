@@ -120,18 +120,13 @@
   -webkit-user-select: none;
 }
 
-.ascii-engine .ui {
-  background-color: var(--ui-bg);
-  color: var(--ui-text);
-}
-
-.ascii-engine .ui .selectable:hover,
-.ascii-engine .ui .selectable.selected {
+.ascii-engine .ui-selectable.selected {
   background-color: var(--selected-bg);
   color: var(--selected-text);
 }
 
-.ascii-engine .ui .selectable {
+.ascii-engine .ui-selectable {
+  white-space: pre;
   transition:
     background-color 0.12s,
     color 0.12s;

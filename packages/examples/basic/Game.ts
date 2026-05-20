@@ -1,4 +1,4 @@
-import { type AsciiEngine, GridVector, CHUNK_SIZE, UILayoutElement } from 'ascii-engine'
+import { type AsciiEngine, GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
@@ -19,13 +19,14 @@ export class Game {
       switch (action) {
         case 'menu_test':
           {
-            const uiEl = new UILayoutElement()
+            const uiEl = new UISelectElement(['option_a', 'option_b', 'option_c'])
             this.engine.renderer.ui.addElement(uiEl, {
               w: 45,
               h: 10,
               xPercent: 50,
               yPercent: 100,
               minH: 5,
+              minW: 10,
             })
           }
           break

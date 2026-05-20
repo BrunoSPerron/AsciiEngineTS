@@ -1,3 +1,4 @@
+import type { AsciiEngine } from '../../core/Engine'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
@@ -30,6 +31,7 @@ const FRAME_ID = -1
 export class UILayout {
   private parentRoot: HTMLDivElement
   private root: HTMLDivElement
+  private _engine: AsciiEngine
 
   // TODO get rid of inlayEl
   //  Currently used to fill the outside of the frame.
@@ -60,9 +62,15 @@ export class UILayout {
    */
   private _cellStacks = new Map<string, CellEntry[]>()
 
-  constructor(parentRoot: HTMLDivElement, root: HTMLDivElement, tileMetrics: TileMetricsData) {
+  constructor(
+    parentRoot: HTMLDivElement,
+    root: HTMLDivElement,
+    tileMetrics: TileMetricsData,
+    engine: AsciiEngine,
+  ) {
     this.parentRoot = parentRoot
     this.root = root
+    this._engine = engine
     this.tileMetrics = tileMetrics
 
     const inlayEl = document.createElement('div')
@@ -102,7 +110,7 @@ export class UILayout {
   }
 
   addElement(element: UILayoutElement, spatialConfig: UISpatialConfig): number {
-    element._afterEngineAdd(this._nextId++, spatialConfig, this.tileMetrics)
+    element._mount(this._nextId++, spatialConfig, this.tileMetrics, this._engine)
     this.root.appendChild(element.el)
 
     this._elements.set(element.id, element)
@@ -113,6 +121,7 @@ export class UILayout {
       this._reconcileBorderNeighbors(element)
     }
 
+    element.onLoad()
     return element.id
   }
 
@@ -120,7 +129,7 @@ export class UILayout {
     const element = this._elements.get(id)
     if (!element) return
 
-    // Pop this element's cells from the stacks, reconcile affected positions
+    element.onUnload()
     this._teardownElementSegments(id)
     this._elements.delete(id)
     element.destroy()

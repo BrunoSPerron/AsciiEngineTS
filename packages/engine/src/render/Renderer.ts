@@ -8,6 +8,7 @@ import baseCssUrl from './css/base.css?url'
 import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
 import { UILayout } from './ui/UILayout'
+import type { AsciiEngine } from '../core/Engine'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (ch: string): string => HTML_ESC[ch] ?? ch
@@ -67,7 +68,13 @@ export class Renderer {
   private _unlistenFns = new Map<number, () => void>()
   private _world: World | null = null
 
-  constructor(root: HTMLElement, world: World, camera: Camera, tileMetrics: TileMetricsData) {
+  constructor(
+    engine: AsciiEngine,
+    root: HTMLElement,
+    world: World,
+    camera: Camera,
+    tileMetrics: TileMetricsData,
+  ) {
     this.root = root
     this.tileMetrics = tileMetrics
 
@@ -88,7 +95,7 @@ export class Renderer {
     uiLayoutRoot.className = 'ui-layout-root'
     uiLayerEl.appendChild(uiLayoutRoot)
 
-    this.ui = new UILayout(uiLayerEl, uiLayoutRoot, this.tileMetrics)
+    this.ui = new UILayout(uiLayerEl, uiLayoutRoot, this.tileMetrics, engine)
     this.bindWorld(world)
   }
 

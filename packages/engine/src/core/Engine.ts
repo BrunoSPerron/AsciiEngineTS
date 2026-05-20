@@ -41,7 +41,7 @@ export class AsciiEngine {
 
     this.world = new World(this)
     this.contextManager = new ContextManager()
-    this.renderer = new Renderer(gameContainer, this.world, camera, tileMetrics)
+    this.renderer = new Renderer(this, gameContainer, this.world, camera, tileMetrics)
     this.pointerManager = new PointerManager(
       gameContainer,
       tileMetrics,

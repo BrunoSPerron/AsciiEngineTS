@@ -1,3 +1,4 @@
+import type { AsciiEngine } from '../../../core/Engine'
 import type { TileMetricsData } from '../../tileMetrics'
 
 export type UISpatialConfig = {
@@ -32,6 +33,18 @@ export type UISpatialConfig = {
  *   - When only x / y are set they are used as the top-left corner directly.
  *   - The element is always clamped to the layout bounds. If after clamping
  *     the available space is smaller than minW / minH the element is hidden.
+ *
+ * Lifecycle hooks (override in subclasses):
+ *   - onLoad()    — called once after the element is mounted into the layout.
+ *                   this.engine, this.w, this.h etc. are all available.
+ *   - onResize()  — called after every layout pass (initial + window resize).
+ *                   this.x / y / w / h reflect the new values.
+ *   - onUnload()  — called before the element is removed from the layout.
+ *                   Clean up listeners, timers, etc. here.
+ *   - layout()    — override only if you need access to the raw resolved coords
+ *                   before onResize fires. Always call super.layout() first.
+ *   - destroy()   — called by UILayout after onUnload for final DOM teardown.
+ *                   Call super.destroy() to remove this.el.
  */
 export class UILayoutElement {
   private _id?: number
@@ -61,14 +74,25 @@ export class UILayoutElement {
   private _hidden = false
 
   protected tileMetrics?: TileMetricsData
+  protected engine!: AsciiEngine
 
   constructor() {
     this.el = document.createElement('div')
     this.el.className = 'ui-layout-element'
   }
 
-  _afterEngineAdd(id: number, spatialConfig: UISpatialConfig, tileMetrics: TileMetricsData): void {
+  // ---------------------------------------------------------------------------
+  // Engine-internal mount — called once by UILayout.addElement()
+  // ---------------------------------------------------------------------------
+
+  _mount(
+    id: number,
+    spatialConfig: UISpatialConfig,
+    tileMetrics: TileMetricsData,
+    engine: AsciiEngine,
+  ): void {
     this._id = id
+    this.engine = engine
 
     this.priority = spatialConfig.priority ?? 0
 
@@ -93,6 +117,26 @@ export class UILayoutElement {
     this.tileMetrics = tileMetrics
   }
 
+  // ---------------------------------------------------------------------------
+  // Lifecycle hooks — override in subclasses
+  // ---------------------------------------------------------------------------
+
+  /** Called once after the element is fully mounted. Safe to access this.engine. */
+  onLoad(): void {}
+
+  /**
+   * Called after every layout pass (initial placement and every window resize).
+   * this.x / y / w / h are already updated when this fires.
+   */
+  onResize(): void {}
+
+  /** Called before the element is removed from the layout. Clean up here. */
+  onUnload(): void {}
+
+  // ---------------------------------------------------------------------------
+  // Layout — called by UILayout on add and every resize
+  // ---------------------------------------------------------------------------
+
   get hidden(): boolean {
     return this._hidden
   }
@@ -103,7 +147,7 @@ export class UILayoutElement {
   }
 
   /**
-   * Called by UILayout on creation and every resize.
+   * Called by UILayout after creation and on every resize.
    * Resolves percent-based config against container dimensions, then calls layout().
    */
   reflow(containerCols: number, containerRows: number): void {
@@ -160,9 +204,8 @@ export class UILayoutElement {
   }
 
   /**
-   * Called by UILayout after creation and on every resize.
-   * Repositions the DOM node to match current tile metrics and grid coords.
-   * Subclasses can override to re-render content after a layout change.
+   * Repositions the DOM node and fires onResize().
+   * Subclasses can override to intercept raw coords, but must call super first.
    */
   layout(x: number, y: number, w: number, h: number): void {
     this.x = x
@@ -172,11 +215,12 @@ export class UILayoutElement {
     this.el.style.transform = `translate(${(x + 1) * this.tileMetrics!.w}px, ${(y + 1) * this.tileMetrics!.h}px)`
     this.el.style.width = `${w * this.tileMetrics!.w}px`
     this.el.style.height = `${h * this.tileMetrics!.h}px`
+    this.onResize()
   }
 
   /**
    * Called by UILayout when this element is removed.
-   * Subclasses should override to clean up internal state.
+   * Subclasses should call super.destroy() to remove the DOM element.
    */
   destroy(): void {
     this.el.remove()
