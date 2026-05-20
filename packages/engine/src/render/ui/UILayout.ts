@@ -1,49 +1,6 @@
+import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
-
-const TOP = 0b10000
-const RIGHT = 0b01000
-const BOTTOM = 0b00100
-const LEFT = 0b00010
-const DOUBLE = 0b00001
-
-const GLYPHS: Record<number, string> = {
-  [DOUBLE | RIGHT]: '═',
-  [DOUBLE | LEFT]: '═',
-  [DOUBLE | RIGHT | LEFT]: '═',
-  [DOUBLE | TOP]: '║',
-  [DOUBLE | BOTTOM]: '║',
-  [DOUBLE | TOP | BOTTOM]: '║',
-  [DOUBLE | RIGHT | BOTTOM]: '╔',
-  [DOUBLE | LEFT | BOTTOM]: '╗',
-  [DOUBLE | TOP | RIGHT]: '╚',
-  [DOUBLE | TOP | LEFT]: '╝',
-  [DOUBLE | TOP | RIGHT | BOTTOM]: '╠',
-  [DOUBLE | TOP | LEFT | BOTTOM]: '╣',
-  [DOUBLE | RIGHT | LEFT | BOTTOM]: '╦',
-  [DOUBLE | TOP | RIGHT | LEFT]: '╩',
-  [DOUBLE | TOP | RIGHT | LEFT | BOTTOM]: '╬',
-
-  [RIGHT]: '─',
-  [LEFT]: '─',
-  [RIGHT | LEFT]: '─',
-  [TOP]: '│',
-  [BOTTOM]: '│',
-  [TOP | BOTTOM]: '│',
-  [RIGHT | BOTTOM]: '┌',
-  [LEFT | BOTTOM]: '┐',
-  [TOP | RIGHT]: '└',
-  [TOP | LEFT]: '┘',
-  [TOP | RIGHT | BOTTOM]: '├',
-  [TOP | LEFT | BOTTOM]: '┤',
-  [RIGHT | LEFT | BOTTOM]: '┬',
-  [TOP | RIGHT | LEFT]: '┴',
-  [TOP | RIGHT | LEFT | BOTTOM]: '┼',
-}
-
-function maskToGlyph(mask: number): string {
-  return GLYPHS[mask] ?? ' '
-}
 
 // ---------------------------------------------------------------------------
 // Segment — one <pre> element representing one straight line run
@@ -428,11 +385,11 @@ export class UILayout {
     // (handles the case where frame cells are removed on resize)
     if (!topSeg) return
 
-    let mask = DOUBLE
-    if (this._cellOccupied(cx, cy - 1)) mask |= TOP
-    if (this._cellOccupied(cx + 1, cy)) mask |= RIGHT
-    if (this._cellOccupied(cx, cy + 1)) mask |= BOTTOM
-    if (this._cellOccupied(cx - 1, cy)) mask |= LEFT
+    let mask = LINE_MASK.DOUBLE
+    if (this._cellOccupied(cx, cy - 1)) mask |= LINE_MASK.TOP
+    if (this._cellOccupied(cx + 1, cy)) mask |= LINE_MASK.RIGHT
+    if (this._cellOccupied(cx, cy + 1)) mask |= LINE_MASK.BOTTOM
+    if (this._cellOccupied(cx - 1, cy)) mask |= LINE_MASK.LEFT
 
     const glyph = maskToGlyph(mask)
     const i = topSeg.orientation === 'horizontal' ? cx - topSeg.x : cy - topSeg.y

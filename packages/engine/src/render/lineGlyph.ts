@@ -1,0 +1,45 @@
+export const MASK = {
+  TOP: 0b10000,
+  RIGHT: 0b01000,
+  BOTTOM: 0b00100,
+  LEFT: 0b00010,
+  DOUBLE: 0b00001,
+} as const
+
+export function maskToGlyph(mask: number): string {
+  return GLYPHS[mask] ?? ' '
+}
+
+const GLYPHS: Record<number, string> = {
+  [MASK.DOUBLE | MASK.RIGHT]: '═',
+  [MASK.DOUBLE | MASK.LEFT]: '═',
+  [MASK.DOUBLE | MASK.RIGHT | MASK.LEFT]: '═',
+  [MASK.DOUBLE | MASK.TOP]: '║',
+  [MASK.DOUBLE | MASK.BOTTOM]: '║',
+  [MASK.DOUBLE | MASK.TOP | MASK.BOTTOM]: '║',
+  [MASK.DOUBLE | MASK.RIGHT | MASK.BOTTOM]: '╔',
+  [MASK.DOUBLE | MASK.LEFT | MASK.BOTTOM]: '╗',
+  [MASK.DOUBLE | MASK.TOP | MASK.RIGHT]: '╚',
+  [MASK.DOUBLE | MASK.TOP | MASK.LEFT]: '╝',
+  [MASK.DOUBLE | MASK.TOP | MASK.RIGHT | MASK.BOTTOM]: '╠',
+  [MASK.DOUBLE | MASK.TOP | MASK.LEFT | MASK.BOTTOM]: '╣',
+  [MASK.DOUBLE | MASK.RIGHT | MASK.LEFT | MASK.BOTTOM]: '╦',
+  [MASK.DOUBLE | MASK.TOP | MASK.RIGHT | MASK.LEFT]: '╩',
+  [MASK.DOUBLE | MASK.TOP | MASK.RIGHT | MASK.LEFT | MASK.BOTTOM]: '╬',
+
+  [MASK.RIGHT]: '─',
+  [MASK.LEFT]: '─',
+  [MASK.RIGHT | MASK.LEFT]: '─',
+  [MASK.TOP]: '│',
+  [MASK.BOTTOM]: '│',
+  [MASK.TOP | MASK.BOTTOM]: '│',
+  [MASK.RIGHT | MASK.BOTTOM]: '┌',
+  [MASK.LEFT | MASK.BOTTOM]: '┐',
+  [MASK.TOP | MASK.RIGHT]: '└',
+  [MASK.TOP | MASK.LEFT]: '┘',
+  [MASK.TOP | MASK.RIGHT | MASK.BOTTOM]: '├',
+  [MASK.TOP | MASK.LEFT | MASK.BOTTOM]: '┤',
+  [MASK.RIGHT | MASK.LEFT | MASK.BOTTOM]: '┬',
+  [MASK.TOP | MASK.RIGHT | MASK.LEFT]: '┴',
+  [MASK.TOP | MASK.RIGHT | MASK.LEFT | MASK.BOTTOM]: '┼',
+}
