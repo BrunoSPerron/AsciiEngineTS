@@ -2,66 +2,38 @@ import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
 
-// ---------------------------------------------------------------------------
-// Segment — one <pre> element representing one straight line run
-// ---------------------------------------------------------------------------
-
-type SegmentOrientation = 'horizontal' | 'vertical'
-
 type Segment = {
   el: HTMLPreElement
-  orientation: SegmentOrientation
-  /** Start cell in viewport-local tile coords */
+  vertical: Boolean
   x: number
   y: number
-  /** Length in tiles */
   length: number
-  /** chars[i] is the glyph at offset i along the segment */
   chars: string[]
-  /** Owner id — FRAME_ID for frame segments, element.id for element segments */
   ownerId: number
-}
-
-function makeSegmentEl(): HTMLPreElement {
-  const el = document.createElement('pre')
-  el.className = 'ui-layout-line'
-  el.style.position = 'absolute'
-  el.style.margin = '0'
-  el.style.padding = '0'
-  el.style.whiteSpace = 'pre'
-  el.style.pointerEvents = 'none'
-  return el
 }
 
 // ---------------------------------------------------------------------------
 // Cell stack
 // ---------------------------------------------------------------------------
 
-/** One entry in a cell's ownership stack, sorted ascending by priority. */
 type CellEntry = {
   priority: number
   seg: Segment
 }
 
-/** The FRAME_ID sentinel — always at priority -Infinity, never popped. */
 const FRAME_ID = -1
 
 // ---------------------------------------------------------------------------
 // UILayout
 // ---------------------------------------------------------------------------
 
-/**
- * Owns the viewport frame and all line-based UI layout.
- *
- * Per-cell ownership is now a **priority-sorted stack** rather than
- * last-writer-wins. The topmost entry (highest priority) determines what
- * glyph is rendered at that cell. Adding an element pushes onto relevant
- * stacks; removing pops and lets the entry beneath show through — no
- * cascading redraws, no saved chars.
- */
 export class UILayout {
   private parentRoot: HTMLDivElement
   private root: HTMLDivElement
+
+  // TODO get rid of this
+  //  Currently used to fill the outside of the frame.
+  //  We should be able to achieve this using pure css
   private inlayEl: HTMLDivElement
   tileMetrics: TileMetricsData
 
@@ -76,14 +48,14 @@ export class UILayout {
   } | null = null
 
   private _elements = new Map<number, UILayoutElement>()
-  /** Per-element border segments, keyed by element id */
+  // Per-element border segments, use element.id as key
   private _elementSegments = new Map<number, Segment[]>()
 
   private _nextId = 1
 
   /**
    * Per-cell ownership stacks.
-   * Key: "cx,cy". Value: entries sorted by priority ascending (top = last).
+   * Key: `this._key(x, y)`. Value: entries sorted by priority, ascending (top = last).
    */
   private _cellStacks = new Map<string, CellEntry[]>()
 
@@ -163,7 +135,7 @@ export class UILayout {
   // ---------------------------------------------------------------------------
 
   private _buildFrame(): void {
-    // Tear down old frame — pop all FRAME_ID entries from stacks
+    // Tear down old frame
     if (this._frame) {
       for (const seg of [
         this._frame.top,
@@ -177,36 +149,18 @@ export class UILayout {
       this._frame = null
     }
 
-    const { w, h } = this.tileMetrics
     const cols = this._cols
     const rows = this._rows
 
-    const top = this._makeHSegment(0, 0, cols, FRAME_ID)
-    const bottom = this._makeHSegment(0, rows - 1, cols, FRAME_ID)
-    const left = this._makeVSegment(0, 0, rows, FRAME_ID)
-    const right = this._makeVSegment(cols - 1, 0, rows, FRAME_ID)
-
-    top.el.style.transform = `translate(0px, 0px)`
-    bottom.el.style.transform = `translate(0px, ${(rows - 1) * h}px)`
-    left.el.style.transform = `translate(0px, 0px)`
-    right.el.style.transform = `translate(${(cols - 1) * w}px, 0px)`
-
-    this.root.appendChild(top.el)
-    this.root.appendChild(bottom.el)
-    this.root.appendChild(left.el)
-    this.root.appendChild(right.el)
+    const top = this._makeSegment(0, 0, cols, FRAME_ID, '═')
+    const bottom = this._makeSegment(0, rows - 1, cols, FRAME_ID, '═')
+    const left = this._makeSegment(0, 0, rows, FRAME_ID, '║', true)
+    const right = this._makeSegment(cols - 1, 0, rows, FRAME_ID, '║', true)
 
     this._frame = { top, bottom, left, right }
-
-    // Push frame segments onto stacks at priority -Infinity
     for (const seg of [top, bottom, left, right]) {
       this._pushSegmentToStacks(seg, -Infinity)
     }
-
-    this._fillSegment(top, '═')
-    this._fillSegment(bottom, '═')
-    this._fillSegment(left, '║')
-    this._fillSegment(right, '║')
   }
 
   // ---------------------------------------------------------------------------
@@ -214,7 +168,6 @@ export class UILayout {
   // ---------------------------------------------------------------------------
 
   private _buildElementSegments(element: UILayoutElement): void {
-    const { w, h } = this.tileMetrics
     const priority = element.priority
 
     const bx = element.x
@@ -222,20 +175,10 @@ export class UILayout {
     const bw = element.w + 2
     const bh = element.h + 2
 
-    const top = this._makeHSegment(bx, by, bw, element.id)
-    const bottom = this._makeHSegment(bx, by + bh - 1, bw, element.id)
-    const left = this._makeVSegment(bx, by, bh, element.id)
-    const right = this._makeVSegment(bx + bw - 1, by, bh, element.id)
-
-    top.el.style.transform = `translate(${bx * w}px, ${by * h}px)`
-    bottom.el.style.transform = `translate(${bx * w}px, ${(by + bh - 1) * h}px)`
-    left.el.style.transform = `translate(${bx * w}px, ${by * h}px)`
-    right.el.style.transform = `translate(${(bx + bw - 1) * w}px, ${by * h}px)`
-
-    this.root.appendChild(top.el)
-    this.root.appendChild(bottom.el)
-    this.root.appendChild(left.el)
-    this.root.appendChild(right.el)
+    const top = this._makeSegment(bx, by, bw, element.id, '═')
+    const bottom = this._makeSegment(bx, by + bh - 1, bw, element.id, '═')
+    const left = this._makeSegment(bx, by, bh, element.id, '║', true)
+    const right = this._makeSegment(bx + bw - 1, by, bh, element.id, '║', true)
 
     const segments = [top, bottom, left, right]
     this._elementSegments.set(element.id, segments)
@@ -243,11 +186,6 @@ export class UILayout {
     for (const seg of segments) {
       this._pushSegmentToStacks(seg, priority)
     }
-
-    this._fillSegment(top, '═')
-    this._fillSegment(bottom, '═')
-    this._fillSegment(left, '║')
-    this._fillSegment(right, '║')
   }
 
   private _teardownElementSegments(id: number): void {
@@ -300,26 +238,25 @@ export class UILayout {
   // Segment factories
   // ---------------------------------------------------------------------------
 
-  private _makeHSegment(x: number, y: number, length: number, ownerId: number): Segment {
-    const el = makeSegmentEl()
-    const chars = new Array<string>(length).fill(' ')
-    return { el, orientation: 'horizontal', x, y, length, chars, ownerId }
-  }
-
-  private _makeVSegment(x: number, y: number, length: number, ownerId: number): Segment {
-    const el = makeSegmentEl()
-    el.style.lineHeight = `${this.tileMetrics.h}px`
-    const chars = new Array<string>(length).fill(' ')
-    return { el, orientation: 'vertical', x, y, length, chars, ownerId }
-  }
-
-  private _fillSegment(seg: Segment, glyph: string): void {
-    seg.chars.fill(glyph)
-    this._flushSegment(seg)
+  private _makeSegment(
+    x: number,
+    y: number,
+    length: number,
+    ownerId: number,
+    glyph: string = ' ',
+    vertical: boolean = false,
+  ): Segment {
+    const el = document.createElement('pre')
+    el.className = 'ui-layout-line'
+    const { w, h } = this.tileMetrics
+    el.style.transform = `translate(${x * w}px, ${y * h}px)`
+    const chars = new Array<string>(length).fill(glyph)
+    this.root.appendChild(el)
+    return { el, vertical, x, y, length, chars, ownerId }
   }
 
   private _flushSegment(seg: Segment): void {
-    seg.el.textContent = seg.orientation === 'vertical' ? seg.chars.join('\n') : seg.chars.join('')
+    seg.el.textContent = seg.vertical ? seg.chars.join('\n') : seg.chars.join('')
   }
 
   // ---------------------------------------------------------------------------
@@ -392,7 +329,7 @@ export class UILayout {
     if (this._cellOccupied(cx - 1, cy)) mask |= LINE_MASK.LEFT
 
     const glyph = maskToGlyph(mask)
-    const i = topSeg.orientation === 'horizontal' ? cx - topSeg.x : cy - topSeg.y
+    const i = topSeg.vertical ? cy - topSeg.y : cx - topSeg.x
     if (i < 0 || i >= topSeg.length) return
 
     topSeg.chars[i] = glyph
@@ -402,7 +339,7 @@ export class UILayout {
     const stack = this._cellStacks.get(this._key(cx, cy))!
     for (let s = 0; s < stack.length - 1; s++) {
       const lowerSeg = stack[s].seg
-      const li = lowerSeg.orientation === 'horizontal' ? cx - lowerSeg.x : cy - lowerSeg.y
+      const li = lowerSeg.vertical ? cy - lowerSeg.y : cx - lowerSeg.x
       if (li >= 0 && li < lowerSeg.length) {
         lowerSeg.chars[li] = ' '
         this._flushSegment(lowerSeg)
@@ -438,7 +375,7 @@ export class UILayout {
   // ---------------------------------------------------------------------------
 
   private _segCellAt(seg: Segment, i: number): [number, number] {
-    return seg.orientation === 'horizontal' ? [seg.x + i, seg.y] : [seg.x, seg.y + i]
+    return seg.vertical ? [seg.x, seg.y + i] : [seg.x + i, seg.y]
   }
 
   private _key(x: number, y: number): string {
