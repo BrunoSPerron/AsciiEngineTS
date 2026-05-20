@@ -146,14 +146,15 @@
 .ascii-engine .ui-panel {
   padding: 4px;
   inset: -4px;
-  z-index: -1;
+  /*z-index: -1;*/
 }
 
-.ascii-engine .ui-panel-container {
+/*.ascii-engine .ui-panel-container {
   z-index: 1;
-}
+}*/
 
 .ascii-engine .ui-layout-element {
+  position: absolute !important;
   background-color: var(--ui-bg);
 }
 

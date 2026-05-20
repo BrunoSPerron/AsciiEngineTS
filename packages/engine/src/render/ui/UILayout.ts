@@ -1,10 +1,10 @@
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
-import { UILayoutElement, type UILayoutElementConfig } from './layout_elements/UILayoutElement'
+import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
 
 type Segment = {
   el: HTMLPreElement
-  vertical: Boolean
+  vertical: boolean
   x: number
   y: number
   length: number
@@ -31,10 +31,11 @@ export class UILayout {
   private parentRoot: HTMLDivElement
   private root: HTMLDivElement
 
-  // TODO get rid of this
+  // TODO get rid of inlayEl
   //  Currently used to fill the outside of the frame.
   //  We should be able to achieve this using pure css
   private inlayEl: HTMLDivElement
+
   tileMetrics: TileMetricsData
 
   private _cols = 0
@@ -100,24 +101,19 @@ export class UILayout {
     this.drawFrame()
   }
 
-  createElement(config: Omit<UILayoutElementConfig, 'id'>): UILayoutElement {
-    const id = this._nextId++
-    const el = document.createElement('div')
-    el.className = 'ui-layout-element'
-    el.style.position = 'absolute'
-    this.root.appendChild(el)
+  addElement(element: UILayoutElement, spatialConfig: UISpatialConfig): number {
+    element._afterEngineAdd(this._nextId++, spatialConfig, this.tileMetrics)
+    this.root.appendChild(element.el)
 
-    const element = new UILayoutElement({ ...config, id }, el, this.tileMetrics)
+    this._elements.set(element.id, element)
     element.reflow(this._cols, this._rows)
-
-    this._elements.set(id, element)
 
     if (!element.hidden) {
       this._buildElementSegments(element)
       this._reconcileBorderNeighbors(element)
     }
 
-    return element
+    return element.id
   }
 
   removeElement(id: number): void {

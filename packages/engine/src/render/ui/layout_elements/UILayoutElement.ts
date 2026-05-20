@@ -1,8 +1,6 @@
 import type { TileMetricsData } from '../../tileMetrics'
 
-export type UILayoutElementConfig = {
-  id: number
-  /** Viewport-local tile offset applied on top of percent-based position (or absolute position when no percent is set) */
+export type UISpatialConfig = {
   x?: number
   y?: number
   w: number
@@ -11,9 +9,7 @@ export type UILayoutElementConfig = {
   minW?: number
   minH?: number
 
-  /** Position the element's center at this percentage of the container width */
   xPercent?: number
-  /** Position the element's center at this percentage of the container height */
   yPercent?: number
   maxHPercent?: number
   maxWPercent?: number
@@ -38,63 +34,72 @@ export type UILayoutElementConfig = {
  *     the available space is smaller than minW / minH the element is hidden.
  */
 export class UILayoutElement {
-  readonly id: number
+  private _id?: number
   readonly el: HTMLDivElement
 
-  x: number
-  y: number
-  w: number
-  h: number
+  x: number = 0
+  y: number = 0
+  w: number = 0
+  h: number = 0
 
-  minW: number
-  maxW: number
-  minH: number
-  maxH: number
+  minW: number = 0
+  maxW: number = 0
+  minH: number = 0
+  maxH: number = 0
 
   xPercent: number | undefined
   yPercent: number | undefined
   maxHPercent: number | undefined
   maxWPercent: number | undefined
 
-  private _xPercentOffset: number = 0
-  private _yPercentOffset: number = 0
+  private _originalX: number = 0
+  private _originalY: number = 0
 
-  priority: number
+  priority: number = 0
 
   /** True when the element was hidden because it could not fit in the layout */
   private _hidden = false
 
-  protected tileMetrics: TileMetricsData
+  protected tileMetrics?: TileMetricsData
 
-  constructor(config: UILayoutElementConfig, el: HTMLDivElement, tileMetrics: TileMetricsData) {
-    this.id = config.id
-    this.el = el
+  constructor() {
+    this.el = document.createElement('div')
+    this.el.className = 'ui-layout-element'
+  }
 
-    this.priority = config.priority ?? 0
+  _afterEngineAdd(id: number, spatialConfig: UISpatialConfig, tileMetrics: TileMetricsData): void {
+    this._id = id
 
-    this.x = config.x ?? 0
-    this.y = config.y ?? 0
-    this.w = config.w
-    this.h = config.h
+    this.priority = spatialConfig.priority ?? 0
 
-    this.minW = config.minW !== undefined ? config.minW : config.w
-    this.minH = config.minH !== undefined ? config.minH : config.h
-    this.maxW = config.w
-    this.maxH = config.h
+    this.x = spatialConfig.x ?? 0
+    this.y = spatialConfig.y ?? 0
+    this.w = spatialConfig.w
+    this.h = spatialConfig.h
 
-    this.xPercent = config.xPercent
-    this.yPercent = config.yPercent
-    this.maxWPercent = config.maxWPercent
-    this.maxHPercent = config.maxHPercent
+    this.minW = spatialConfig.minW !== undefined ? spatialConfig.minW : spatialConfig.w
+    this.minH = spatialConfig.minH !== undefined ? spatialConfig.minH : spatialConfig.h
+    this.maxW = spatialConfig.w
+    this.maxH = spatialConfig.h
 
-    this._xPercentOffset = this.x
-    this._yPercentOffset = this.y
+    this.xPercent = spatialConfig.xPercent
+    this.yPercent = spatialConfig.yPercent
+    this.maxWPercent = spatialConfig.maxWPercent
+    this.maxHPercent = spatialConfig.maxHPercent
+
+    this._originalX = this.x
+    this._originalY = this.y
 
     this.tileMetrics = tileMetrics
   }
 
   get hidden(): boolean {
     return this._hidden
+  }
+
+  get id(): number {
+    if (!this._id) throw new Error('ID not assigned')
+    return this._id
   }
 
   /**
@@ -116,24 +121,21 @@ export class UILayoutElement {
     const w = Math.max(this.minW, Math.min(this.maxW, maxW))
     const h = Math.max(this.minH, Math.min(this.maxH, maxH))
 
-    const offsetX = this._xPercentOffset
-    const offsetY = this._yPercentOffset
-
     let x: number
     let y: number
 
     if (this.xPercent !== undefined) {
       const centerX = (containerCols * this.xPercent) / 100
-      x = Math.round(centerX - w / 2) + offsetX - 1
+      x = Math.round(centerX - w / 2) + this._originalX - 1
     } else {
-      x = offsetX
+      x = this._originalX
     }
 
     if (this.yPercent !== undefined) {
       const centerY = (containerRows * this.yPercent) / 100
-      y = Math.round(centerY - h / 2) + offsetY - 1
+      y = Math.round(centerY - h / 2) + this._originalY - 1
     } else {
-      y = offsetY
+      y = this._originalY
     }
 
     const minX = 0
@@ -167,9 +169,9 @@ export class UILayoutElement {
     this.y = y
     this.w = w
     this.h = h
-    this.el.style.transform = `translate(${(x + 1) * this.tileMetrics.w}px, ${(y + 1) * this.tileMetrics.h}px)`
-    this.el.style.width = `${w * this.tileMetrics.w}px`
-    this.el.style.height = `${h * this.tileMetrics.h}px`
+    this.el.style.transform = `translate(${(x + 1) * this.tileMetrics!.w}px, ${(y + 1) * this.tileMetrics!.h}px)`
+    this.el.style.width = `${w * this.tileMetrics!.w}px`
+    this.el.style.height = `${h * this.tileMetrics!.h}px`
   }
 
   /**

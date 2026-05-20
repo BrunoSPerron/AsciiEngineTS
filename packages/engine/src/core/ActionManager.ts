@@ -119,7 +119,7 @@ export class ActionManager implements ContextListener {
   // Queries
   // --------------------------------------------------------------------------
 
-  isActionDown(action: string, context: string): boolean {
+  isActionKeyDown(action: string, context: string): boolean {
     if (this._contextManager.active !== context) return false
     return (this.actionPressCount.get(action) ?? 0) > 0
   }

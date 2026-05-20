@@ -4,7 +4,7 @@
 
 ## Setup
 
-Instantiate the engine with a container element and an asset glob, then call `init()` and `start()`.
+Instantiate the engine with a container element and an [[engine/Assets|asset glob]], then call `init()` and `start()`.
 
 ```ts
 import { AsciiEngine } from 'ascii-engine'
@@ -25,7 +25,7 @@ await engine.init()
 engine.start()
 ```
 
-The asset glob is optional. Pass an empty object if you have no local assets.
+The [[engine/Assets|asset glob]] is optional. Pass an empty object if you have no local assets.
 
 ---
 
@@ -37,11 +37,11 @@ Creates the engine and its subsystems. The DOM structure is built here — a hos
 
 ### `await engine.init()`
 
-Loads the config file if one was found in the asset glob (`engine-settings.toml`), waits for fonts to be ready, then finishes initialising the action manager, renderer, and pointer manager. Must be awaited before calling `start()`.
+Loads the config file if one was found in the asset glob (`engine-settings.toml`), waits for fonts to be ready, then finishes initialising the [[Engine#Subsystems|subsystems]]. Must be awaited before calling `start()`.
 
 ### `engine.start()`
 
-Begins the game loop. Loads the initial chunks around the camera's starting position, snaps the camera to its target, and starts the RAF loop and entity action timers. Call this after you have set up your world and spawned your entities.
+Begins the game loop. Loads the initial chunks around the camera's starting position, snaps the camera to its target, and starts the [[Camera|camera]] RAF loop and [[World/Entity|entity]] action timers. Call this after you have set up your world and spawned your entities.
 
 ### `engine.destroy()`
 
