@@ -18,6 +18,8 @@ export class ActionHero extends Entity {
   OnLoad(): void {
     const actionManager = this.engine.actionManager
 
+    // TODO: Use actionManager.isActionKeyDown instead of tracking here
+    //   keep the listener for action trigger (on a separate cooldown)
     this._unlistenDown = actionManager.onActionKeyDown((action) => {
       if (action in ACTION_TO_DIR) this._heldActions.add(action)
     })

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "world/Entity.md",
+                "file": "input/PointerManager.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Entity"
+              "title": "PointerManager"
             }
           }
         ]
@@ -183,10 +183,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "fe0ee1a7efb0509b",
+  "active": "de4d67c5623448fe",
   "lastOpenFiles": [
-    "world/Region.md",
     "world/Entity.md",
+    "world/Region.md",
     "world/Chunk.md",
     "index.md",
     "render/UILayoutElement.md",

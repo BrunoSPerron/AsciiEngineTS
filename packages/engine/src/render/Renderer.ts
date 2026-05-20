@@ -2,16 +2,12 @@ import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
 import type { World } from '../world/World'
 import { type Camera } from './Camera'
-import { RendererUI } from './ui/RendererUI'
 import { ThemeManager } from './ThemeManager'
 import { type TileMetricsData } from './tileMetrics'
 import baseCssUrl from './css/base.css?url'
 import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
-import type { ActionManager } from '../core/ActionManager'
-import type { ContextManager } from '../core/ContextManager'
-import type { PointerManager } from '../core/PointerManager'
-import type { UILayout } from './ui/UILayout'
+import { UILayout } from './ui/UILayout'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (ch: string): string => HTML_ESC[ch] ?? ch
@@ -62,7 +58,7 @@ export class Renderer {
   worldEl: HTMLDivElement
   bg: HTMLDivElement
   actors: HTMLDivElement
-  uiLayer?: RendererUI
+  ui: UILayout
 
   actorEls = new Map<number, HTMLDivElement>()
   chunkEls = new Map<string, HTMLPreElement>()
@@ -71,7 +67,7 @@ export class Renderer {
   private _unlistenFns = new Map<number, () => void>()
   private _world: World | null = null
 
-  constructor(root: HTMLElement, camera: Camera, tileMetrics: TileMetricsData) {
+  constructor(root: HTMLElement, world: World, camera: Camera, tileMetrics: TileMetricsData) {
     this.root = root
     this.tileMetrics = tileMetrics
 
@@ -86,36 +82,22 @@ export class Renderer {
     this.worldEl = this._makeLayer('layer-world')
     this.bg = this._makeLayerInto(this.worldEl, 'layer-background')
     this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
-  }
-
-  init(
-    world: World,
-    actionManager: ActionManager,
-    pointerManager: PointerManager,
-    contextManager: ContextManager,
-    config: EngineConfig,
-    assets: GameAssets,
-  ) {
-    this.themeManager.init(config.game.engine_themes)
-
-    this.camera.halfLife = config.camera.half_life
-    this.camera.setInitialPosition(...config.camera.initial_position)
-    this.viewDistance = config.world.chunk_view_distance
 
     const uiLayerEl = this._makeLayer('layer-ui')
     const uiLayoutRoot = document.createElement('div')
     uiLayoutRoot.className = 'ui-layout-root'
     uiLayerEl.appendChild(uiLayoutRoot)
-    pointerManager.registerUIRoot(uiLayoutRoot)
 
-    this.uiLayer = new RendererUI(
-      uiLayerEl,
-      uiLayoutRoot,
-      actionManager,
-      contextManager,
-      pointerManager,
-      this.tileMetrics,
-    )
+    this.ui = new UILayout(uiLayerEl, uiLayoutRoot, this.tileMetrics)
+    this.bindWorld(world)
+  }
+
+  init(config: EngineConfig, assets: GameAssets) {
+    this.themeManager.init(config.game.engine_themes)
+
+    this.camera.halfLife = config.camera.half_life
+    this.camera.setInitialPosition(...config.camera.initial_position)
+    this.viewDistance = config.world.chunk_view_distance
 
     if (assets.baseCssUrl) {
       const link = document.createElement('link')
@@ -130,10 +112,9 @@ export class Renderer {
     this.themeManager.set(config.game.initial_theme)
 
     this.setTileHAndW()
-    this.bindWorld(world)
     this.camera.onFrame((now) => this._onCameraFrame(now))
 
-    this.uiLayer.drawFrame()
+    this.ui.drawFrame()
   }
 
   setTileHAndW() {
@@ -172,11 +153,6 @@ export class Renderer {
       this._world?.updateActiveChunks(cx, cy, this.viewDistance)
       this.invalidateChunks()
     })
-  }
-
-  get uiLayout(): UILayout {
-    if (!this.uiLayer) throw Error('')
-    return this.uiLayer.uiLayout
   }
 
   private _registerActor(entity: Entity) {

@@ -9,6 +9,8 @@ import type { PointerManager } from '../../core/PointerManager'
 import { Anchor } from './anchor'
 import { UILayout } from './UILayout'
 
+// TODO Deprecated dead code, need to be reimplemented
+//  all uiNodes are deprecated too and should be rewrote as a single panel accepting a UILayoutElement
 export class RendererUI {
   root: HTMLDivElement
   private _actionManager: ActionManager

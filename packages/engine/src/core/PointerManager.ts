@@ -115,6 +115,8 @@ export class PointerManager implements ContextListener {
     }
   }
 
+  /*
+  // TODO fix and plug
   registerUIRoot(el: HTMLElement): () => void {
     const onEnter = (): void => {
       this._uiHoverDepth++
@@ -137,6 +139,7 @@ export class PointerManager implements ContextListener {
       el.removeEventListener('pointerleave', onLeave)
     }
   }
+    */
 
   // --------------------------------------------------------------------------
   // World Event Listeners

@@ -41,7 +41,7 @@ export class AsciiEngine {
 
     this.world = new World(this)
     this.contextManager = new ContextManager()
-    this.renderer = new Renderer(gameContainer, camera, tileMetrics)
+    this.renderer = new Renderer(gameContainer, this.world, camera, tileMetrics)
     this.pointerManager = new PointerManager(
       gameContainer,
       tileMetrics,
@@ -64,14 +64,7 @@ export class AsciiEngine {
     await document.fonts.ready
 
     this.actionManager = new ActionManager(this._config.bindings, this.contextManager)
-    this.renderer.init(
-      this.world,
-      this.actionManager,
-      this.pointerManager,
-      this.contextManager,
-      this._config,
-      this.assets,
-    )
+    this.renderer.init(this._config, this.assets)
     this._setupContextMenu(this._config.game.disable_context_menu)
   }
 
@@ -146,7 +139,7 @@ export class AsciiEngine {
   }
 
   private handleResize = () => {
-    this.renderer.uiLayer?.onResize()
+    this.renderer.ui.onResize()
     const minimized = window.innerWidth === 0 || window.innerHeight === 0
     if (minimized || document.hidden) {
       this.suspend()

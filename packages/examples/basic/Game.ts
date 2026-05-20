@@ -1,18 +1,14 @@
-import { type AsciiEngine, SelectMenu, GridVector, CHUNK_SIZE } from 'ascii-engine'
+import { type AsciiEngine, GridVector, CHUNK_SIZE } from 'ascii-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
   private engine: AsciiEngine
 
-  private _escapeMenu: SelectMenu
-
   constructor(engine: AsciiEngine) {
     this.engine = engine
-    this._escapeMenu = new SelectMenu(this.engine)
   }
 
   init() {
-    this.setupUi()
     this.setupWorld()
     this.spawnPlayer()
     this.bindGameControl()
@@ -21,21 +17,15 @@ export class Game {
   private bindGameControl() {
     this.engine.actionManager.onActionKeyDown((action) => {
       switch (action) {
-        case 'pause':
-          void this._escapeMenu.open()
-          break
         case 'menu_test':
           {
-            //UILayout test
-            const uiLayout = this.engine.renderer.uiLayer!.uiLayout
+            const uiLayout = this.engine.renderer.ui
             uiLayout.createElement({
-              y: 0,
               w: 45,
               h: 10,
               xPercent: 50,
               yPercent: 100,
               minH: 5,
-              minW: 50,
             })
           }
           break
@@ -45,6 +35,8 @@ export class Game {
     })
   }
 
+  /*
+  Waiting for refactor
   private setupEscapeMenu() {
     this._escapeMenu.register('Option 1', () => {
       // TODO
@@ -60,6 +52,7 @@ export class Game {
   private setupUi() {
     this.setupEscapeMenu()
   }
+  */
 
   private setupWorld() {
     this.engine.world.setChunkGenerator((_cx, _cy, chunk) => {
