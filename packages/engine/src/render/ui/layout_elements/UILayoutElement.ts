@@ -195,11 +195,11 @@ export class UILayoutElement {
     const minFitY = containerRows - this.minH - 2
 
     if (minFitX < minX || minFitY < minY) {
-      this._setHidden(true)
+      this.setHidden(true)
       return
     }
 
-    this._setHidden(false)
+    this.setHidden(false)
     this.layout(clampedX, clampedY, Math.min(w, containerCols - 2), Math.min(h, containerRows - 2))
   }
 
@@ -256,10 +256,10 @@ export class UILayoutElement {
   }
 
   // ---------------------------------------------------------------------------
-  // Private helpers
+  // Protected helpers
   // ---------------------------------------------------------------------------
 
-  private _setHidden(hide: boolean): void {
+  protected setHidden(hide: boolean): void {
     if (this._hidden === hide) return
     this._hidden = hide
     this.el.style.display = hide ? 'none' : ''

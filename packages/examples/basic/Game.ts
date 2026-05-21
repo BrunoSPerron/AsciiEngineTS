@@ -15,57 +15,47 @@ export class Game {
   }
 
   private bindGameControl() {
-    this.engine.actionManager.onActionKeyDown((action) => this.openTestMenu(action))
+    this.engine.actionManager.onActionKeyDown((action) => this.processActionDown(action))
   }
 
-  private async openTestMenu(action: string) {
+  private processActionDown(action: string) {
     switch (action) {
-      case 'menu_test':
-        {
-          const uiEl = new UISelectElement([
-            'option_a',
-            'option_b',
-            'option_c',
-            'option_d',
-            'option_e',
-            'option_f',
-            'option_g',
-          ])
-          this.engine.renderer.ui.addElement(uiEl, {
-            w: 15,
-            h: 7,
-            xPercent: 50,
-            yPercent: 100,
-            minH: 1,
-            minW: 1,
-          })
-          const chosen = await uiEl.result
-          if (chosen === -1) this.engine.renderer.ui.removeElement(uiEl.id)
-        }
+      case 'pause':
+        this.openEscapeMenu()
         break
       default:
         break
     }
   }
 
-  /*
-  Waiting for refactor
-  private setupEscapeMenu() {
-    this._escapeMenu.register('Option 1', () => {
-      // TODO
+  private openEscapeMenu() {
+    const options = [
+      'Palette',
+      'Option_b',
+      'option_c',
+      'option_d',
+      'option_e',
+      'option_f',
+      'option_g',
+      'option_h',
+      'option_i',
+      'option_j',
+    ]
+    const selectEl = new UISelectElement(options)
+    this.engine.renderer.ui.addElement(selectEl, {
+      w: 15,
+      h: 4,
+      xPercent: 50,
+      yPercent: 100,
+      minH: 1,
+      minW: 1,
     })
-
-    this._escapeMenu.registerPaletteSelect()
-
-    this._escapeMenu.register('Option 2', () => {
-      // TODO
+    selectEl.onSelect((selectId: number) => {
+      if (options[selectId] === 'Palette') {
+        // TODO
+      }
     })
   }
-
-  private setupUi() {
-    this.setupEscapeMenu()
-  }
-  */
 
   private setupWorld() {
     this.engine.world.setChunkGenerator((_cx, _cy, chunk) => {

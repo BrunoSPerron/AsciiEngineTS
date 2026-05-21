@@ -1,5 +1,7 @@
 import { UILayoutElement } from './UILayoutElement'
 
+const ROOT_ROLLER_CLS = 'ui-roller-fade'
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -8,14 +10,11 @@ type Mode = 'list' | 'roller' | 'single'
 
 type ChangeHandler = (index: number) => void
 
+type SelectHandler = (index: number) => void
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Opacity for a roller item at `distance` steps from center. */
-function slotOpacity(distance: number): number {
-  return distance === 0 ? 1 : Math.max(0.12, 1 - distance * 0.28)
-}
 
 /**
  * Crop `text` to fit within `maxChars`.
@@ -47,12 +46,6 @@ function cropLabel(text: string, maxChars: number): string {
  * to the bar rectangle only. With default css t he result is perfect a↔b color
  * swapthat works with smooth scrolling and partial row transitions.
  *
- * Usage:
- *   const sel = new UISelectElement(['Option A', 'Option B', 'Option C'])
- *   engine.renderer.ui.addElement(sel, { w: 24, h: 5, xPercent: 50, yPercent: 50 })
- *   sel.onChange(index => console.log('changed', index))
- *   const chosen = await sel.result  // -1 if cancelled
- *
  * The element does NOT remove itself on confirm/cancel.
  * Call engine.renderer.ui.removeElement(sel.id) yourself.
  * result resolves once on the first confirm/cancel.
@@ -66,6 +59,7 @@ export class UISelectElement extends UILayoutElement {
   private _unlistenKey: (() => void) | null = null
   private _pointerDisposers: Array<() => void> = []
   private _contextName = ''
+  public closeOnSelect: boolean
 
   // List mode
   private _listScrollEl: HTMLDivElement | null = null
@@ -81,13 +75,9 @@ export class UISelectElement extends UILayoutElement {
   // Single-line mode
   private _singleLabelEl: HTMLDivElement | null = null
 
-  // Result promise
-  private _resolve!: (index: number) => void
-  private _settled = false
-  readonly result: Promise<number>
-
-  // onChange listeners
+  // Listeners
   private _changeListeners = new Set<ChangeHandler>()
+  private _selectListeners = new Set<ChangeHandler>()
 
   // Arrow glyphs
   private static readonly ARROW_L = '◁'
@@ -95,12 +85,10 @@ export class UISelectElement extends UILayoutElement {
   private static readonly ARROW_R = '▷'
   private static readonly ARROW_R_HOV = '▶'
 
-  constructor(items: string[]) {
+  constructor(items: string[], closeOnSelect: boolean = true) {
     super()
     this._items = items
-    this.result = new Promise<number>((resolve) => {
-      this._resolve = resolve
-    })
+    this.closeOnSelect = closeOnSelect
   }
 
   // ---------------------------------------------------------------------------
@@ -112,11 +100,17 @@ export class UISelectElement extends UILayoutElement {
     return () => this._changeListeners.delete(fn)
   }
 
-  confirm(): void {
-    this._settle(this._currentIndex)
+  onSelect(fn: SelectHandler): () => void {
+    this._selectListeners.add(fn)
+    return () => this._selectListeners.delete(fn)
   }
+
+  confirm(): void {
+    this._confirm(this._currentIndex)
+  }
+
   cancel(): void {
-    this._settle(-1)
+    this._confirm(-1)
   }
 
   get currentIndex(): number {
@@ -178,6 +172,16 @@ export class UISelectElement extends UILayoutElement {
   }
 
   // ---------------------------------------------------------------------------
+  // Layout override
+  // ---------------------------------------------------------------------------
+  override layout(x: number, y: number, w: number, h: number): void {
+    if (h === 1 && w < 5) {
+      this.setHidden(true)
+      return
+    }
+    return super.layout(x, y, w, h)
+  }
+  // ---------------------------------------------------------------------------
   // Shared DOM helpers
   // ---------------------------------------------------------------------------
 
@@ -233,20 +237,25 @@ export class UISelectElement extends UILayoutElement {
     return el
   }
 
-  /** Sync both scroll containers to the same translateY. */
+  /** Sync both scroll containers. */
   private _syncScroll(
     normal: HTMLDivElement | null,
     inverted: HTMLDivElement | null,
     offsetY: number,
   ): void {
-    const t = `translateY(${offsetY}px)`
-    if (normal) normal.style.transform = t
-    if (inverted) inverted.style.transform = t
+    if (normal) normal.style.transform = `translateY(${offsetY}px)`
+    if (inverted) {
+      inverted.style.transform = `translateY(${offsetY}px)`
+      const tm = this.tileMetrics!
+      const totalH = this._items.length * tm.h
+      const barTopPx = this.currentIndex * tm.h
+      inverted.style.clipPath = this._clipPath(barTopPx, totalH)
+    }
   }
 
   /** Build the clip-path inset string for the inverted layer. */
-  private _clipPath(barTopPx: number, barHeightPx: number, totalHeightPx: number): string {
-    const bottomPx = totalHeightPx - barTopPx - barHeightPx
+  private _clipPath(barTopPx: number, totalHeightPx: number): string {
+    const bottomPx = totalHeightPx - barTopPx - this.tileMetrics!.h
     return `inset(${barTopPx}px 0px ${Math.max(0, bottomPx)}px 0px)`
   }
 
@@ -262,7 +271,7 @@ export class UISelectElement extends UILayoutElement {
 
     // Scroll pair — no movement in list mode, but clip must match bar
     const [normal, inverted] = this._makeScrollPair()
-    inverted.style.clipPath = this._clipPath(barTopPx, tm.h, totalH)
+    inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     this.el.appendChild(normal)
     this.el.appendChild(inverted)
     this._listScrollEl = normal
@@ -282,7 +291,7 @@ export class UISelectElement extends UILayoutElement {
       const dispose = this.engine.pointerManager.registerUIElement(hit, {
         hover: () => this._setSelected(idx),
         pointerDown: (btn) => {
-          if (btn === 0) this._settle(idx)
+          if (btn === 0) this._confirm(idx)
         },
       })
       this._pointerDisposers.push(dispose)
@@ -300,7 +309,7 @@ export class UISelectElement extends UILayoutElement {
     }
 
     if (this._listScrollInvEl) {
-      this._listScrollInvEl.style.clipPath = this._clipPath(barTopPx, tm.h, totalH)
+      this._listScrollInvEl.style.clipPath = this._clipPath(barTopPx, totalH)
     }
 
     const nChildren = this._listScrollEl?.children
@@ -317,17 +326,17 @@ export class UISelectElement extends UILayoutElement {
   // ---------------------------------------------------------------------------
 
   private _buildRoller(): void {
-    const h = this.h
     const tm = this.tileMetrics!
     const count = this._items.length
-    const centerSlot = Math.floor(h / 2)
-    const evenOffset = h % 2 === 0 ? tm.h / 2 : 0
-    const totalH = h * tm.h
+    const centerSlot = Math.floor(this.h / 2)
+    const evenOffset = this.h % 2 === 0 ? -tm.h / 2 : 0
+    const totalH = this.h * tm.h
     const barTopPx = centerSlot * tm.h
 
     // Scroll pair
     const [normal, inverted] = this._makeScrollPair('ui-select-scroll--roller')
-    inverted.style.clipPath = this._clipPath(barTopPx, tm.h, totalH)
+    inverted.style.height = `${this._items.length * this.tileMetrics!.h}px`
+    inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     this.el.appendChild(normal)
     this.el.appendChild(inverted)
     this._rollerScrollEl = normal
@@ -339,7 +348,7 @@ export class UISelectElement extends UILayoutElement {
     }
 
     // Hit zones — one per visible slot
-    for (let slot = 0; slot < h; slot++) {
+    for (let slot = 0; slot < this.h; slot++) {
       const hit = this._makeHitEl()
       hit.style.top = `${slot * tm.h + evenOffset}px`
       hit.style.height = `${tm.h}px`
@@ -351,7 +360,7 @@ export class UISelectElement extends UILayoutElement {
         pointerDown: (btn) => {
           if (btn !== 0) return
           if (s === centerSlot) {
-            this._settle(this._currentIndex)
+            this._confirm(this._currentIndex)
           } else {
             const delta = s < centerSlot ? -1 : 1
             this._setSelected(this._clamp(this._currentIndex + delta))
@@ -365,11 +374,10 @@ export class UISelectElement extends UILayoutElement {
   }
 
   private _rollerRefresh(animate = true): void {
-    const { h } = this
+    this.el.classList.add(ROOT_ROLLER_CLS)
     const tm = this.tileMetrics!
-    const count = this._items.length
-    const centerSlot = Math.floor(h / 2)
-    const evenOffset = h % 2 === 0 ? tm.h / 2 : 0
+    const centerSlot = Math.floor(this.h / 2)
+    const evenOffset = this.h % 2 === 0 ? -tm.h / 2 : 0
 
     if (!animate) {
       this._rollerScrollEl?.style.setProperty('transition', 'none')
@@ -384,16 +392,6 @@ export class UISelectElement extends UILayoutElement {
         this._rollerScrollEl?.style.removeProperty('transition')
         this._rollerScrollInvEl?.style.removeProperty('transition')
       })
-    }
-
-    // Distance-based opacity on both layers' rows
-    for (const container of [this._rollerScrollEl, this._rollerScrollInvEl]) {
-      if (!container) continue
-      for (let i = 0; i < count; i++) {
-        const row = container.children[i] as HTMLElement | undefined
-        if (!row) continue
-        row.style.opacity = String(slotOpacity(Math.abs(i - this._currentIndex)))
-      }
     }
   }
 
@@ -454,7 +452,7 @@ export class UISelectElement extends UILayoutElement {
   private _singleRefresh(): void {
     if (!this._singleLabelEl) return
     const labelW = Math.max(0, this.w - 2)
-    this._singleLabelEl.textContent = cropLabel(this._items[this._currentIndex] ?? '', labelW)
+    this._singleLabelEl.textContent = cropLabel(this._items[this._currentIndex] ?? '', labelW - 2)
   }
 
   // ---------------------------------------------------------------------------
@@ -469,6 +467,8 @@ export class UISelectElement extends UILayoutElement {
   }
 
   private _refresh(): void {
+    if (this._mode !== 'roller') this.el.classList.remove(ROOT_ROLLER_CLS)
+
     if (this._mode === 'list') this._listRefresh()
     else if (this._mode === 'roller') this._rollerRefresh()
     else this._singleRefresh()
@@ -488,13 +488,17 @@ export class UISelectElement extends UILayoutElement {
   }
 
   // ---------------------------------------------------------------------------
-  // Settle
+  // Confirm
   // ---------------------------------------------------------------------------
 
-  private _settle(index: number): void {
-    if (this._settled) return
-    this._settled = true
-    this._resolve(index)
+  /**
+   * @param index Selected option index or -1 for cancel
+   */
+  private _confirm(index: number): void {
+    this._emitSelect(index)
+    if (this.closeOnSelect) {
+      this.engine.renderer.ui.removeElement(this.id)
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -517,10 +521,10 @@ export class UISelectElement extends UILayoutElement {
           if (this._mode === 'single') this._setSelected(this._clamp(this._currentIndex + 1))
           break
         case 'confirm':
-          this._settle(this._currentIndex)
+          this._confirm(this._currentIndex)
           break
-        case 'pause':
-          this._settle(-1)
+        case 'cancel':
+          this._confirm(-1)
           break
       }
     })
@@ -532,6 +536,13 @@ export class UISelectElement extends UILayoutElement {
 
   private _emitChange(): void {
     for (const fn of this._changeListeners) fn(this._currentIndex)
+  }
+
+  /**
+   * @param index Selected index, -1 if cancelled
+   */
+  private _emitSelect(index: number): void {
+    for (const fn of this._selectListeners) fn(index)
   }
 
   private _cleanupPointer(): void {

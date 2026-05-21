@@ -185,8 +185,6 @@
 
 /* ----- Select Element ----- */
 
-/* ----- Select Element ----- */
-
 .ascii-engine .ui-select {
   position: relative;
   overflow: hidden;
@@ -194,6 +192,17 @@
 
 .ascii-engine .ui-select-bar--list {
   transition: top 80ms ease;
+}
+
+.ascii-engine .ui-layout-element.ui-select.ui-roller-fade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: linear-gradient(to bottom, var(--ui-bg) 0%, transparent 50%, var(--ui-bg) 100%);
+
+  mix-blend-mode: normal;
 }
 
 .ascii-engine .ui-select-scroll {
@@ -214,7 +223,9 @@
 }
 
 .ascii-engine .ui-select-scroll--roller {
-  transition: transform 150ms ease;
+  transition:
+    transform 180ms ease,
+    clip-path 180ms ease;
 }
 
 .ascii-engine .ui-select-row {

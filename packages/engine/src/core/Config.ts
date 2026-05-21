@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG = {
   bindings: {
     pause: ['Escape'],
     confirm: ['Enter', 'NumpadEnter', 'Space'],
+    cancel: ['Escape', 'ShiftLeft'],
     up: ['KeyW', 'ArrowUp', 'Numpad7', 'Numpad8', 'Numpad9'],
     down: ['KeyS', 'ArrowDown', 'Numpad1', 'Numpad2', 'Numpad3'],
     left: ['KeyA', 'ArrowLeft', 'Numpad1', 'Numpad4', 'Numpad7'],

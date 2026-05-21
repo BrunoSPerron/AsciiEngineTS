@@ -16,10 +16,10 @@ half_life = 400  # ms to close half the distance to target
 initial_position = [20, 20]
 
 [bindings]
-pause       = ["Escape"]
+pause       = ["Escape", "ShiftLeft"]
 confirm     = ["Enter", "NumpadEnter", "Space"]
+cancel      = ["Escape", "ShiftLeft"]
 up          = ["KeyW", "ArrowUp", "Numpad7", "Numpad8", "Numpad9"]
 down        = ["KeyS", "ArrowDown", "Numpad1", "Numpad2", "Numpad3"]
 left        = ["KeyA", "ArrowLeft", "Numpad1", "Numpad4", "Numpad7"]
 right       = ["KeyD", "ArrowRight", "Numpad3", "Numpad6", "Numpad9"]
-menu_test   = ["ShiftLeft"]
