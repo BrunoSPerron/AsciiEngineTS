@@ -31,28 +31,34 @@ export class Game {
   private openEscapeMenu() {
     const options = [
       'Palette',
-      'Option_b',
-      'option_c',
-      'option_d',
-      'option_e',
-      'option_f',
-      'option_g',
-      'option_h',
-      'option_i',
-      'option_j',
+      'Option b',
+      'Option c',
+      'Option d',
+      'Option e',
+      'Option f',
+      'Option g',
     ]
     const selectEl = new UISelectElement(options)
     this.engine.renderer.ui.addElement(selectEl, {
       w: 15,
-      h: 4,
+      h: 9,
       xPercent: 50,
       yPercent: 100,
+      maxHPercent: 25,
       minH: 1,
       minW: 1,
     })
     selectEl.onSelect((selectId: number) => {
       if (options[selectId] === 'Palette') {
-        // TODO
+        this.engine.renderer.ui.addPaletteElement({
+          w: 30,
+          h: 5,
+          xPercent: 20,
+          yPercent: 20,
+          maxHPercent: 25,
+          minH: 1,
+          minW: 12,
+        })
       }
     })
   }

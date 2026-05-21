@@ -2,6 +2,7 @@ import type { AsciiEngine } from '../../core/Engine'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
+import { UISelectElement } from './layout_elements/UISelectElement'
 
 type Segment = {
   el: HTMLPreElement
@@ -133,6 +134,26 @@ export class UILayout {
     this._teardownElementSegments(id)
     this._elements.delete(id)
     element.destroy()
+  }
+
+  public addPaletteElement(spatialConfig: UISpatialConfig): void {
+    const themeManager = this._engine.renderer.themeManager
+    const themes = themeManager.getThemeNames()
+    const currentTheme = themeManager.current
+    const previousTheme = currentTheme
+
+    const selectEl = new UISelectElement(themes)
+    this._engine.renderer.ui.addElement(selectEl, spatialConfig)
+    selectEl.currentIndex = themes.indexOf(currentTheme)
+
+    selectEl.onChange((selectId: number) => {
+      themeManager.set(themes[selectId])
+    })
+
+    selectEl.onSelect((selectId: number) => {
+      if (selectId == -1) themeManager.set(previousTheme)
+      else themeManager.set(themes[selectId])
+    })
   }
 
   // ---------------------------------------------------------------------------

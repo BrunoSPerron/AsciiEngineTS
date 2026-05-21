@@ -173,6 +173,7 @@ The engine ships these themes out of the box:
 | Saphire Peach  | `#061f42`  | `#e9bcc6` |
 
 A local theme with the same name as a built-in will replace it.
+There's also an [[engine/engine-settings|'engine_themes' settings]] used as a whitelist for what is loaded by the engine.
 
 ---
 

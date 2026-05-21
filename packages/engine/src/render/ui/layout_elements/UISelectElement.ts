@@ -43,12 +43,8 @@ function cropLabel(text: string, maxChars: number): string {
  *
  * Selection bar technique: two identical text layers scroll in sync.
  * The normal layer and inverted layer have different css and is clipped via clip-path
- * to the bar rectangle only. With default css t he result is perfect a↔b color
+ * to the bar rectangle only. Using the default css this result in perfect a↔b color
  * swapthat works with smooth scrolling and partial row transitions.
- *
- * The element does NOT remove itself on confirm/cancel.
- * Call engine.renderer.ui.removeElement(sel.id) yourself.
- * result resolves once on the first confirm/cancel.
  */
 export class UISelectElement extends UILayoutElement {
   private _items: string[]
@@ -115,6 +111,10 @@ export class UISelectElement extends UILayoutElement {
 
   get currentIndex(): number {
     return this._currentIndex
+  }
+
+  set currentIndex(value: number) {
+    this._setSelected(value)
   }
 
   // ---------------------------------------------------------------------------
@@ -265,11 +265,11 @@ export class UISelectElement extends UILayoutElement {
 
   private _buildList(): void {
     const tm = this.tileMetrics!
-    const count = Math.min(this._items.length, this.h)
+    const count = Math.max(this._items.length, this.h)
     const totalH = count * tm.h
     const barTopPx = this._currentIndex * tm.h
 
-    // Scroll pair — no movement in list mode, but clip must match bar
+    // Scroll pair, clip must match bar
     const [normal, inverted] = this._makeScrollPair()
     inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     this.el.appendChild(normal)
@@ -300,7 +300,7 @@ export class UISelectElement extends UILayoutElement {
 
   private _listRefresh(): void {
     const tm = this.tileMetrics!
-    const count = Math.min(this._items.length, this.h)
+    const count = Math.max(this._items.length, this.h)
     const totalH = count * tm.h
     const barTopPx = this._currentIndex * tm.h
 
