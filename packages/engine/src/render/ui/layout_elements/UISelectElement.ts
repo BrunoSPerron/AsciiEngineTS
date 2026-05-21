@@ -234,15 +234,20 @@ export class UISelectElement extends UILayoutElement {
     normal: HTMLDivElement | null,
     inverted: HTMLDivElement | null,
     offsetY: number,
+    visualIndex: number,
   ): void {
-    if (normal) normal.style.transform = `translateY(${offsetY}px)`
+    if (normal) {
+      normal.style.transform = `translateY(${offsetY}px)`
+    }
+
     if (inverted) {
       inverted.style.transform = `translateY(${offsetY}px)`
+
       const tm = this.tileMetrics!
       const totalH = this._items.length * tm.h
-      const barTopPx = this.currentIndex * tm.h
+      const barTopPx = visualIndex * tm.h
+
       inverted.style.clipPath = this._clipPath(barTopPx, totalH)
-      return
     }
   }
 
@@ -385,18 +390,19 @@ export class UISelectElement extends UILayoutElement {
       this._rollerScrollInvEl?.style.setProperty('transition', 'none')
 
       const ghostOffsetY = (centerSlot + wrapDirection - this._currentIndex) * tm.h + evenOffset
-      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, ghostOffsetY)
+      const visualIndex = wrapDirection ? this._currentIndex - wrapDirection : this._currentIndex
+      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, ghostOffsetY, visualIndex)
 
       requestAnimationFrame(() => {
         this._rollerScrollEl?.style.removeProperty('transition')
         this._rollerScrollInvEl?.style.removeProperty('transition')
 
-        const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
-        this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+        const offsetY = (centerSlot - this._currentIndex) * tm.h + evenOffset
+        this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY, this._currentIndex)
       })
     } else {
-      const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
-      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+      const offsetY = (centerSlot - this._currentIndex) * tm.h + evenOffset
+      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY, this._currentIndex)
     }
   }
 
