@@ -15,25 +15,37 @@ export class Game {
   }
 
   private bindGameControl() {
-    this.engine.actionManager.onActionKeyDown((action) => {
-      switch (action) {
-        case 'menu_test':
-          {
-            const uiEl = new UISelectElement(['option_a', 'option_b', 'option_c'])
-            this.engine.renderer.ui.addElement(uiEl, {
-              w: 45,
-              h: 10,
-              xPercent: 50,
-              yPercent: 100,
-              minH: 5,
-              minW: 10,
-            })
-          }
-          break
-        default:
-          break
-      }
-    })
+    this.engine.actionManager.onActionKeyDown((action) => this.openTestMenu(action))
+  }
+
+  private async openTestMenu(action: string) {
+    switch (action) {
+      case 'menu_test':
+        {
+          const uiEl = new UISelectElement([
+            'option_a',
+            'option_b',
+            'option_c',
+            'option_d',
+            'option_e',
+            'option_f',
+            'option_g',
+          ])
+          this.engine.renderer.ui.addElement(uiEl, {
+            w: 15,
+            h: 7,
+            xPercent: 50,
+            yPercent: 100,
+            minH: 1,
+            minW: 1,
+          })
+          const chosen = await uiEl.result
+          if (chosen === -1) this.engine.renderer.ui.removeElement(uiEl.id)
+        }
+        break
+      default:
+        break
+    }
   }
 
   /*

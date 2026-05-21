@@ -1,6 +1,6 @@
 .ascii-engine-host {
   position: fixed !important;
-  inset: 0px !important;
+  inset: 0px;
 }
 
 @property --color-bg {
@@ -181,4 +181,84 @@
   margin: 0;
   color: var(--ui-text);
   background-color: var(--ui-bg);
+}
+
+/* ----- Select Element ----- */
+
+/* ----- Select Element ----- */
+
+.ascii-engine .ui-select {
+  position: relative;
+  overflow: hidden;
+}
+
+.ascii-engine .ui-select-bar--list {
+  transition: top 80ms ease;
+}
+
+.ascii-engine .ui-select-scroll {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+}
+
+.ascii-engine .ui-select-scroll--normal {
+  color: var(--ui-text);
+}
+
+.ascii-engine .ui-select-scroll--inverted {
+  width: 100%;
+  height: 100%;
+  color: var(--ui-bg);
+}
+
+.ascii-engine .ui-select-scroll--roller {
+  transition: transform 150ms ease;
+}
+
+.ascii-engine .ui-select-row {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  white-space: pre;
+  cursor: pointer;
+}
+
+.ascii-engine .ui-select-row.inverted {
+  background-color: var(--ui-text);
+  color: var(var(--ui-bg));
+}
+
+.ascii-engine .ui-select-row--roller {
+  transition: opacity 150ms ease;
+}
+
+.ascii-engine .ui-select-hit {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* Single-line mode */
+
+.ascii-engine .ui-select-single {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  white-space: pre;
+}
+
+.ascii-engine .ui-select-arrow {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ascii-engine .ui-select-label {
+  flex: 1;
+  overflow: hidden;
+  text-align: center;
 }

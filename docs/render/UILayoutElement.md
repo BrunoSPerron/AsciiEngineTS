@@ -22,7 +22,7 @@ See [[UiLayout]] for the full positioning and sizing reference.
 
 ## Subclassing
 
-`UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. The engine calls them at the right time — you never call them directly.
+`UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. They are called by the engine.
 
 ```ts
 import { UILayoutElement, type UISpatialConfig } from 'ascii-engine'
@@ -81,19 +81,19 @@ Called by `UILayout` after `onUnload()`. Removes `this.el` from the DOM. Overrid
 
 These are the fields of the object passed to `engine.renderer.ui.addElement()`. Only `w` and `h` are required.
 
-|Field|Type|Default|Description|
-|---|---|---|---|
-|`w`|`number`|—|Interior width in tiles. Also the initial maximum width.|
-|`h`|`number`|—|Interior height in tiles. Also the initial maximum height.|
-|`x`|`number`|`0`|Tile offset applied to the left edge, or added on top of the percent-based center position when `xPercent` is set.|
-|`y`|`number`|`0`|Tile offset applied to the top edge, or added on top of the percent-based center position when `yPercent` is set.|
-|`minW`|`number`|`w`|Minimum width in tiles. If the element cannot fit at this width, it is hidden.|
-|`minH`|`number`|`h`|Minimum height in tiles. If the element cannot fit at this height, it is hidden.|
-|`xPercent`|`number`|—|Pins the horizontal center of the element to this percentage of the container width. `0` = left edge, `50` = center, `100` = right edge.|
-|`yPercent`|`number`|—|Pins the vertical center of the element to this percentage of the container height. `0` = top edge, `50` = center, `100` = bottom edge.|
-|`maxWPercent`|`number`|—|Caps the resolved width to this percentage of the container width. Applied before clamping to `minW`.|
-|`maxHPercent`|`number`|—|Caps the resolved height to this percentage of the container height. Applied before clamping to `minH`.|
-|`priority`|`number`|`0`|Border intersection priority. When two elements share a border cell, the higher priority wins. The frame is always `-Infinity`.|
+| Field         | Type     | Default | Description                                                                                                                              |
+| ------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `w`           | `number` | —       | Interior width in tiles. Also the initial maximum width.                                                                                 |
+| `h`           | `number` | —       | Interior height in tiles. Also the initial maximum height.                                                                               |
+| `x`           | `number` | `0`     | Tile offset applied to the left edge, or added on top of the percent-based center position when `xPercent` is set.                       |
+| `y`           | `number` | `0`     | Tile offset applied to the top edge, or added on top of the percent-based center position when `yPercent` is set.                        |
+| `minW`        | `number` | `w`     | Minimum width in tiles. If the element cannot fit at this width, it is hidden.                                                           |
+| `minH`        | `number` | `h`     | Minimum height in tiles. If the element cannot fit at this height, it is hidden.                                                         |
+| `xPercent`    | `number` | —       | Pins the horizontal center of the element to this percentage of the container width. `0` = left edge, `50` = center, `100` = right edge. |
+| `yPercent`    | `number` | —       | Pins the vertical center of the element to this percentage of the container height. `0` = top edge, `50` = center, `100` = bottom edge.  |
+| `maxWPercent` | `number` | —       | Caps the resolved width to this percentage of the container width. Applied before clamping to `minW`.                                    |
+| `maxHPercent` | `number` | —       | Caps the resolved height to this percentage of the container height. Applied before clamping to `minH`.                                  |
+| `priority`    | `number` | `0`     | Border intersection priority. When two elements share a border cell, the higher priority wins. The frame is always `-Infinity`.          |
 
 ---
 
@@ -101,18 +101,18 @@ These are the fields of the object passed to `engine.renderer.ui.addElement()`. 
 
 These are available inside lifecycle hooks and at any point after `onLoad()` fires.
 
-|Property|Type|Description|
-|---|---|---|
-|`id`|`number`|Unique identifier assigned by `UILayout`. Use this to remove the element.|
-|`el`|`HTMLDivElement`|Content container. Sized to the interior in pixels. Append your DOM nodes here.|
-|`engine`|`AsciiEngine`|Reference to the engine. Available from `onLoad()` onwards.|
-|`tileMetrics`|`TileMetricsData`|Current tile pixel dimensions `{ w, h }`. Use for pixel-precise DOM positioning.|
-|`x`|`number`|Top-left column of the interior, in viewport tile coords.|
-|`y`|`number`|Top-left row of the interior, in viewport tile coords.|
-|`w`|`number`|Interior width in tiles.|
-|`h`|`number`|Interior height in tiles.|
-|`hidden`|`boolean`|`true` when the element was hidden because it couldn't fit the minimum size. Read-only.|
-|`priority`|`number`|Border intersection priority.|
+| Property      | Type              | Description                                                                             |
+| ------------- | ----------------- | --------------------------------------------------------------------------------------- |
+| `id`          | `number`          | Unique identifier assigned by `UILayout`. Use this to remove the element.               |
+| `el`          | `HTMLDivElement`  | Content container. Sized to the interior in pixels. Append your DOM nodes here.         |
+| `engine`      | `AsciiEngine`     | Reference to the engine. Available from `onLoad()` onwards.                             |
+| `tileMetrics` | `TileMetricsData` | Current tile pixel dimensions `{ w, h }`. Use for pixel-precise DOM positioning.        |
+| `x`           | `number`          | Top-left column of the interior, in viewport tile coords.                               |
+| `y`           | `number`          | Top-left row of the interior, in viewport tile coords.                                  |
+| `w`           | `number`          | Interior width in tiles.                                                                |
+| `h`           | `number`          | Interior height in tiles.                                                               |
+| `hidden`      | `boolean`         | `true` when the element was hidden because it couldn't fit the minimum size. Read-only. |
+| `priority`    | `number`          | Border intersection priority.                                                           |
 
 ---
 
