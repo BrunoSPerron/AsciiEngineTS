@@ -206,11 +206,11 @@ export class UISelectElement extends UILayoutElement {
   private _makeTextRow(
     index: number,
     topPx: number,
-    heightPx: number,
     element: HTMLDivElement,
     extraClass = '',
   ): void {
     const text = this._renderLabel(index)
+    const heightPx = this.tileMetrics!.h
     let row
 
     row = document.createElement('div')
@@ -242,6 +242,7 @@ export class UISelectElement extends UILayoutElement {
       const totalH = this._items.length * tm.h
       const barTopPx = this.currentIndex * tm.h
       inverted.style.clipPath = this._clipPath(barTopPx, totalH)
+      return
     }
   }
 
@@ -271,8 +272,8 @@ export class UISelectElement extends UILayoutElement {
 
     // Rows + hit zones
     for (let i = 0; i < count; i++) {
-      this._makeTextRow(i, i * tm.h, tm.h, normal)
-      this._makeTextRow(i, i * tm.h, tm.h, inverted)
+      this._makeTextRow(i, i * tm.h, normal)
+      this._makeTextRow(i, i * tm.h, inverted)
 
       const hit = this._makeHitEl()
       hit.style.top = `${i * tm.h}px`
@@ -338,13 +339,10 @@ export class UISelectElement extends UILayoutElement {
     // One row per item for - with before/after ghost copies for infinite-scroll illusion
     for (let copy = -1; copy <= 1; copy++) {
       for (let i = 0; i < count; i++) {
-        this._makeTextRow(i, (copy * count + i) * tm.h, tm.h, normal, 'ui-select-row--roller')
+        const ypos = (copy * count + i) * tm.h
+        this._makeTextRow(i, ypos, normal, 'ui-select-row--roller')
+        this._makeTextRow(i, ypos, inverted, 'ui-select-row--roller inverted')
       }
-    }
-
-    // One row per item
-    for (let i = 0; i < count; i++) {
-      this._makeTextRow(i, i * tm.h, tm.h, inverted, 'ui-select-row--roller inverted')
     }
 
     // Hit zones — one per visible slot
@@ -386,23 +384,16 @@ export class UISelectElement extends UILayoutElement {
       this._rollerScrollEl?.style.setProperty('transition', 'none')
       this._rollerScrollInvEl?.style.setProperty('transition', 'none')
 
-      const ghostOffsetY =
-        centerSlot * tm.h +
-        evenOffset -
-        (this._currentIndex + wrapDirection * this._items.length) * tm.h +
-        this._items.length * tm.h
+      const ghostOffsetY = (centerSlot + wrapDirection - this._currentIndex) * tm.h + evenOffset
       this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, ghostOffsetY)
 
-      // Force reflow — this makes the browser commit the instant jump before we animate
-      void this._rollerScrollEl?.offsetHeight
-      void this._rollerScrollEl?.offsetHeight
+      requestAnimationFrame(() => {
+        this._rollerScrollEl?.style.removeProperty('transition')
+        this._rollerScrollInvEl?.style.removeProperty('transition')
 
-      this._rollerScrollEl?.style.removeProperty('transition')
-      this._rollerScrollInvEl?.style.removeProperty('transition')
-
-      const offsetY =
-        centerSlot * tm.h + evenOffset - this._currentIndex * tm.h + this._items.length * tm.h
-      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+        const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
+        this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+      })
     } else {
       const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
       this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
@@ -477,12 +468,20 @@ export class UISelectElement extends UILayoutElement {
     const prev = this._currentIndex
     this._currentIndex = index
     this._emitChange()
+
+    if (this._mode !== 'roller') {
+      this.el
+    }
+
     if (this._mode === 'list') this._listRefresh()
     else if (this._mode === 'roller') {
       // jumped more than 1 step = wrap
       // TODO: Let the user step 2 using the mouse
-      const wrapped = Math.abs(index - prev) > 1
-      this._rollerRefresh(wrapped ? 1 : 0)
+      const count = this._items.length
+      const wrappedForward = prev === count - 1 && index === 0
+      const wrappedBack = prev === 0 && index === count - 1
+      const wrapDirection = wrappedForward ? 1 : wrappedBack ? -1 : 0
+      this._rollerRefresh(wrapDirection)
     } else this._singleRefresh()
   }
 
