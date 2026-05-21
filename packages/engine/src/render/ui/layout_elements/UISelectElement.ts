@@ -207,27 +207,19 @@ export class UISelectElement extends UILayoutElement {
     index: number,
     topPx: number,
     heightPx: number,
-    normal: HTMLDivElement,
-    inverted: HTMLDivElement,
+    element: HTMLDivElement,
     extraClass = '',
   ): void {
     const text = this._renderLabel(index)
+    let row
 
-    let row = document.createElement('div')
+    row = document.createElement('div')
     row.className = `ui-select-row ${extraClass ? extraClass : ''}`
     row.style.top = `${topPx}px`
     row.style.height = `${heightPx}px`
     row.style.lineHeight = `${heightPx}px`
     row.textContent = text
-    normal.appendChild(row)
-
-    row = document.createElement('div')
-    row.className = `ui-select-row inverted ${extraClass ? extraClass : ''}`
-    row.style.top = `${topPx}px`
-    row.style.height = `${heightPx}px`
-    row.style.lineHeight = `${heightPx}px`
-    row.textContent = text
-    inverted.appendChild(row)
+    element.appendChild(row)
   }
 
   /** Hit zone div — dynamic top/height set by caller. */
@@ -279,7 +271,8 @@ export class UISelectElement extends UILayoutElement {
 
     // Rows + hit zones
     for (let i = 0; i < count; i++) {
-      this._makeTextRow(i, i * tm.h, tm.h, normal, inverted)
+      this._makeTextRow(i, i * tm.h, tm.h, normal)
+      this._makeTextRow(i, i * tm.h, tm.h, inverted)
 
       const hit = this._makeHitEl()
       hit.style.top = `${i * tm.h}px`
@@ -342,9 +335,16 @@ export class UISelectElement extends UILayoutElement {
     this._rollerScrollEl = normal
     this._rollerScrollInvEl = inverted
 
+    // One row per item for - with before/after ghost copies for infinite-scroll illusion
+    for (let copy = -1; copy <= 1; copy++) {
+      for (let i = 0; i < count; i++) {
+        this._makeTextRow(i, (copy * count + i) * tm.h, tm.h, normal, 'ui-select-row--roller')
+      }
+    }
+
     // One row per item
     for (let i = 0; i < count; i++) {
-      this._makeTextRow(i, i * tm.h, tm.h, normal, inverted, 'ui-select-row--roller')
+      this._makeTextRow(i, i * tm.h, tm.h, inverted, 'ui-select-row--roller inverted')
     }
 
     // Hit zones — one per visible slot
@@ -370,28 +370,42 @@ export class UISelectElement extends UILayoutElement {
       this._pointerDisposers.push(dispose)
     }
 
-    this._rollerRefresh(false)
+    this._rollerRefresh(0)
   }
 
-  private _rollerRefresh(animate = true): void {
+  /**
+   * @param wrapDirection -1, 0 or 1
+   */
+  private _rollerRefresh(wrapDirection: number = 0): void {
     this.el.classList.add(ROOT_ROLLER_CLS)
     const tm = this.tileMetrics!
     const centerSlot = Math.floor(this.h / 2)
     const evenOffset = this.h % 2 === 0 ? -tm.h / 2 : 0
 
-    if (!animate) {
+    if (wrapDirection) {
       this._rollerScrollEl?.style.setProperty('transition', 'none')
       this._rollerScrollInvEl?.style.setProperty('transition', 'none')
-    }
 
-    const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
-    this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+      const ghostOffsetY =
+        centerSlot * tm.h +
+        evenOffset -
+        (this._currentIndex + wrapDirection * this._items.length) * tm.h +
+        this._items.length * tm.h
+      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, ghostOffsetY)
 
-    if (!animate) {
-      requestAnimationFrame(() => {
-        this._rollerScrollEl?.style.removeProperty('transition')
-        this._rollerScrollInvEl?.style.removeProperty('transition')
-      })
+      // Force reflow — this makes the browser commit the instant jump before we animate
+      void this._rollerScrollEl?.offsetHeight
+      void this._rollerScrollEl?.offsetHeight
+
+      this._rollerScrollEl?.style.removeProperty('transition')
+      this._rollerScrollInvEl?.style.removeProperty('transition')
+
+      const offsetY =
+        centerSlot * tm.h + evenOffset - this._currentIndex * tm.h + this._items.length * tm.h
+      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
+    } else {
+      const offsetY = centerSlot * tm.h + evenOffset - this._currentIndex * tm.h
+      this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, offsetY)
     }
   }
 
@@ -460,18 +474,16 @@ export class UISelectElement extends UILayoutElement {
   // ---------------------------------------------------------------------------
 
   private _setSelected(index: number): void {
-    if (index === this._currentIndex) return
+    const prev = this._currentIndex
     this._currentIndex = index
     this._emitChange()
-    this._refresh()
-  }
-
-  private _refresh(): void {
-    if (this._mode !== 'roller') this.el.classList.remove(ROOT_ROLLER_CLS)
-
     if (this._mode === 'list') this._listRefresh()
-    else if (this._mode === 'roller') this._rollerRefresh()
-    else this._singleRefresh()
+    else if (this._mode === 'roller') {
+      // jumped more than 1 step = wrap
+      // TODO: Let the user step 2 using the mouse
+      const wrapped = Math.abs(index - prev) > 1
+      this._rollerRefresh(wrapped ? 1 : 0)
+    } else this._singleRefresh()
   }
 
   private _clamp(index: number): number {

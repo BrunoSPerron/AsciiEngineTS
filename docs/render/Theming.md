@@ -129,12 +129,6 @@ To read the currently active theme:
 engine.renderer.themeManager.current // string
 ```
 
-The built-in palette picker menu wires all of this up automatically if you register it:
-
-```ts
-mySelectMenu.registerPaletteSelect()
-```
-
 ---
 
 ## Setting the default theme
