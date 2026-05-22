@@ -2,9 +2,9 @@ export { AsciiEngine } from './core/Engine'
 
 export type { GameAssets } from './core/GameAssets'
 
-export { ActionManager } from './core/ActionManager'
-export { ContextManager } from './core/ContextManager'
-export { PointerManager } from './core/PointerManager'
+export { ActionManager } from './input/ActionManager'
+export { ContextManager } from './input/ContextManager'
+export { PointerManager } from './input/PointerManager'
 
 export { World } from './world/World'
 export { Entity } from './world/entities/Entity'
