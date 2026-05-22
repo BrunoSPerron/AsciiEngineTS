@@ -1,4 +1,4 @@
-`UISelectElement` is a ready-made [[UILayoutElement]] that renders a keyboard- and pointer-navigable list of options. Add it to the layout and `await` its `result` promise to get the selected index.
+`UISelectElement` is a ready-made [[UILayoutElement]] that renders a keyboard- and pointer-navigable list of options. It supports three display modes depending on the element size and item count, and notifies listeners when the selection changes or is confirmed.
 
 ---
 
@@ -13,73 +13,133 @@ engine.renderer.ui.addElement(select, {
   anchorY: 50,
 })
 
-const chosen = await select.result
-// chosen: 0-based index of the confirmed item, or -1 if cancelled
+select.onSelect((index) => {
+  if (index === -1) return // cancelled
+  if (select[index] == 'New Game') this.startNewGame()
+  // ...
+})
 ```
 
-`addElement` mounts the element and calls `unloaded` synchronously, so the list is visible immediately. `result` resolves when the user confirms or cancels, at which point the element removes itself from the layout.
+`addElement` mounts the element and starts the open animation. The element removes itself from the layout automatically after a confirmed or cancelled selection (see `closeOnSelect`).
+
+---
+
+## Display modes
+
+The mode is resolved automatically from `h` and the number of items. You don't set it directly.
+
+| Mode     | Condition | Behaviour                                                                        |
+| -------- | --------- | -------------------------------------------------------------------------------- |
+| `list`   | items ≤ h | All items visible; a highlight bar slides to the selected row.                   |
+| `roller` | items > h | Vertically scrolling list; the highlight bar stays fixed at the vertical center. |
+| `single` | h === 1   | A single line with left/right arrows for cycling through items.                  |
+
+The mode is re-evaluated on every resize, so the same element can switch between modes as the window shrinks.
 
 ---
 
 ## Sizing
 
-`w` and `h` in the spatial config control the interior dimensions:
+`w` and `h` in the spatial config control the interior dimensions.
 
-- `w` — should comfortably fit the longest item label plus 2 characters of padding (1 each side). Labels longer than `w - 2` are not truncated but the trailing highlight fill will be shorter than the row.
-- `h` — should be at least as tall as the number of items (1 tile per row). Extra height is unused.
+`w` should comfortably fit the longest label plus 2 characters of padding. Labels longer than `w - 1` are cropped with a trailing `…`.
+
+`h` controls both the number of visible rows and the mode threshold. Set it to `items.length` for a plain list, or smaller to get a roller. Setting `h` to `1` always produces single-line mode regardless of item count.
 
 ```ts
 const items = ['Short', 'A much longer option', 'Medium item']
-// longest label is 20 chars → w: 24 gives comfortable padding
-engine.renderer.ui.addElement(select, { w: 24, h: items.length, anchorX: 50, anchorY: 50 })
+engine.renderer.ui.addElement(select, {
+  w: 24, // longest label (20 chars) + padding
+  h: items.length,
+  anchorX: 50,
+  anchorY: 50,
+})
 ```
+
+Elements with `h === 1` and `w < 5` are hidden automatically.
 
 ---
 
 ## Controls
 
-| Input     | Effect                        |
-| --------- | ----------------------------- |
-| `up`      | Move selection up             |
-| `down`    | Move selection down           |
-| `confirm` | Resolve `result` with index   |
-| `pause`   | Resolve `result` with `-1`    |
-| Hover     | Move selection to hovered row |
-| Click     | Confirm hovered row           |
+| Input     | Effect (list / roller)        | Effect (single)         |
+| --------- | ----------------------------- | ----------------------- |
+| `up`      | Move selection up             | —                       |
+| `down`    | Move selection down           | —                       |
+| `left`    | —                             | Move selection left     |
+| `right`   | —                             | Move selection right    |
+| `confirm` | Resolve with current index    | —                       |
+| `cancel`  | Resolve with `-1`             | —                       |
+| Hover     | Move selection to hovered row | —                       |
+| Click     | Confirm hovered row           | Cycle via arrow buttons |
 
-Selection wraps around at both ends.
+Selection wraps around at both ends in all modes.
 
-`UISelectElement` pushes its own input context on open, so game input is suppressed while the list is active. The context is popped automatically on close.
+`UISelectElement` pushes its own input context on `loaded`, so game input is suppressed while the list is active. The context is popped automatically on close.
 
 ---
 
-## Result
+## Listeners
 
-`result` is a `Promise<number>` set up in the constructor. It resolves with:
+### `onChange(fn)`
 
-- the 0-based index of the confirmed item
-- `-1` if the user cancelled (`pause` action or equivalent)
+Fires whenever the highlighted index changes — keyboard navigation, hover, or programmatic updates via `currentIndex`.
 
 ```ts
-const chosen = await select.result
-if (chosen === -1) return // cancelled
-
-switch (chosen) {
-  case 0:
-    startNewGame()
-    break
-  case 1:
-    openLoadMenu()
-    break
-}
+select.onChange((index) => {
+  previewTheme(themes[index])
+})
 ```
 
-The element removes itself from the layout before the promise resolves, so there is no need to call `removeElement` manually.
+Returns an unsubscribe function.
+
+### `onSelect(fn)`
+
+Fires once when the user confirms or cancels. `index` is the confirmed 0-based item index, or `-1` on cancellation.
+
+```ts
+select.onSelect((index) => {
+  switch (index) {
+    case 0:
+      startNewGame()
+      break
+    case 1:
+      openLoadMenu()
+      break
+    case -1:
+    default:
+      break
+  }
+})
+```
+
+Returns an unsubscribe function.
+
+If `closeOnSelect` is `true` (default), the element removes itself before the listener fires.
+
+---
+
+## Properties and methods
+
+| Member            | Type          | Description                                                                                                        |
+| ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `currentIndex`    | `number`      | Get or set the highlighted index. Setting it triggers `onChange` listeners and updates the display.                |
+| `closeOnSelect`   | `boolean`     | When `true` (default), the element removes itself after a confirmed selection or cancellation.                     |
+| `suppressOnClose` | `Set<string>` | Action names suppressed in the restored context when the element closes. Defaults to `confirm`, `cancel`, `pause`. |
+| `confirm()`       | `void`        | Programmatically confirm the current selection.                                                                    |
+| `cancel()`        | `void`        | Programmatically cancel (equivalent to the user pressing `cancel`).                                                |
+
+---
+
+## Implementing `IUSelectInterface`
+
+`UISelectElement` implements [[render/UISelectInterface|IUSelectInterface]]. When writing code that accepts a select element such as a helper that wraps `addPaletteElement` depend on the interface rather than the concrete class so custom implementations can be substituted.
 
 ---
 
 ## Related
 
 - [[UILayoutElement]] — base class, lifecycle hooks, and spatial config reference
-- [[UiLayout]] — `addElement` and layout management
+- [[render/UISelectInterface|IUSelectInterface]] — the interface `UISelectElement` implements
+- [[UiLayout]] — `addElement`, `removeElement`, and layout management
 - [[input/ContextManager|ContextManager]] — how input contexts work

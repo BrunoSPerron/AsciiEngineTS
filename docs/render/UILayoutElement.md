@@ -22,10 +22,10 @@ See [[UiLayout]] for the full positioning and sizing reference.
 
 ## Subclassing
 
-`UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. They are called by the engine.
+`UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. The engine calls them at the right time.
 
 ```ts
-import { UILayoutElement, type UISpatialConfig } from 'ascii-engine'
+import { UILayoutElement } from 'ascii-engine'
 
 class StatusBar extends UILayoutElement {
   private _unlisten: (() => void) | null = null
@@ -58,6 +58,8 @@ Override any of these in your subclass. All have empty default implementations â
 ### `loaded()`
 
 Called once after the element is fully mounted into the layout. `this.engine`, `this.w`, `this.h`, `this.x`, `this.y`, and `this.tileMetrics` are all available. Use this to build DOM content, push an input context, and register listeners.
+
+Technical Note: To avoid propagating a potential input that triggered the creation to the newly created LeyoutElement `loaded()` is invoked via `queueMicrotask` after `addElement` returns, so it fires after the current task completes. The element is visible and positioned before `loaded()` runs, but input listeners and context pushes take effect on the next microtask.
 
 ### `resized()`
 
@@ -97,15 +99,26 @@ These are the fields of the object passed to `engine.renderer.ui.addElement()`. 
 
 ---
 
+## `addElement` options
+
+`addElement` accepts an optional third argument to control the open animation:
+
+```ts
+engine.renderer.ui.addElement(el, spatialConfig) // animated (default)
+engine.renderer.ui.addElement(el, spatialConfig, false) // instant, no animation
+```
+
+---
+
 ## Properties
 
-These are available inside lifecycle hooks and at any point after `unloaded()` fires.
+These are available inside lifecycle hooks and at any point after `loaded()` fires.
 
 | Property      | Type              | Description                                                                             |
 | ------------- | ----------------- | --------------------------------------------------------------------------------------- |
 | `id`          | `number`          | Unique identifier assigned by `UILayout`. Use this to remove the element.               |
 | `el`          | `HTMLDivElement`  | Content container. Sized to the interior in pixels. Append your DOM nodes here.         |
-| `engine`      | `AsciiEngine`     | Reference to the engine. Available from `unloaded()` onwards.                           |
+| `engine`      | `AsciiEngine`     | Reference to the engine.                                                                |
 | `tileMetrics` | `TileMetricsData` | Current tile pixel dimensions `{ w, h }`. Use for pixel-precise DOM positioning.        |
 | `x`           | `number`          | Top-left column of the interior, in viewport tile coords.                               |
 | `y`           | `number`          | Top-left row of the interior, in viewport tile coords.                                  |
@@ -121,14 +134,12 @@ These are available inside lifecycle hooks and at any point after `unloaded()` f
 `el` is already positioned and sized by `UILayout`. Append whatever DOM nodes you need into it.
 
 ```ts
-unloaded(): void {
+loaded(): void {
   const p = document.createElement('p')
   p.textContent = 'Hello world'
   this.el.appendChild(p)
 }
 ```
-
-For content that needs to fill the full width with a highlighted selection (like a menu list), pad text strings to the element width in characters using `this.w` and `whiteSpace: pre`. This ensures `background-color` fills the full row on selection. See [[UISelectElement]] for a worked example.
 
 ---
 
@@ -168,6 +179,12 @@ this.engine.renderer.ui.removeElement(this.id)
 
 // from outside
 engine.renderer.ui.removeElement(myElement.id)
+```
+
+`removeElement` also accepts an optional second argument to skip the close animation:
+
+```ts
+engine.renderer.ui.removeElement(myElement.id, false) // instant, no animation
 ```
 
 Either way, `unloaded` fires first, then `destroy`. After `destroy`, `this.el` is removed from the DOM.
