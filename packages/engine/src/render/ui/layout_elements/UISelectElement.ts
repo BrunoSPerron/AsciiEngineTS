@@ -1,4 +1,5 @@
 import { UILayoutElement } from './UILayoutElement'
+import type { IUSelectInterface } from './UISelectInterface'
 
 const ROOT_ROLLER_CLS = 'ui-roller-fade'
 
@@ -46,7 +47,7 @@ function cropLabel(text: string, maxChars: number): string {
  * to the bar rectangle only. Using the default css this result in perfect a↔b color
  * swapthat works with smooth scrolling and partial row transitions.
  */
-export class UISelectElement extends UILayoutElement {
+export class UISelectElement extends UILayoutElement implements IUSelectInterface {
   private _items: string[]
   private _currentIndex: number = 0
   private _mode: Mode = 'list'

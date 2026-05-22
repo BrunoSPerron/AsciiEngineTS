@@ -14,6 +14,7 @@ export type { Tile } from './world/Tile'
 export { Camera } from './render/Camera'
 export { UILayout } from './render/ui/UILayout'
 export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
+export type { IUSelectInterface } from './render/ui/layout_elements/UISelectInterface'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
 
 export { GridVector } from './math/GridVector'
