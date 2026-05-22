@@ -151,7 +151,7 @@ export class UILayout {
     })
 
     selectEl.onSelect((selectId: number) => {
-      if (selectId == -1) themeManager.set(previousTheme)
+      if (selectId === -1) themeManager.set(previousTheme)
       else themeManager.set(themes[selectId])
     })
   }

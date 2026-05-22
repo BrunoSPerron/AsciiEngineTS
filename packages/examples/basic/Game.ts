@@ -45,6 +45,7 @@ export class Game {
       xPercent: 50,
       yPercent: 100,
       maxHPercent: 25,
+      maxWPercent: 15,
       minH: 1,
       minW: 1,
     })

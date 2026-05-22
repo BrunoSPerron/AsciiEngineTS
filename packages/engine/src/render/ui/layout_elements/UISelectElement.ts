@@ -83,7 +83,8 @@ export class UISelectElement extends UILayoutElement {
 
   constructor(items: string[], closeOnSelect: boolean = true) {
     super()
-    this._items = items
+    this._items = new Array<string>(items.length)
+    for (let i = 0; i < items.length; i++) this._items[i] = ` ${items[i]} `
     this.closeOnSelect = closeOnSelect
   }
 
@@ -211,9 +212,8 @@ export class UISelectElement extends UILayoutElement {
   ): void {
     const text = this._renderLabel(index)
     const heightPx = this.tileMetrics!.h
-    let row
 
-    row = document.createElement('div')
+    const row = document.createElement('div')
     row.className = `ui-select-row ${extraClass ? extraClass : ''}`
     row.style.top = `${topPx}px`
     row.style.height = `${heightPx}px`
@@ -242,11 +242,9 @@ export class UISelectElement extends UILayoutElement {
 
     if (inverted) {
       inverted.style.transform = `translateY(${offsetY}px)`
-
       const tm = this.tileMetrics!
-      const totalH = this._items.length * tm.h
+      const totalH = this._items.length * tm.h * 2
       const barTopPx = visualIndex * tm.h
-
       inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     }
   }
@@ -334,7 +332,7 @@ export class UISelectElement extends UILayoutElement {
 
     // Scroll pair
     const [normal, inverted] = this._makeScrollPair('ui-select-scroll--roller')
-    inverted.style.height = `${this._items.length * this.tileMetrics!.h}px`
+    inverted.style.height = `${this._items.length * this.tileMetrics!.h * 2}px`
     inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     this.el.appendChild(normal)
     this.el.appendChild(inverted)
@@ -390,7 +388,7 @@ export class UISelectElement extends UILayoutElement {
       this._rollerScrollInvEl?.style.setProperty('transition', 'none')
 
       const ghostOffsetY = (centerSlot + wrapDirection - this._currentIndex) * tm.h + evenOffset
-      const visualIndex = wrapDirection ? this._currentIndex - wrapDirection : this._currentIndex
+      const visualIndex = wrapDirection === 1 ? -1 : this._currentIndex + 1
       this._syncScroll(this._rollerScrollEl, this._rollerScrollInvEl, ghostOffsetY, visualIndex)
 
       requestAnimationFrame(() => {
@@ -463,7 +461,7 @@ export class UISelectElement extends UILayoutElement {
   private _singleRefresh(): void {
     if (!this._singleLabelEl) return
     const labelW = Math.max(0, this.w - 2)
-    this._singleLabelEl.textContent = cropLabel(this._items[this._currentIndex] ?? '', labelW - 2)
+    this._singleLabelEl.textContent = cropLabel(this._items[this._currentIndex] ?? '', labelW - 3)
   }
 
   // ---------------------------------------------------------------------------
@@ -475,14 +473,8 @@ export class UISelectElement extends UILayoutElement {
     this._currentIndex = index
     this._emitChange()
 
-    if (this._mode !== 'roller') {
-      this.el
-    }
-
     if (this._mode === 'list') this._listRefresh()
     else if (this._mode === 'roller') {
-      // jumped more than 1 step = wrap
-      // TODO: Let the user step 2 using the mouse
       const count = this._items.length
       const wrappedForward = prev === count - 1 && index === 0
       const wrappedBack = prev === 0 && index === count - 1
@@ -501,7 +493,7 @@ export class UISelectElement extends UILayoutElement {
   // ---------------------------------------------------------------------------
 
   private _renderLabel(index: number): string {
-    return cropLabel(this._items[index] ?? '', this.w)
+    return cropLabel(this._items[index] ?? '', this.w - 1)
   }
 
   // ---------------------------------------------------------------------------
