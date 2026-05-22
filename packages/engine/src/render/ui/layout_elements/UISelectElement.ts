@@ -36,7 +36,7 @@ function cropLabel(text: string, maxChars: number): string {
 /**
  * A managed select element for UILayout.
  *
- * Modes (resolved in onResize from item count and updated h):
+ * Modes (resolved in resized from item count and updated h):
  *   list   — all items visible, bar slides to selected row
  *   roller — vertically centered scroller; bar fixed at center, text scrolls under it
  *   single — h === 1, left/right arrow navigation
@@ -122,17 +122,17 @@ export class UISelectElement extends UILayoutElement {
   // Lifecycle
   // ---------------------------------------------------------------------------
 
-  onLoad(): void {
+  loaded(): void {
     this._contextName = `select_element_${this.id}`
     this.engine.contextManager.pushContext(this._contextName)
     this._registerKeys()
   }
 
-  onResize(): void {
+  resized(): void {
     this._rebuild()
   }
 
-  onUnload(): void {
+  unloaded(): void {
     this._unlistenKey?.()
     this._unlistenKey = null
     this._cleanupPointer()

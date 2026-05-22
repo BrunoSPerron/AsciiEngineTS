@@ -15,7 +15,7 @@ export class ActionHero extends Entity {
   private _dir = new GridVector()
   private _targetPos = new GridVector()
 
-  OnLoad(): void {
+  loaded(): void {
     const actionManager = this.engine.actionManager
 
     // TODO: Use actionManager.isActionKeyDown instead of tracking here
@@ -29,7 +29,7 @@ export class ActionHero extends Entity {
     })
   }
 
-  OnUnload(): void {
+  unloaded(): void {
     this._unlistenDown()
     this._unlistenUp()
     this._heldActions.clear()

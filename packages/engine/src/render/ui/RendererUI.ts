@@ -61,8 +61,8 @@ export class RendererUI {
     this._uiLayout.drawFrame()
   }
 
-  onResize(): void {
-    this._uiLayout.onResize()
+  resized(): void {
+    this._uiLayout.resized()
   }
 
   // ---------- draw calls ----------------------------------------------------

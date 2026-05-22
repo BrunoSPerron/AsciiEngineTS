@@ -82,25 +82,25 @@ See [[input/ContextManager|context manager]] for how to push and pop contexts.
 
 ## Usage inside entities
 
-Register the active context and listeners in `OnLoad()`. Clean the listeners in `OnUnload()`.
+Register the active context and listeners in `loaded()`. Clean the listeners in `unloaded()`.
 
 ```ts
 export class PlayerEntity extends Entity {
   private _unlisten: () => void = () => {}
   private _inputCtx: string = ""
 
-  OnLoad(): void {
+  loaded(): void {
 	this._inputCtx = this.engine.contextManager.active
-	
+
     this._unlisten = this.engine.actionManager.onActionKeyDown((action) => {
       if (action === 'confirm') this.shoot()
     })
   }
 
-  OnUnload(): void {
+  unloaded(): void {
     this._unlisten()
   }
-  
+
   act(): number {
     if (actionManager.isActionKeyDown('down', this._inputCtx))
       this.pos.y++
@@ -127,4 +127,4 @@ The manager also clears all held state on `window blur` and `visibilitychange`, 
 
 - [[input/ContextManager|Context Manager]] — context stack that scopes input delivery
 - [[engine/engine-settings|engine-settings]] — binding configuration
-- [[world/Entity|Entity]] — `OnLoad` / `OnUnload` for registering listeners safely
+- [[world/Entity|Entity]] — `unloaded` / `OnUnload` for registering listeners safely

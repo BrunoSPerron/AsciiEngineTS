@@ -65,9 +65,9 @@ export class Entity {
     return () => this._moveListeners.delete(fn)
   }
 
-  OnLoad() {}
+  loaded() {}
 
-  OnUnload() {}
+  unloaded() {}
 
   scheduleFirst(delay: number = -1) {
     if (this._timeoutId !== null) return

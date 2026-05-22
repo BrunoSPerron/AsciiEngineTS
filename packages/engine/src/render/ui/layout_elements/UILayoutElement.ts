@@ -35,15 +35,15 @@ export type UISpatialConfig = {
  *     the available space is smaller than minW / minH the element is hidden.
  *
  * Lifecycle hooks (override in subclasses):
- *   - onLoad()    — called once after the element is mounted into the layout.
+ *   - loaded()    — called once after the element is mounted into the layout.
  *                   this.engine, this.w, this.h etc. are all available.
- *   - onResize()  — called after every layout pass (initial + window resize).
+ *   - resized()  — called after every layout pass (initial + window resize).
  *                   this.x / y / w / h reflect the new values.
- *   - onUnload()  — called before the element is removed from the layout.
+ *   - unloaded()  — called before the element is removed from the layout.
  *                   Clean up listeners, timers, etc. here.
  *   - layout()    — override only if you need access to the raw resolved coords
- *                   before onResize fires. Always call super.layout() first.
- *   - destroy()   — called by UILayout after onUnload for final DOM teardown.
+ *                   before resized fires. Always call super.layout() first.
+ *   - destroy()   — called by UILayout after unloaded for final DOM teardown.
  *                   Call super.destroy() to remove this.el.
  */
 export class UILayoutElement {
@@ -122,16 +122,16 @@ export class UILayoutElement {
   // ---------------------------------------------------------------------------
 
   /** Called once after the element is fully mounted. Safe to access this.engine. */
-  onLoad(): void {}
+  loaded(): void {}
 
   /**
    * Called after every layout pass (initial placement and every window resize).
    * this.x / y / w / h are already updated when this fires.
    */
-  onResize(): void {}
+  resized(): void {}
 
   /** Called before the element is removed from the layout. Clean up here. */
-  onUnload(): void {}
+  unloaded(): void {}
 
   // ---------------------------------------------------------------------------
   // Layout — called by UILayout on add and every resize
@@ -190,7 +190,7 @@ export class UILayoutElement {
     const clampedX = Math.max(minX, Math.min(x, maxX))
     const clampedY = Math.max(minY, Math.min(y, maxY))
 
-    // Hide only if the element can't fit even at minimum size
+    // Hide if the element can't fit even at minimum size
     const minFitX = containerCols - this.minW - 2
     const minFitY = containerRows - this.minH - 2
 
@@ -204,7 +204,7 @@ export class UILayoutElement {
   }
 
   /**
-   * Repositions the DOM node and fires onResize().
+   * Repositions the DOM node and fires resized().
    * Subclasses can override to intercept raw coords, but must call super first.
    */
   layout(x: number, y: number, w: number, h: number): void {
@@ -215,7 +215,7 @@ export class UILayoutElement {
     this.el.style.transform = `translate(${(x + 1) * this.tileMetrics!.w}px, ${(y + 1) * this.tileMetrics!.h}px)`
     this.el.style.width = `${w * this.tileMetrics!.w}px`
     this.el.style.height = `${h * this.tileMetrics!.h}px`
-    this.onResize()
+    this.resized()
   }
 
   /**

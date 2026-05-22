@@ -139,7 +139,7 @@ export class AsciiEngine {
   }
 
   private handleResize = () => {
-    this.renderer.ui.onResize()
+    this.renderer.ui.resized()
     const minimized = window.innerWidth === 0 || window.innerHeight === 0
     if (minimized || document.hidden) {
       this.suspend()

@@ -17,7 +17,7 @@ const chosen = await select.result
 // chosen: 0-based index of the confirmed item, or -1 if cancelled
 ```
 
-`addElement` mounts the element and calls `onLoad` synchronously, so the list is visible immediately. `result` resolves when the user confirms or cancels, at which point the element removes itself from the layout.
+`addElement` mounts the element and calls `unloaded` synchronously, so the list is visible immediately. `result` resolves when the user confirms or cancels, at which point the element removes itself from the layout.
 
 ---
 
@@ -38,14 +38,14 @@ engine.renderer.ui.addElement(select, { w: 24, h: items.length, xPercent: 50, yP
 
 ## Controls
 
-|Input|Effect|
-|---|---|
-|`up`|Move selection up|
-|`down`|Move selection down|
-|`confirm`|Resolve `result` with index|
-|`pause`|Resolve `result` with `-1`|
-|Hover|Move selection to hovered row|
-|Click|Confirm hovered row|
+| Input     | Effect                        |
+| --------- | ----------------------------- |
+| `up`      | Move selection up             |
+| `down`    | Move selection down           |
+| `confirm` | Resolve `result` with index   |
+| `pause`   | Resolve `result` with `-1`    |
+| Hover     | Move selection to hovered row |
+| Click     | Confirm hovered row           |
 
 Selection wraps around at both ends.
 
@@ -62,11 +62,15 @@ Selection wraps around at both ends.
 
 ```ts
 const chosen = await select.result
-if (chosen === -1) return  // cancelled
+if (chosen === -1) return // cancelled
 
 switch (chosen) {
-  case 0: startNewGame(); break
-  case 1: openLoadMenu(); break
+  case 0:
+    startNewGame()
+    break
+  case 1:
+    openLoadMenu()
+    break
 }
 ```
 

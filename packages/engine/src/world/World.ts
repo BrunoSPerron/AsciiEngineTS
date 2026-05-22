@@ -86,11 +86,11 @@ export class World {
     startChunk.entities.add(entity.uid)
 
     // Keep chunk sets in sync as entity moves
-    const unlistenMove = entity.onMove((e) => this._onEntityMove(e))
+    const unlistenMove = entity.onMove((e) => this._entityMoved(e))
     this._moveUnlisteners.set(entity.uid, unlistenMove)
 
     entity.engine = this.engine
-    entity.OnLoad()
+    entity.loaded()
     entity.scheduleFirst()
     for (const fn of this._spawnListeners) fn(entity)
     return entity
@@ -237,7 +237,7 @@ export class World {
   // Private helpers
   // --------------------------------------------------------------------------
 
-  private _onEntityMove(entity: Entity) {
+  private _entityMoved(entity: Entity) {
     const oldCx = Math.floor(entity.previousPos.x / CHUNK_SIZE)
     const oldCy = Math.floor(entity.previousPos.y / CHUNK_SIZE)
     const newCx = Math.floor(entity.pos.x / CHUNK_SIZE)

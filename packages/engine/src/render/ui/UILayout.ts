@@ -106,7 +106,7 @@ export class UILayout {
     this._reconcileAll()
   }
 
-  onResize(): void {
+  resized(): void {
     this.drawFrame()
   }
 
@@ -122,7 +122,7 @@ export class UILayout {
       this._reconcileBorderNeighbors(element)
     }
 
-    element.onLoad()
+    element.loaded()
     return element.id
   }
 
@@ -130,7 +130,7 @@ export class UILayout {
     const element = this._elements.get(id)
     if (!element) return
 
-    element.onUnload()
+    element.unloaded()
     this._teardownElementSegments(id)
     this._elements.delete(id)
     element.destroy()

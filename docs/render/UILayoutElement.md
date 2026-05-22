@@ -30,16 +30,16 @@ import { UILayoutElement, type UISpatialConfig } from 'ascii-engine'
 class StatusBar extends UILayoutElement {
   private _unlisten: (() => void) | null = null
 
-  onLoad(): void {
+  loaded(): void {
     this._render()
     this._unlisten = this.engine.actionManager.onActionKeyDown(() => this._render())
   }
 
-  onResize(): void {
+  resized(): void {
     this._render()
   }
 
-  onUnload(): void {
+  unloaded(): void {
     this._unlisten?.()
   }
 
@@ -55,25 +55,25 @@ class StatusBar extends UILayoutElement {
 
 Override any of these in your subclass. All have empty default implementations — call `super` only if you override `layout()` or `destroy()`.
 
-### `onLoad()`
+### `loaded()`
 
 Called once after the element is fully mounted into the layout. `this.engine`, `this.w`, `this.h`, `this.x`, `this.y`, and `this.tileMetrics` are all available. Use this to build DOM content, push an input context, and register listeners.
 
-### `onResize()`
+### `resized()`
 
 Called after every layout pass — on initial placement and on every window resize. `this.x / y / w / h` already reflect the new values when this fires. Use this to re-render anything that depends on element dimensions.
 
-### `onUnload()`
+### `unloaded()`
 
 Called before the element is removed from the layout. Use this to pop input contexts, unsubscribe listeners, and cancel timers. The DOM element is still alive at this point — it is removed in `destroy()` which fires immediately after.
 
 ### `layout(x, y, w, h)`
 
-Called by `UILayout` on add and every resize, before `onResize()`. Updates `x / y / w / h`, repositions `this.el`, then calls `onResize()`. Override only if you need the raw resolved coords before `onResize` fires. Always call `super.layout(x, y, w, h)` first.
+Called by `UILayout` on add and every resize, before `resized()`. Updates `x / y / w / h`, repositions `this.el`, then calls `resized()`. Override only if you need the raw resolved coords before `resized` fires. Always call `super.layout(x, y, w, h)` first.
 
 ### `destroy()`
 
-Called by `UILayout` after `onUnload()`. Removes `this.el` from the DOM. Override to add teardown beyond what `onUnload` covers, and always call `super.destroy()`.
+Called by `UILayout` after `unloaded()`. Removes `this.el` from the DOM. Override to add teardown beyond what `unloaded` covers, and always call `super.destroy()`.
 
 ---
 
@@ -99,13 +99,13 @@ These are the fields of the object passed to `engine.renderer.ui.addElement()`. 
 
 ## Properties
 
-These are available inside lifecycle hooks and at any point after `onLoad()` fires.
+These are available inside lifecycle hooks and at any point after `unloaded()` fires.
 
 | Property      | Type              | Description                                                                             |
 | ------------- | ----------------- | --------------------------------------------------------------------------------------- |
 | `id`          | `number`          | Unique identifier assigned by `UILayout`. Use this to remove the element.               |
 | `el`          | `HTMLDivElement`  | Content container. Sized to the interior in pixels. Append your DOM nodes here.         |
-| `engine`      | `AsciiEngine`     | Reference to the engine. Available from `onLoad()` onwards.                             |
+| `engine`      | `AsciiEngine`     | Reference to the engine. Available from `unloaded()` onwards.                           |
 | `tileMetrics` | `TileMetricsData` | Current tile pixel dimensions `{ w, h }`. Use for pixel-precise DOM positioning.        |
 | `x`           | `number`          | Top-left column of the interior, in viewport tile coords.                               |
 | `y`           | `number`          | Top-left row of the interior, in viewport tile coords.                                  |
@@ -121,7 +121,7 @@ These are available inside lifecycle hooks and at any point after `onLoad()` fir
 `el` is already positioned and sized by `UILayout`. Append whatever DOM nodes you need into it.
 
 ```ts
-onLoad(): void {
+unloaded(): void {
   const p = document.createElement('p')
   p.textContent = 'Hello world'
   this.el.appendChild(p)
@@ -134,13 +134,13 @@ For content that needs to fill the full width with a highlighted selection (like
 
 ## Input and context
 
-Elements that capture input should push an input context on `onLoad` and pop it on `onUnload`. This prevents the game from receiving input while the element is active.
+Elements that capture input should push an input context on `loaded` and pop it on `unloaded`. This prevents the game from receiving input while the element is active.
 
 ```ts
 private _contextName = ''
 private _unlisten: (() => void) | null = null
 
-onLoad(): void {
+loaded(): void {
   this._contextName = `my_element_${this.id}`
   this.engine.contextManager.pushContext(this._contextName)
   this._unlisten = this.engine.actionManager.onActionKeyDown((action) => {
@@ -148,7 +148,7 @@ onLoad(): void {
   })
 }
 
-onUnload(): void {
+unloaded(): void {
   this._unlisten?.()
   this.engine.contextManager.popContext(this._contextName)
 }
@@ -170,7 +170,7 @@ this.engine.renderer.ui.removeElement(this.id)
 engine.renderer.ui.removeElement(myElement.id)
 ```
 
-Either way, `onUnload` fires first, then `destroy`. After `destroy`, `this.el` is removed from the DOM.
+Either way, `unloaded` fires first, then `destroy`. After `destroy`, `this.el` is removed from the DOM.
 
 ---
 
