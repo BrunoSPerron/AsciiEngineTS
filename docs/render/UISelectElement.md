@@ -9,8 +9,8 @@ const select = new UISelectElement(['New Game', 'Load Game', 'Settings'])
 engine.renderer.ui.addElement(select, {
   w: 24,
   h: 5,
-  xPercent: 50,
-  yPercent: 50,
+  anchorX: 50,
+  anchorY: 50,
 })
 
 const chosen = await select.result
@@ -31,7 +31,7 @@ const chosen = await select.result
 ```ts
 const items = ['Short', 'A much longer option', 'Medium item']
 // longest label is 20 chars → w: 24 gives comfortable padding
-engine.renderer.ui.addElement(select, { w: 24, h: items.length, xPercent: 50, yPercent: 50 })
+engine.renderer.ui.addElement(select, { w: 24, h: items.length, anchorX: 50, anchorY: 50 })
 ```
 
 ---

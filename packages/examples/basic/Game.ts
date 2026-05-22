@@ -40,12 +40,13 @@ export class Game {
     ]
     const selectEl = new UISelectElement(options)
     this.engine.renderer.ui.addElement(selectEl, {
-      w: 15,
+      w: 60,
       h: 9,
-      xPercent: 50,
-      yPercent: 100,
+      anchorX: 50,
+      anchorY: 100,
+      pivotX: 50,
+      pivotY: 100,
       maxHPercent: 25,
-      maxWPercent: 15,
       minH: 1,
       minW: 1,
     })
@@ -54,8 +55,8 @@ export class Game {
         this.engine.renderer.ui.addPaletteElement({
           w: 30,
           h: 5,
-          xPercent: 20,
-          yPercent: 20,
+          anchorX: 20,
+          anchorY: 20,
           maxHPercent: 25,
           minH: 1,
           minW: 12,

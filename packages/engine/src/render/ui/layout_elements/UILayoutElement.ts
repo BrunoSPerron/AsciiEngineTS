@@ -9,11 +9,13 @@ export type UISpatialConfig = {
 
   minW?: number
   minH?: number
-
-  xPercent?: number
-  yPercent?: number
   maxHPercent?: number
   maxWPercent?: number
+
+  anchorX?: number
+  anchorY?: number
+  pivotX?: number
+  pivotY?: number
 
   priority?: number
 }
@@ -27,7 +29,7 @@ export type UISpatialConfig = {
  * Coordinates are viewport-local tile grid coordinates.
  *
  * Positioning:
- *   - When xPercent / yPercent are set they pin the **center** of the element
+ *   - When anchorX / anchorY are set they pin the **center** of the element
  *     to that percentage of the container. x / y are then treated as a tile
  *     offset added on top of that centered position.
  *   - When only x / y are set they are used as the top-left corner directly.
@@ -59,11 +61,13 @@ export class UILayoutElement {
   maxW: number = 0
   minH: number = 0
   maxH: number = 0
-
-  xPercent: number | undefined
-  yPercent: number | undefined
   maxHPercent: number | undefined
   maxWPercent: number | undefined
+
+  anchorX: number | undefined
+  anchorY: number | undefined
+  pivotX: number = 0
+  pivotY: number = 0
 
   private _originalX: number = 0
   private _originalY: number = 0
@@ -106,11 +110,12 @@ export class UILayoutElement {
     this.maxW = spatialConfig.w
     this.maxH = spatialConfig.h
 
-    this.xPercent = spatialConfig.xPercent
-    this.yPercent = spatialConfig.yPercent
+    this.anchorX = spatialConfig.anchorX
+    this.anchorY = spatialConfig.anchorY
     this.maxWPercent = spatialConfig.maxWPercent
     this.maxHPercent = spatialConfig.maxHPercent
-
+    this.pivotX = spatialConfig.pivotX ?? (spatialConfig.anchorX !== undefined ? 50 : 0)
+    this.pivotY = spatialConfig.pivotY ?? (spatialConfig.anchorY !== undefined ? 50 : 0)
     this._originalX = this.x
     this._originalY = this.y
 
@@ -168,18 +173,18 @@ export class UILayoutElement {
     let x: number
     let y: number
 
-    if (this.xPercent !== undefined) {
-      const centerX = (containerCols * this.xPercent) / 100
-      x = Math.round(centerX - w / 2) + this._originalX - 1
+    if (this.anchorX !== undefined) {
+      const anchorX = (containerCols * this.anchorX) / 100
+      x = Math.round(anchorX - (w * this.pivotX) / 100) + this._originalX - 1
     } else {
-      x = this._originalX
+      x = this._originalX - Math.round((w * this.pivotX) / 100)
     }
 
-    if (this.yPercent !== undefined) {
-      const centerY = (containerRows * this.yPercent) / 100
-      y = Math.round(centerY - h / 2) + this._originalY - 1
+    if (this.anchorY !== undefined) {
+      const anchorY = (containerRows * this.anchorY) / 100
+      y = Math.round(anchorY - (h * this.pivotY) / 100) + this._originalY - 1
     } else {
-      y = this._originalY
+      y = this._originalY - Math.round((h * this.pivotY) / 100)
     }
 
     const minX = 0

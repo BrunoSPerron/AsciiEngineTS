@@ -11,8 +11,8 @@ const el = new MyElement()
 engine.renderer.ui.addElement(el, {
   w: 40,
   h: 10,
-  xPercent: 50,
-  yPercent: 50,
+  anchorX: 50,
+  anchorY: 50,
 })
 ```
 
@@ -85,12 +85,12 @@ These are the fields of the object passed to `engine.renderer.ui.addElement()`. 
 | ------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `w`           | `number` | —       | Interior width in tiles. Also the initial maximum width.                                                                                 |
 | `h`           | `number` | —       | Interior height in tiles. Also the initial maximum height.                                                                               |
-| `x`           | `number` | `0`     | Tile offset applied to the left edge, or added on top of the percent-based center position when `xPercent` is set.                       |
-| `y`           | `number` | `0`     | Tile offset applied to the top edge, or added on top of the percent-based center position when `yPercent` is set.                        |
+| `x`           | `number` | `0`     | Tile offset applied to the left edge, or added on top of the percent-based center position when `anchorX` is set.                        |
+| `y`           | `number` | `0`     | Tile offset applied to the top edge, or added on top of the percent-based center position when `anchorY` is set.                         |
 | `minW`        | `number` | `w`     | Minimum width in tiles. If the element cannot fit at this width, it is hidden.                                                           |
 | `minH`        | `number` | `h`     | Minimum height in tiles. If the element cannot fit at this height, it is hidden.                                                         |
-| `xPercent`    | `number` | —       | Pins the horizontal center of the element to this percentage of the container width. `0` = left edge, `50` = center, `100` = right edge. |
-| `yPercent`    | `number` | —       | Pins the vertical center of the element to this percentage of the container height. `0` = top edge, `50` = center, `100` = bottom edge.  |
+| `anchorX`     | `number` | —       | Pins the horizontal center of the element to this percentage of the container width. `0` = left edge, `50` = center, `100` = right edge. |
+| `anchorY`     | `number` | —       | Pins the vertical center of the element to this percentage of the container height. `0` = top edge, `50` = center, `100` = bottom edge.  |
 | `maxWPercent` | `number` | —       | Caps the resolved width to this percentage of the container width. Applied before clamping to `minW`.                                    |
 | `maxHPercent` | `number` | —       | Caps the resolved height to this percentage of the container height. Applied before clamping to `minH`.                                  |
 | `priority`    | `number` | `0`     | Border intersection priority. When two elements share a border cell, the higher priority wins. The frame is always `-Infinity`.          |
