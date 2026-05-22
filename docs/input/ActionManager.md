@@ -51,7 +51,7 @@ const unlisten = engine.actionManager.onActionKeyUp((action) => {
 })
 ```
 
-Both methods return an unsubscribe function. Call it in `OnUnload()` or when the listener is no longer needed to avoid leaks.
+Both methods return an unsubscribe function. Call it in `unloaded()` or when the listener is no longer needed to avoid leaks.
 
 ---
 
@@ -127,4 +127,4 @@ The manager also clears all held state on `window blur` and `visibilitychange`, 
 
 - [[input/ContextManager|Context Manager]] — context stack that scopes input delivery
 - [[engine/engine-settings|engine-settings]] — binding configuration
-- [[world/Entity|Entity]] — `unloaded` / `OnUnload` for registering listeners safely
+- [[world/Entity|Entity]] — `loaded` / `unloaded` for registering listeners safely

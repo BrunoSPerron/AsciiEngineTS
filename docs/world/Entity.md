@@ -26,7 +26,7 @@ The return value of `act()` controls how long the engine waits before calling it
 
 ## Spawning and despawning
 
-Entities must be added to the world through `world.spawnEntity()`. This registers the entity, calls `unloaded()`, and starts its action timer.
+Entities must be added to the world through `world.spawnEntity()`. This registers the entity, calls `loaded()`, and starts its action timer.
 
 ```ts
 const goblin = engine.world.spawnEntity(new Goblin('☺', new GridVector(20, 20), 80))
@@ -34,7 +34,7 @@ const goblin = engine.world.spawnEntity(new Goblin('☺', new GridVector(20, 20)
 
 `spawnEntity` returns the same entity, typed correctly, so you can hold a reference to it.
 
-To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls `OnUnload()`, removes it from the world, and fires despawn listeners for the renderer to clean up.
+To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls `unloaded()`, removes it from the world, and fires despawn listeners for the renderer to clean up.
 
 ---
 
@@ -42,28 +42,28 @@ To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls 
 
 | Method       | When it's called                            |
 | ------------ | ------------------------------------------- |
-| `unloaded()` | After the entity is added to the world      |
-| `OnUnload()` | Before the entity is removed from the world |
+| `loaded()`   | After the entity is added to the world      |
+| `unloaded()` | Before the entity is removed from the world |
 
-Use `unloaded()` to register input listeners and start any entity-specific logic. Use `OnUnload()` to clean up those listeners.
+Use `loaded()` to register input listeners and start any entity-specific logic. Use `unloaded()` to clean up those listeners.
 
 ```ts
 export class PlayerEntity extends Entity {
   private _unlisten: () => void = () => {}
 
-  unloaded(): void {
+  loaded(): void {
     this._unlisten = this.engine.actionManager.onActionKeyDown((action) => {
       // handle input
     })
   }
 
-  OnUnload(): void {
+  unloaded(): void {
     this._unlisten()
   }
 }
 ```
 
-The `engine` property is injected before `unloaded()` is called, so it's safe to access `this.engine` inside both hooks.
+The `engine` property is injected before `loaded()` is called, so it's safe to access `this.engine` inside both hooks.
 
 ---
 

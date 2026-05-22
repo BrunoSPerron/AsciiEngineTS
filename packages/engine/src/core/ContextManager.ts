@@ -1,6 +1,6 @@
 export type ContextListener = {
-  onPush(outgoingContext: string, incomingContext: string): void
-  onPop(outgoingContext: string, incomingContext: string): void
+  onPush(outgoingContext: string, incomingContext: string, suppressActions?: Set<string>): void
+  onPop(outgoingContext: string, incomingContext: string, suppressActions?: Set<string>): void
 }
 
 export class ContextManager {
@@ -20,18 +20,18 @@ export class ContextManager {
     return () => this._listeners.delete(listener)
   }
 
-  pushContext(name: string): void {
+  pushContext(name: string, suppressActions?: Set<string>): void {
     const outgoing = this.active
     this._stack.push(name)
-    for (const l of this._listeners) l.onPush(outgoing, name)
+    for (const l of this._listeners) l.onPush(outgoing, name, suppressActions)
   }
 
-  popContext(name: string): void {
+  popContext(name: string, suppressActions?: Set<string>): void {
     const i = this._stack.findLastIndex((c) => c === name)
     if (i === -1) return
     const outgoing = this._stack[i]
     this._stack.splice(i, 1)
     const incoming = this.active
-    for (const l of this._listeners) l.onPop(outgoing, incoming)
+    for (const l of this._listeners) l.onPop(outgoing, incoming, suppressActions)
   }
 }

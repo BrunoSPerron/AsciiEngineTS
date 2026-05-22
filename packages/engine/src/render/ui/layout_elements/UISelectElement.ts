@@ -51,6 +51,8 @@ export class UISelectElement extends UILayoutElement {
   private _currentIndex: number = 0
   private _mode: Mode = 'list'
 
+  suppressOnClose = new Set(['confirm', 'cancel', 'pause'])
+
   // Shared
   private _unlistenKey: (() => void) | null = null
   private _pointerDisposers: Array<() => void> = []
@@ -124,7 +126,10 @@ export class UISelectElement extends UILayoutElement {
 
   loaded(): void {
     this._contextName = `select_element_${this.id}`
-    this.engine.contextManager.pushContext(this._contextName)
+    this.engine.contextManager.pushContext(
+      this._contextName,
+      new Set(['cancel', 'confirm', 'pause']),
+    )
     this._registerKeys()
   }
 
@@ -506,6 +511,7 @@ export class UISelectElement extends UILayoutElement {
   private _confirm(index: number): void {
     this._emitSelect(index)
     if (this.closeOnSelect) {
+      this.engine.contextManager.popContext(this._contextName, this.suppressOnClose)
       this.engine.renderer.ui.removeElement(this.id)
     }
   }

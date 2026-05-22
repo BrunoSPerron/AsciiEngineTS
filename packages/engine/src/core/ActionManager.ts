@@ -57,7 +57,7 @@ export class ActionManager implements ContextListener {
   // ContextListener implementation
   // --------------------------------------------------------------------------
 
-  onPush(outgoing: string, incoming: string): void {
+  onPush(outgoing: string, incoming: string, suppressActions?: Set<string>): void {
     const outCtx = this._ensureInputContext(outgoing)
     // Release all held actions in the outgoing context
     for (const [action, count] of this.actionPressCount.entries()) {
@@ -66,11 +66,12 @@ export class ActionManager implements ContextListener {
     const inCtx = this._ensureInputContext(incoming)
     // Re-press all held actions in the incoming context
     for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(inCtx.actionDownListeners, action)
+      if (count > 0 && !suppressActions?.has(action))
+        this._emitAction(inCtx.actionDownListeners, action)
     }
   }
 
-  onPop(outgoing: string, incoming: string): void {
+  onPop(outgoing: string, incoming: string, suppressActions?: Set<string>): void {
     const outCtx = this._inputContexts.get(outgoing)
     if (outCtx) {
       for (const [action, count] of this.actionPressCount.entries()) {
@@ -80,7 +81,9 @@ export class ActionManager implements ContextListener {
     }
     const inCtx = this._ensureInputContext(incoming)
     for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(inCtx.actionDownListeners, action)
+      if (count > 0 && !suppressActions?.has(action)) {
+        this._emitAction(inCtx.actionDownListeners, action)
+      }
     }
   }
 
