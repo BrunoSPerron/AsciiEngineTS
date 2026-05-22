@@ -126,7 +126,8 @@ export class UILayout {
     element.reflow(this._cols, this._rows)
 
     // We load the element now so the UI is more reactive to the user input
-    element.loaded()
+    // Wait for event propagation to end before doing so.
+    queueMicrotask(() => element.loaded())
 
     if (!element.hidden) {
       this._buildElementSegments(element)
