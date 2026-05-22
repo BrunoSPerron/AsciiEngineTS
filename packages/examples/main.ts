@@ -1,5 +1,5 @@
 import './style.css'
-import { bootstrap } from './basic/bootstrap'
+import { bootstrap } from './action/bootstrap'
 
 const container = document.querySelector<HTMLDivElement>('#asciiEngine')
 if (!container) {
