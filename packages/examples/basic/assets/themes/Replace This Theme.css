@@ -29,7 +29,7 @@
 /*
  * And any fancy css you want
  */
-.ascii-engine .layer-ui::before {
+.ascii-engine .layer.layer-ui::before {
   content: '';
   position: fixed;
   inset: 0;

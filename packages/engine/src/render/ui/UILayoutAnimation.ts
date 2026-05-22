@@ -1,0 +1,314 @@
+/**
+ * Two-phase open/close animation for UILayout element borders.
+ *
+ * The border box consists of:
+ *   topEl     — horizontal <pre> at the top of the border
+ *   bottomEl  — horizontal <pre> at the bottom of the border
+ *   leftEl    — vertical <pre> on the left (spans full bh rows)
+ *   rightEl   — vertical <pre> on the right (spans full bh rows)
+ *   bgEl      — the UILayoutElement's content <div> (spans h = bh-2 rows, offset by 1)
+ *
+ * Open sequence
+ * ─────────────
+ * Phase 1 (PHASE1_RATIO):
+ *   A single '╠═…═╣' line at pivotRow expands horizontally from the pivot column.
+ *
+ * Phase 2 (PHASE2_RATIO, speed-normalised to pivot position):
+ *   Top slides from pivotRow → row 0.
+ *   Bottom slides from pivotRow → row (bh-1).
+ *   Left / right reveal via vertical clip-path (border-box coordinates).
+ *   bgEl reveals via vertical clip-path (interior-box coordinates).
+ *
+ * Close sequence is the exact reverse.
+ *
+ * Duration scaling (requirement 6):
+ *   Phase-2 pixel-per-ms speed is constant regardless of pivot.
+ *   phase2Duration = BASE_PHASE2 * max(distTop, distBottom) / (bh / 2)
+ *
+ * Clip-path coordinate systems
+ * ─────────────────────────────
+ * leftEl / rightEl: clip-path is relative to the segment element's own bounding
+ *   box, which has height bh * tileH. Pixel values correspond directly to
+ *   border-box row positions.
+ *
+ * bgEl: clip-path is relative to the element's own bounding box, which has
+ *   height h * tileH = (bh - 2) * tileH, offset one row below the border top.
+ *   pivotRow (in border coords) maps to bgEl local row (pivotRow - 1), clamped
+ *   to [0, h].
+ */
+
+export type BorderSegments = {
+  topEl: HTMLPreElement
+  bottomEl: HTMLPreElement
+  leftEl: HTMLPreElement
+  rightEl: HTMLPreElement
+  bgEl: HTMLDivElement
+  /** Width of border box in tiles (w + 2) */
+  bw: number
+  /** Height of border box in tiles (h + 2) */
+  bh: number
+  /** Pivot row within the border box, 0 = top border row */
+  pivotRow: number
+  /** Tile pixel width */
+  tileW: number
+  /** Tile pixel height */
+  tileH: number
+}
+
+const PHASE1_RATIO = 0.4
+const PHASE2_RATIO = 0.6
+/** Minimum animation duration in ms — prevents 0ms WAAPI animations on degenerate pivots. */
+const MIN_DURATION = 1
+
+function wait(anim: Animation): Promise<void> {
+  return new Promise((resolve) => {
+    anim.onfinish = () => resolve()
+    anim.oncancel = () => resolve()
+  })
+}
+
+function cancelAll(...els: HTMLElement[]): void {
+  for (const el of els) el.getAnimations().forEach((a) => a.cancel())
+}
+
+/**
+ * Compute phase-2 duration scaled so travel speed is constant
+ * regardless of where the pivot sits within the border box.
+ */
+function computePhase2Duration(baseDuration: number, bh: number, pivotRow: number): number {
+  const distTop = pivotRow
+  const distBottom = bh - 1 - pivotRow
+  const maxDist = Math.max(distTop, distBottom, 1)
+  const halfH = (bh - 1) / 2 // distance from center to edge at neutral pivot
+  return baseDuration * PHASE2_RATIO * (maxDist / Math.max(halfH, 1))
+}
+
+/**
+ * Clip-path string for left/right segment elements.
+ * These elements span bh rows; clip is in border-box pixel space.
+ */
+function borderClip(pivotRow: number, bh: number, tileH: number): string {
+  const topPx = pivotRow * tileH
+  const bottomPx = Math.max(0, (bh - pivotRow - 1) * tileH)
+  return `inset(${topPx}px 0 ${bottomPx}px 0)`
+}
+
+/**
+ * Clip-path string for the bgEl (interior content div).
+ * bgEl spans h = bh-2 rows, starting one row below the border top.
+ * pivotRow is in border coordinates; we translate to bgEl-local coordinates.
+ */
+function bgClip(pivotRow: number, bh: number, tileH: number): string {
+  const innerRows = bh - 2 // number of interior rows
+  // pivot in bgEl-local rows (row 0 of bgEl = border row 1)
+  const localPivot = Math.max(0, Math.min(innerRows, pivotRow - 1))
+  const topPx = localPivot * tileH
+  const bottomPx = Math.max(0, (innerRows - localPivot - 1) * tileH)
+  return `inset(${topPx}px 0 ${bottomPx}px 0)`
+}
+
+// ─── Open ────────────────────────────────────────────────────────────────────
+
+export async function animateBorderOpen(segs: BorderSegments, duration: number): Promise<void> {
+  const { topEl, bottomEl, leftEl, rightEl, bgEl, bw, bh, pivotRow, tileH } = segs
+
+  const p1 = duration * PHASE1_RATIO
+  const p2 = computePhase2Duration(duration, bh, pivotRow)
+
+  const distTop = pivotRow
+  const distBottom = bh - 1 - pivotRow
+  const maxDist = Math.max(distTop, distBottom, 1)
+
+  const pivotOffsetPx = pivotRow * tileH
+  const bottomFromPivotPx = (pivotRow - (bh - 1)) * tileH // always <= 0
+
+  const baseTopTransform = topEl.style.transform
+  const baseBottomTransform = bottomEl.style.transform
+
+  // ── Initial hide ────────────────────────────────────────────────────────────
+  bottomEl.style.display = 'none'
+
+  leftEl.style.clipPath = 'inset(50% 0 50% 0)'
+  rightEl.style.clipPath = 'inset(50% 0 50% 0)'
+  bgEl.style.clipPath = 'inset(50% 0 50% 0)'
+
+  // Replace top content with the pivot collapse line, shifted to pivotRow
+  const savedTopContent = topEl.textContent ?? ''
+  topEl.textContent = '╠' + '═'.repeat(Math.max(0, bw - 2)) + '╣'
+  topEl.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`
+  topEl.style.clipPath = 'inset(0 50% 0 50%)'
+
+  // ── Phase 1: horizontal expand ──────────────────────────────────────────────
+  const phase1Anim = topEl.animate(
+    [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0% 0 0%)' }],
+    { duration: p1, easing: 'ease-out', fill: 'forwards' },
+  )
+  await wait(phase1Anim)
+  cancelAll(topEl)
+
+  // ── Set up phase 2 ──────────────────────────────────────────────────────────
+
+  // Restore real top content at pivotRow position
+  topEl.textContent = savedTopContent
+  topEl.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`
+  topEl.style.clipPath = ''
+
+  // Show bottom at pivotRow
+  bottomEl.style.display = ''
+  bottomEl.style.transform = `${baseBottomTransform} translateY(${bottomFromPivotPx}px)`
+
+  // Set left/right/bg to pivot-band clips before animating outward
+  const bClip = borderClip(pivotRow, bh, tileH)
+  const bgC = bgClip(pivotRow, bh, tileH)
+  leftEl.style.clipPath = bClip
+  rightEl.style.clipPath = bClip
+  bgEl.style.clipPath = bgC
+
+  // ── Phase 2: vertical reveal ─────────────────────────────────────────────────
+
+  const topSlideAnim = topEl.animate(
+    [
+      { transform: `${baseTopTransform} translateY(${pivotOffsetPx}px)` },
+      { transform: `${baseTopTransform} translateY(0px)` },
+    ],
+    {
+      duration: Math.max(MIN_DURATION, p2 * (distTop / maxDist)),
+      easing: 'ease-out',
+      fill: 'forwards',
+    },
+  )
+
+  const bottomSlideAnim = bottomEl.animate(
+    [
+      { transform: `${baseBottomTransform} translateY(${bottomFromPivotPx}px)` },
+      { transform: `${baseBottomTransform} translateY(0px)` },
+    ],
+    {
+      duration: Math.max(MIN_DURATION, p2 * (distBottom / maxDist)),
+      easing: 'ease-out',
+      fill: 'forwards',
+    },
+  )
+
+  const borderReveal = [leftEl, rightEl].map((el) =>
+    el.animate([{ clipPath: bClip }, { clipPath: 'inset(0px 0 0px 0)' }], {
+      duration: p2,
+      easing: 'ease-out',
+      fill: 'forwards',
+    }),
+  )
+
+  const bgReveal = bgEl.animate([{ clipPath: bgC }, { clipPath: 'inset(0px 0 0px 0)' }], {
+    duration: p2,
+    easing: 'ease-out',
+    fill: 'forwards',
+  })
+
+  await Promise.all([
+    wait(topSlideAnim),
+    wait(bottomSlideAnim),
+    ...borderReveal.map(wait),
+    wait(bgReveal),
+  ])
+
+  // ── Cleanup: remove animation artifacts so normal layout takes over ──────────
+  cancelAll(topEl, bottomEl, leftEl, rightEl, bgEl)
+  topEl.style.transform = baseTopTransform
+  bottomEl.style.transform = baseBottomTransform
+  for (const el of [topEl, bottomEl, leftEl, rightEl, bgEl]) {
+    el.style.clipPath = ''
+  }
+}
+
+// ─── Close ───────────────────────────────────────────────────────────────────
+
+export async function animateBorderClose(segs: BorderSegments, duration: number): Promise<void> {
+  const { topEl, bottomEl, leftEl, rightEl, bgEl, bw, bh, pivotRow, tileH } = segs
+
+  const p1 = duration * PHASE1_RATIO
+  const p2 = computePhase2Duration(duration, bh, pivotRow)
+
+  const distTop = pivotRow
+  const distBottom = bh - 1 - pivotRow
+  const maxDist = Math.max(distTop, distBottom, 1)
+
+  const pivotOffsetPx = pivotRow * tileH
+  const bottomFromPivotPx = (pivotRow - (bh - 1)) * tileH
+
+  const baseTopTransform = topEl.style.transform
+  const baseBottomTransform = bottomEl.style.transform
+
+  const bClip = borderClip(pivotRow, bh, tileH)
+  const bgC = bgClip(pivotRow, bh, tileH)
+
+  // ── Phase 1: collapse to pivot row ──────────────────────────────────────────
+
+  const topSlideAnim = topEl.animate(
+    [
+      { transform: `${baseTopTransform} translateY(0px)` },
+      { transform: `${baseTopTransform} translateY(${pivotOffsetPx}px)` },
+    ],
+    {
+      duration: Math.max(MIN_DURATION, p2 * (distTop / maxDist)),
+      easing: 'ease-in',
+      fill: 'forwards',
+    },
+  )
+
+  const bottomSlideAnim = bottomEl.animate(
+    [
+      { transform: `${baseBottomTransform} translateY(0px)` },
+      { transform: `${baseBottomTransform} translateY(${bottomFromPivotPx}px)` },
+    ],
+    {
+      duration: Math.max(MIN_DURATION, p2 * (distBottom / maxDist)),
+      easing: 'ease-in',
+      fill: 'forwards',
+    },
+  )
+
+  const borderCollapse = [leftEl, rightEl].map((el) =>
+    el.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bClip }], {
+      duration: p2,
+      easing: 'ease-in',
+      fill: 'forwards',
+    }),
+  )
+
+  const bgCollapse = bgEl.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bgC }], {
+    duration: p2,
+    easing: 'ease-in',
+    fill: 'forwards',
+  })
+
+  await Promise.all([
+    wait(topSlideAnim),
+    wait(bottomSlideAnim),
+    ...borderCollapse.map(wait),
+    wait(bgCollapse),
+  ])
+
+  // ── Transition: replace top with pivot collapse line ─────────────────────────
+  cancelAll(topEl, bottomEl, leftEl, rightEl, bgEl)
+
+  bottomEl.style.display = 'none'
+  topEl.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`
+  topEl.textContent = '╠' + '═'.repeat(Math.max(0, bw - 2)) + '╣'
+  topEl.style.clipPath = 'inset(0 0% 0 0%)'
+
+  // ── Phase 2: horizontal collapse ─────────────────────────────────────────────
+  const phase2Anim = topEl.animate(
+    [{ clipPath: 'inset(0 0% 0 0%)' }, { clipPath: 'inset(0 50% 0 50%)' }],
+    { duration: p1, easing: 'ease-in', fill: 'forwards' },
+  )
+  await wait(phase2Anim)
+
+  // ── Cleanup ──────────────────────────────────────────────────────────────────
+  cancelAll(topEl, bottomEl, leftEl, rightEl, bgEl)
+  topEl.style.transform = baseTopTransform
+  bottomEl.style.transform = baseBottomTransform
+  for (const el of [topEl, bottomEl, leftEl, rightEl, bgEl]) {
+    el.style.clipPath = ''
+    el.style.display = ''
+  }
+}

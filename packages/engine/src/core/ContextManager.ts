@@ -23,14 +23,13 @@ export class ContextManager {
   pushContext(name: string): void {
     const outgoing = this.active
     this._stack.push(name)
-    const incoming = this.active
-    for (const l of this._listeners) l.onPush(outgoing, incoming)
+    for (const l of this._listeners) l.onPush(outgoing, name)
   }
 
   popContext(name: string): void {
     const i = this._stack.findLastIndex((c) => c === name)
     if (i === -1) return
-    const outgoing = this.active
+    const outgoing = this._stack[i]
     this._stack.splice(i, 1)
     const incoming = this.active
     for (const l of this._listeners) l.onPop(outgoing, incoming)
