@@ -1,4 +1,4 @@
-import { type AsciiEngine, GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-engine'
+import { type AsciiEngine, GridVector, CHUNK_SIZE, UISelectElement, type Chunk } from 'ascii-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
@@ -66,24 +66,26 @@ export class Game {
   }
 
   private setupWorld() {
-    this.engine.world.setChunkGenerator((_cx, _cy, chunk) => {
-      for (let y = 0; y < CHUNK_SIZE; y++) {
-        for (let x = 0; x < CHUNK_SIZE; x++) {
-          const edge = x < 2 || y < 2 || x >= CHUNK_SIZE - 2 || y >= CHUNK_SIZE - 2
-          if (
-            edge &&
-            !(
-              (y > CHUNK_SIZE / 2 - 3 && y < CHUNK_SIZE / 2 + 2) ||
-              (x > CHUNK_SIZE / 2 - 3 && x < CHUNK_SIZE / 2 + 2)
-            )
-          ) {
-            const tile = chunk.get(x, y)
-            tile.glyph = '#'
-            tile.solid = true
-          }
+    this.engine.world.setChunkGenerator(this.generateChunk.bind(this))
+  }
+
+  private generateChunk(_cx: number, _cy: number, chunk: Chunk) {
+    for (let y = 0; y < CHUNK_SIZE; y++) {
+      for (let x = 0; x < CHUNK_SIZE; x++) {
+        const edge = x < 2 || y < 2 || x >= CHUNK_SIZE - 2 || y >= CHUNK_SIZE - 2
+        if (
+          edge &&
+          !(
+            (y > CHUNK_SIZE / 2 - 3 && y < CHUNK_SIZE / 2 + 2) ||
+            (x > CHUNK_SIZE / 2 - 3 && x < CHUNK_SIZE / 2 + 2)
+          )
+        ) {
+          const tile = chunk.get(x, y)
+          tile.glyph = '#'
+          tile.solid = true
         }
       }
-    })
+    }
   }
 
   private spawnPlayer() {

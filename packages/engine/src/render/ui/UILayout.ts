@@ -5,7 +5,7 @@ import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayou
 import { UISelectElement } from './layout_elements/UISelectElement'
 import { animateBorderOpen, animateBorderClose, type BorderSegments } from './UILayoutAnimation'
 
-type Segment = {
+export type Segment = {
   el: HTMLPreElement
   vertical: boolean
   x: number
@@ -125,7 +125,7 @@ export class UILayout {
     this._elements.set(element.id, element)
     element.reflow(this._cols, this._rows)
 
-    // We load the element now so the UI is more reactive to the user input
+    // We load the element now so the UI is more reactive to user inputs
     // Wait for event propagation to end before doing so.
     queueMicrotask(() => element.loaded())
 
@@ -133,20 +133,16 @@ export class UILayout {
       this._buildElementSegments(element)
 
       if (animate) {
-        // Do NOT push segments here.
-        // That happens after the open animation completes
+        // The open animation reconciliate and push to stack after completion
         const openPromise = this._runOpenAnimation(element)
         this._openingAnimations.set(element.id, openPromise)
       } else {
-        // Instant: push to stacks and reconcile immediately.
+        // Push to stacks and reconcile immediately.
         const segs = this._elementSegments.get(element.id)!
-        for (const seg of segs) {
-          this._pushSegmentToStacks(seg, element.priority)
-        }
+        for (const seg of segs) this._pushSegmentToStacks(seg, element.priority)
         this._reconcileBorderNeighbors(element)
       }
     }
-
     return element.id
   }
 
@@ -154,21 +150,14 @@ export class UILayout {
     const element = this._elements.get(id)
     if (!element) return
 
-    // Unload before any animation starts (requirement 3).
     element.unloaded()
 
-    // Remove from the active element map immediately so no further
-    // layout passes will touch this element.
     this._elements.delete(id)
-
-    // Remove from cell stacks immediately and reconcile (requirement 5).
     this._teardownElementSegments(id)
 
     if (animate) {
-      // Kick off the close animation; DOM cleanup and destroy happen after it ends.
       void this._runCloseAnimation(element, id)
     } else {
-      // Instant: remove segment DOM elements and destroy right away.
       const segs = this._elementSegments.get(id)
       if (segs) {
         for (const seg of segs) seg.el.remove()
@@ -212,11 +201,11 @@ export class UILayout {
     const pivotRow = this._pivotRow(element, bh)
 
     const borderSegs: BorderSegments = {
-      topEl: top.el,
-      bottomEl: bottom.el,
-      leftEl: left.el,
-      rightEl: right.el,
-      bgEl: element.el,
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
+      bg: element,
       bw,
       bh,
       pivotRow,
@@ -224,20 +213,14 @@ export class UILayout {
       tileH: this.tileMetrics.h,
     }
 
-    await animateBorderOpen(borderSegs, OPEN_CLOSE_DURATION)
+    await animateBorderOpen(
+      borderSegs,
+      this._cellOccupied.bind(this),
+      this._flushSegment.bind(this),
+      OPEN_CLOSE_DURATION,
+    )
 
-    // After animation: push segments into the cell stacks and reconcile
-    // (requirement 4).
-    const stillExists = this._elements.has(element.id)
-    if (!stillExists) {
-      // Element was removed while we were animating open; clean up segments.
-      const s = this._elementSegments.get(element.id)
-      if (s) {
-        for (const seg of s) seg.el.remove()
-        this._elementSegments.delete(element.id)
-      }
-      return
-    }
+    if (!this._elements.has(element.id)) return // closing animation handle cleanup
 
     for (const seg of segs) {
       this._pushSegmentToStacks(seg, element.priority)
@@ -248,7 +231,6 @@ export class UILayout {
 
   private async _runCloseAnimation(element: UILayoutElement, id: number): Promise<void> {
     // If an open animation is still in flight, wait for it to finish first,
-    // then the code above will detect the element is gone and skip stacking.
     const opening = this._openingAnimations.get(id)
     if (opening) {
       await opening
@@ -266,11 +248,11 @@ export class UILayout {
     const pivotRow = this._pivotRow(element, bh)
 
     const borderSegs: BorderSegments = {
-      topEl: top.el,
-      bottomEl: bottom.el,
-      leftEl: left.el,
-      rightEl: right.el,
-      bgEl: element.el,
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
+      bg: element,
       bw,
       bh,
       pivotRow,
@@ -280,7 +262,7 @@ export class UILayout {
 
     await animateBorderClose(borderSegs, OPEN_CLOSE_DURATION)
 
-    // Remove segment DOM elements (they were already popped from stacks in removeElement)
+    // Remove segment DOM elements (Stack is already clean)
     for (const seg of segs) seg.el.remove()
     this._elementSegments.delete(id)
 
@@ -335,7 +317,7 @@ export class UILayout {
 
   /**
    * Builds the four border <pre> elements for an element.
-   * Does NOT push them to cell stacks — that happens after the open animation.
+   * Caller is responsible for pushing them in the cell stack.
    */
   private _buildElementSegments(element: UILayoutElement): void {
     const bx = element.x
@@ -351,11 +333,16 @@ export class UILayout {
     this._elementSegments.set(element.id, [top, bottom, left, right])
   }
 
+  /**
+   * Remove segment from the line cell stack and reconcile.
+   * Caller is responsible for cleaning up the DOM element and _elementSegments entry
+   * @param id
+   * @returns
+   */
   private _teardownElementSegments(id: number): void {
     const segments = this._elementSegments.get(id)
     if (!segments) return
 
-    // Collect all affected cells before mutating stacks
     const affectedCells = new Set<string>()
     for (const seg of segments) {
       for (let i = 0; i < seg.length; i++) {
@@ -364,16 +351,10 @@ export class UILayout {
       }
     }
 
-    // Pop this element from all its cells (only has effect if they were pushed)
     for (const seg of segments) {
       this._popSegmentFromStacks(seg)
     }
-    // Note: we do NOT remove the segment DOM elements here — the close animation
-    // still needs them. DOM removal happens in _runCloseAnimation after the
-    // animation completes.
-    // _elementSegments entry is also kept alive for the same reason.
 
-    // For each affected cell, reconcile the new top entry
     for (const key of affectedCells) {
       const [cx, cy] = key.split(',').map(Number) as [number, number]
       this._reconcileAt(cx, cy)
@@ -394,7 +375,6 @@ export class UILayout {
 
       element.reflow(this._cols, this._rows)
       if (!element.hidden) {
-        // On resize, skip animation — build and push segments immediately
         this._buildElementSegments(element)
         const segs = this._elementSegments.get(id)!
         for (const seg of segs) {
@@ -422,7 +402,6 @@ export class UILayout {
     el.style.transform = `translate(${x * w}px, ${y * h}px)`
     const chars = new Array<string>(length).fill(glyph)
     const seg: Segment = { el, vertical, x, y, length, chars, ownerId }
-    // Flush initial content so the element is visible before reconciliation runs
     this._flushSegment(seg)
     this.root.appendChild(el)
     return seg
@@ -490,9 +469,6 @@ export class UILayout {
 
   private _reconcileAt(cx: number, cy: number): void {
     const topSeg = this._topSegment(cx, cy)
-
-    // Nothing owns this cell — blank every segment that might have written here
-    // (handles the case where frame cells are removed on resize)
     if (!topSeg) return
 
     let mask = LINE_MASK.DOUBLE
