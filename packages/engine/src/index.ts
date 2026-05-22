@@ -15,7 +15,6 @@ export { Camera } from './render/Camera'
 export { UILayout } from './render/ui/UILayout'
 export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
-export { Anchor } from './render/ui/anchor'
 
 export { GridVector } from './math/GridVector'
 export { clamp, lerp } from './math/utils'
