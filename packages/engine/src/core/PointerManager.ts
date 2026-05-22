@@ -62,12 +62,13 @@ export class PointerManager implements ContextListener {
   // ContextListener
   // --------------------------------------------------------------------------
 
-  onPush(_outgoing: string, incoming: string, _suppressActions?: Set<string>): void {
+  onPush(_outgoing: string, incoming: string): void {
     this._emitHoverEnd()
     this._ensurePointerContext(incoming)
   }
 
   onPop(outgoing: string, _incoming: string, _suppressActions?: Set<string>): void {
+    this._emitHoverEnd()
     this._pointerContexts.delete(outgoing)
     this._emitHoverStart()
   }

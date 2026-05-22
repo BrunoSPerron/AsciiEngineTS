@@ -1,5 +1,5 @@
 export type ContextListener = {
-  onPush(outgoingContext: string, incomingContext: string, suppressActions?: Set<string>): void
+  onPush(outgoingContext: string, incomingContext: string): void
   onPop(outgoingContext: string, incomingContext: string, suppressActions?: Set<string>): void
 }
 
@@ -20,10 +20,10 @@ export class ContextManager {
     return () => this._listeners.delete(listener)
   }
 
-  pushContext(name: string, suppressActions?: Set<string>): void {
+  pushContext(name: string): void {
     const outgoing = this.active
     this._stack.push(name)
-    for (const l of this._listeners) l.onPush(outgoing, name, suppressActions)
+    for (const l of this._listeners) l.onPush(outgoing, name)
   }
 
   popContext(name: string, suppressActions?: Set<string>): void {

@@ -126,10 +126,7 @@ export class UISelectElement extends UILayoutElement {
 
   loaded(): void {
     this._contextName = `select_element_${this.id}`
-    this.engine.contextManager.pushContext(
-      this._contextName,
-      new Set(['cancel', 'confirm', 'pause']),
-    )
+    this.engine.contextManager.pushContext(this._contextName)
     this._registerKeys()
   }
 
