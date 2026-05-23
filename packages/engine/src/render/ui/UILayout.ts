@@ -458,7 +458,7 @@ export class UILayout {
    *   bg.el reveals via vertical clip-path.
    */
   private async _animateOpen(segs: BorderSegments): Promise<void> {
-    const { top, bottom, left, right, bg, bh, pivotRow, tileH } = segs
+    const { top, bottom, left, right, bg, bh, pivotRow } = segs
     const duration = OPEN_CLOSE_DURATION
     const p1 = duration * PHASE1_RATIO
     const p2 = duration * PHASE2_RATIO
@@ -471,7 +471,7 @@ export class UILayout {
     this._animOpenSetupPivotLine(segs)
 
     // ── Phase 1: horizontal expand ──────────────────────────────────────────
-    await this._animOpenPhase1(top, pivotRow, tileH, p1)
+    await this._animOpenPhase1(top, p1)
 
     // ── Transition between phases ───────────────────────────────────────────
     this._animOpenPhase1Teardown(segs)
@@ -490,7 +490,7 @@ export class UILayout {
    * Top and bottom are raised so they draw over corners during animation.
    */
   private _animOpenSetup(segs: BorderSegments): void {
-    const { top, bottom, left, right, bg, bh, pivotRow, tileH } = segs
+    const { top, bottom, left, right, bg } = segs
 
     bottom.el.style.display = 'none'
 
@@ -569,12 +569,7 @@ export class UILayout {
   }
 
   /** Runs phase 1: horizontally expands the pivot line. Returns when done. */
-  private async _animOpenPhase1(
-    top: Segment,
-    pivotRow: number,
-    tileH: number,
-    p1: number,
-  ): Promise<void> {
+  private async _animOpenPhase1(top: Segment, p1: number): Promise<void> {
     const anim = top.el.animate(
       [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0% 0 0%)' }],
       { duration: p1, easing: 'ease-out', fill: 'forwards' },
@@ -818,10 +813,12 @@ export class UILayout {
       },
     )
 
-    // Hide glyph bleeding slightly early
+    // Start the sides clip one tile down from the top to keep the first row covered
+    // until the top border row has passed — prevents glyph bleed at the top edge.
+    const sidesCollapseStart = `inset(${tileH}px 0 0px 0)`
     const sidesCollapse = [left.el, right.el].map((el) =>
-      el.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bClip }], {
-        duration: Math.max(p2 - 40, 1),
+      el.animate([{ clipPath: sidesCollapseStart }, { clipPath: bClip }], {
+        duration: p2,
         easing: 'ease-in',
         fill: 'forwards',
       }),
@@ -854,7 +851,7 @@ export class UILayout {
     bottom.el.style.display = 'none'
 
     top.el.style.transform = `${baseTopTransform} translateY(${pivotRow * tileH}px)`
-    top.el.textContent = '╠' + '═'.repeat(Math.max(0, bw - 2)) + '╣'
+    top.el.textContent = '=' + '═'.repeat(Math.max(0, bw - 2)) + '=' // TODO calculate glyph
     top.el.style.clipPath = 'inset(0 0% 0 0%)'
   }
 
