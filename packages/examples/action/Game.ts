@@ -1,4 +1,5 @@
-import { type AsciiEngine, GridVector, CHUNK_SIZE, UISelectElement, type Chunk } from 'ascii-engine'
+import type { AsciiEngine, Chunk } from 'ascii-engine'
+import { GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
@@ -43,9 +44,9 @@ export class Game {
       w: 60,
       h: 9,
       anchorX: 50,
-      anchorY: 100,
+      anchorY: 50,
       pivotX: 50,
-      pivotY: 100,
+      pivotY: 50,
       maxHPercent: 25,
       minH: 1,
       minW: 1,

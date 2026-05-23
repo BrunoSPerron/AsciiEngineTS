@@ -12,7 +12,7 @@ engine_themes = ["Burgundy Pink", "Copper", "Deep Sea", "Midnight",
 chunk_view_distance = 3
 
 [camera]
-half_life = 400  # ms to close half the distance to target
+half_life = 300  # ms to close half the distance to target
 initial_position = [20, 20]
 
 [bindings]

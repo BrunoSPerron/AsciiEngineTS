@@ -138,23 +138,28 @@ export async function animateBorderOpen(
 
   // Reconciliate the middle line extremities
   let mask = LINE_MASK.DOUBLE | LINE_MASK.RIGHT
-  if (bottom.y === top.y + pivotRow) {
+  const pivotIsBottom = bottom.y === top.y + pivotRow
+  const pivotIsTop = pivotRow === 0
+  if (pivotIsBottom) {
     mask |= LINE_MASK.TOP
     if (cellOccupied(top.x, pivotRow + 1)) mask |= LINE_MASK.BOTTOM
-  } else if (pivotRow === 0) {
+  } else if (pivotIsTop) {
     mask |= LINE_MASK.BOTTOM
     if (cellOccupied(top.x, pivotRow - 1)) mask |= LINE_MASK.TOP
   } else {
     mask |= LINE_MASK.BOTTOM | LINE_MASK.TOP
   }
   if (cellOccupied(top.x - 1, top.y + pivotRow)) mask |= LINE_MASK.LEFT
+
   top.chars[0] = maskToGlyph(mask)
 
+  right.chars[right.length - 1] = top.chars[bottom.length - 1]
+
   mask = LINE_MASK.DOUBLE | LINE_MASK.LEFT
-  if (bottom.y === top.y + pivotRow) {
+  if (pivotIsBottom) {
     mask |= LINE_MASK.TOP
     if (cellOccupied(top.x + top.length, pivotRow)) mask |= LINE_MASK.BOTTOM
-  } else if (pivotRow === 0) {
+  } else if (pivotIsTop) {
     mask |= LINE_MASK.BOTTOM
     if (cellOccupied(top.x + top.length - 1, pivotRow - 1)) mask |= LINE_MASK.TOP
   } else {
@@ -162,6 +167,14 @@ export async function animateBorderOpen(
   }
   if (cellOccupied(top.x + top.length + 1, top.y + pivotRow)) mask |= LINE_MASK.RIGHT
   top.chars[top.length - 1] = maskToGlyph(mask)
+
+  if (pivotIsBottom) {
+    left.chars[left.length - 1] = top.chars[0]
+    right.chars[left.length - 1] = top.chars[top.length - 1]
+  } else if (pivotIsTop) {
+    left.chars[0] = top.chars[0]
+    right.chars[0] = top.chars[top.length - 1]
+  }
 
   flushSegment(top)
 
@@ -193,6 +206,17 @@ export async function animateBorderOpen(
 
   // ── Set up phase 2 ──────────────────────────────────────────────────────────
 
+  if (bottom.y === top.y + pivotRow) {
+    bottom.el.style.removeProperty('z-index')
+    left.chars[left.length - 1] = top.chars[0]
+    right.chars[right.length - 1] = top.chars[bottom.length - 1]
+  } else {
+    left.chars[left.length - 1] = ' '
+    right.chars[right.length - 1] = ' '
+    bottom.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
+    bottom.chars[bottom.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
+  }
+
   if (pivotRow === 0) {
     top.el.style.removeProperty('z-index')
     left.chars[0] = top.chars[0]
@@ -202,17 +226,6 @@ export async function animateBorderOpen(
     right.chars[0] = ' '
     top.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
     top.chars[top.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
-  }
-
-  if (bottom.y === top.y + pivotRow) {
-    bottom.el.style.removeProperty('z-index')
-    left.chars[left.length - 1] = bottom.chars[0]
-    right.chars[right.length - 1] = bottom.chars[bottom.length - 1]
-  } else {
-    left.chars[left.length - 1] = ' '
-    right.chars[right.length - 1] = ' '
-    bottom.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
-    bottom.chars[bottom.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
   }
 
   flushSegment(top)
