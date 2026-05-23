@@ -499,7 +499,6 @@ export class UILayout {
 
   private _rebuildAllElementSegments(): void {
     for (const [id, element] of this._elements) {
-      // Pop old stacks and remove DOM elements
       const segments = this._elementSegments.get(id)
       if (segments) {
         for (const seg of segments) {
@@ -509,8 +508,9 @@ export class UILayout {
         this._elementSegments.delete(id)
       }
 
-      if (element.dock !== undefined) continue // already positioned by _recomputeContentRect
-      this._reflowElement(element)
+      if (element.dock === undefined) {
+        this._reflowElement(element)
+      }
 
       if (!element.hidden) {
         this._buildElementSegments(element)

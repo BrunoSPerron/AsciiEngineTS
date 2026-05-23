@@ -143,7 +143,7 @@ export class UISelectElement extends UISelectBase {
   // ---------------------------------------------------------------------------
   override layout(x: number, y: number, w: number, h: number): void {
     if (h === 1 && w < 5) {
-      this.setHidden(true)
+      this.hidden = true
       return
     }
     return super.layout(x, y, w, h)
@@ -470,11 +470,11 @@ export class UISelectElement extends UISelectBase {
    * @param index Selected option index or -1 for cancel
    */
   private _confirm(index: number): void {
-    this._emitSelect(index)
     if (this.closeOnSelect) {
       this.engine.contextManager.popContext(this._contextName, this.suppressOnClose)
       this.engine.renderer.ui.removeElement(this.id)
     }
+    this._emitSelect(index)
   }
 
   // ---------------------------------------------------------------------------
