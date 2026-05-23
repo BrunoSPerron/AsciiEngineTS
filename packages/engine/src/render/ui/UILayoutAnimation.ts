@@ -211,8 +211,6 @@ export async function animateBorderOpen(
     left.chars[left.length - 1] = top.chars[0]
     right.chars[right.length - 1] = top.chars[bottom.length - 1]
   } else {
-    left.chars[left.length - 1] = ' '
-    right.chars[right.length - 1] = ' '
     bottom.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
     bottom.chars[bottom.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
   }
@@ -222,8 +220,6 @@ export async function animateBorderOpen(
     left.chars[0] = top.chars[0]
     right.chars[0] = top.chars[top.length - 1]
   } else {
-    left.chars[0] = ' '
-    right.chars[0] = ' '
     top.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
     top.chars[top.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
   }
@@ -310,6 +306,9 @@ export async function animateBorderOpen(
 export async function animateBorderClose(segs: BorderSegments, duration: number): Promise<void> {
   const { top, bottom, left, right, bg, bw, bh, pivotRow, tileH } = segs
 
+  top.el.style.zIndex = '1'
+  bottom.el.style.zIndex = '1'
+
   const p1 = duration * PHASE1_RATIO
   const p2 = computePhase2Duration(duration, bh, pivotRow)
 
@@ -354,7 +353,7 @@ export async function animateBorderClose(segs: BorderSegments, duration: number)
 
   const borderCollapse = [left.el, right.el].map((el) =>
     el.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bClip }], {
-      duration: p2,
+      duration: Math.max(p2 - 40, 1), // Hide glyph bleeding
       easing: 'ease-in',
       fill: 'forwards',
     }),
@@ -375,6 +374,9 @@ export async function animateBorderClose(segs: BorderSegments, duration: number)
 
   // ── Transition: replace top with pivot collapse line ─────────────────────────
   cancelAll(top.el, bottom.el, left.el, right.el, bg.el)
+  left.el.style.display = 'none'
+  right.el.style.display = 'none'
+  bg.el.style.display = 'none'
 
   bottom.el.style.display = 'none'
   top.el.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`

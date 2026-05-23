@@ -484,13 +484,13 @@ export class UILayout {
     topSeg.chars[i] = glyph
     this._flushSegment(topSeg)
 
-    // Blank this cell in all lower segments so they don't bleed through
+    // Apply to all cell in the stack
     const stack = this._cellStacks.get(this._key(cx, cy))!
     for (let s = 0; s < stack.length - 1; s++) {
       const lowerSeg = stack[s].seg
       const li = lowerSeg.vertical ? cy - lowerSeg.y : cx - lowerSeg.x
       if (li >= 0 && li < lowerSeg.length) {
-        lowerSeg.chars[li] = ' '
+        lowerSeg.chars[li] = glyph
         this._flushSegment(lowerSeg)
       }
     }
