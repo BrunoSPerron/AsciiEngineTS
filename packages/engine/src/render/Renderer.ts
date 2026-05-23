@@ -4,11 +4,12 @@ import type { World } from '../world/World'
 import { type Camera } from './Camera'
 import { ThemeManager } from './ThemeManager'
 import { type TileMetricsData } from './tileMetrics'
-import baseCssUrl from './css/base.css?url'
 import type { EngineConfig } from '../core/Config'
 import type { GameAssets } from '../core/GameAssets'
 import { UILayout } from './ui/UILayout'
 import type { AsciiEngine } from '../core/Engine'
+
+import baseCss from './css/base.css?inline'
 
 const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const esc = (ch: string): string => HTML_ESC[ch] ?? ch
@@ -78,10 +79,9 @@ export class Renderer {
     this.root = root
     this.tileMetrics = tileMetrics
 
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = baseCssUrl
-    document.head.appendChild(link)
+    const style = document.createElement('style')
+    style.textContent = baseCss
+    document.head.appendChild(style)
 
     this.themeManager = new ThemeManager()
     this.camera = camera
@@ -113,8 +113,8 @@ export class Renderer {
       document.head.appendChild(link)
     }
 
-    for (const { name, url } of assets.themes) {
-      this.themeManager.register(name, url)
+    for (const { name, css } of assets.themes) {
+      this.themeManager.register(name, css)
     }
     this.themeManager.set(config.game.initial_theme)
 

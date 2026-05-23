@@ -1,7 +1,7 @@
 export type GameAssets = {
   configUrl: string | null
   baseCssUrl: string | null
-  themes: Array<{ name: string; url: string }>
+  themes: Array<{ name: string; css: string }>
 }
 
 export function loadGameAssets(glob: Record<string, string>): GameAssets {
@@ -12,9 +12,9 @@ export function loadGameAssets(glob: Record<string, string>): GameAssets {
 
   const themes = Object.entries(glob)
     .filter(([path]) => path.includes('/themes/') && path.endsWith('.css'))
-    .map(([path, url]) => ({
+    .map(([path, css]) => ({
       name: path.split('/').pop()!.replace('.css', ''),
-      url,
+      css,
     }))
 
   return { configUrl, baseCssUrl, themes }

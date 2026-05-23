@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'path'
 
 export default defineConfig({
-  root: '.',
+  resolve: {
+    alias: {
+      'ascii-engine': resolve(__dirname, '../engine/src/index.ts'),
+    },
+  },
 })
