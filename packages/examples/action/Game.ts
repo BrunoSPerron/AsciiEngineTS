@@ -45,13 +45,11 @@ export class Game {
       y: 0,
       w: 18,
       h: options.length,
-      anchorX: 50,
-      anchorY: 100,
-      pivotX: 50,
-      pivotY: 100,
-      maxHPercent: 25,
+      anchorX: 0,
+      anchorY: 0,
       minH: 1,
       minW: 1,
+      dock: 'right',
     })
     selectEl.onSelect((selectId: number) => {
       if (options[selectId] === 'Palette') {

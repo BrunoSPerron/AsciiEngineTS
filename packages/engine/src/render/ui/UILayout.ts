@@ -25,6 +25,17 @@ type CellEntry = {
   seg: Segment
 }
 
+type ContentRect = {
+  /** First usable tile column inside the frame (0-based, frame-relative) */
+  x: number
+  /** First usable tile row inside the frame (0-based, frame-relative) */
+  y: number
+  /** Number of usable columns */
+  cols: number
+  /** Number of usable rows */
+  rows: number
+}
+
 const FRAME_ID = -1
 const OPEN_CLOSE_DURATION = 700
 
@@ -46,6 +57,14 @@ export class UILayout {
 
   private _cols = 0
   private _rows = 0
+
+  /**
+   * The tile region available to non-dock elements after all docked panels
+   * have claimed their edges. Coordinates are frame-relative (origin = top-left
+   * tile inside the outer frame border). Recomputed whenever a dock panel is
+   * added or removed.
+   */
+  private _contentRect: ContentRect = { x: 0, y: 0, cols: 0, rows: 0 }
 
   private _frame: {
     top: Segment
@@ -110,6 +129,7 @@ export class UILayout {
     this._cols = cols
     this._rows = rows
 
+    this._recomputeContentRect()
     this._buildFrame()
     this._rebuildAllElementSegments()
     this._reconcileAll()
@@ -124,7 +144,13 @@ export class UILayout {
     this.root.appendChild(element.el)
 
     this._elements.set(element.id, element)
-    element.reflow(this._cols, this._rows)
+
+    if (element.dock !== undefined) {
+      this._recomputeContentRect()
+      this._reflowNonDockElements()
+    } else {
+      this._reflowElement(element)
+    }
 
     // We load the element now so the UI is more reactive to user inputs
     // Wait for event propagation to end before doing so.
@@ -156,6 +182,8 @@ export class UILayout {
     this._elements.delete(id)
     this._teardownElementSegments(id)
 
+    const wasDock = element.dock !== undefined
+
     if (animate) {
       void this._runCloseAnimation(element, id)
     } else {
@@ -165,6 +193,11 @@ export class UILayout {
         this._elementSegments.delete(id)
       }
       element.destroy()
+    }
+
+    if (wasDock) {
+      this._recomputeContentRect()
+      this._reflowNonDockElements()
     }
   }
 
@@ -189,6 +222,105 @@ export class UILayout {
       if (selectId === -1) themeManager.set(previousTheme)
       else themeManager.set(themes[selectId])
     })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Content rect
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Single-pass replay of all docked elements in insertion order.
+   *
+   * Each dock panel is positioned from the running rect *before* it claims
+   * its space, then the rect shrinks for the next panel. This ensures correct
+   * placement regardless of how many dock panels exist or in what order.
+   *
+   * Dock panel interior coordinates (UILayoutElement x/y) work in the full
+   * grid space where (0,0) is the first tile inside the outer frame. The
+   * frame border itself sits at the -1 position, which layout() handles via
+   * the +1 pixel offset. So a left dock panel with interior x=0 has its left
+   * border merged with the outer frame at pixel col 0.
+   *
+   * Must be called after _cols / _rows change or after any dock add/remove.
+   */
+  private _recomputeContentRect(): void {
+    // Running rect in element interior coordinates.
+    // Starts as the full inner grid (frame border tiles excluded).
+    // x/y: first available interior tile on each axis.
+    // cols/rows: span of available interior tiles.
+    let x = 0
+    let y = 0
+    let cols = this._cols - 2
+    let rows = this._rows - 2
+
+    for (const element of this._elements.values()) {
+      if (element.dock === undefined) continue
+
+      // Position this panel from the running rect, then shrink.
+      // The panel's border on the docked side merges with either the outer
+      // frame or the previous dock panel's inner border (both already occupy
+      // that tile). The border on the content side becomes the new edge.
+      // Consumed = interior size + 1 (the new shared border on content side).
+      let ex: number, ey: number, ew: number, eh: number
+
+      switch (element.dock) {
+        case 'left':
+          ex = x // interior flush against current left edge
+          ey = y // span full height of current rect
+          ew = element.w
+          eh = rows
+          x += ew + 1 // next rect starts after this panel's right border
+          cols -= ew + 1
+          break
+        case 'right':
+          ew = element.w
+          eh = rows
+          ex = x + cols - ew // interior flush against current right edge
+          ey = y
+          cols -= ew + 1
+          break
+        case 'top':
+          ex = x
+          ey = y
+          ew = cols
+          eh = element.h
+          y += eh + 1
+          rows -= eh + 1
+          break
+        case 'bottom':
+          ew = cols
+          eh = element.h
+          ex = x
+          ey = y + rows - eh // interior flush against current bottom edge
+          rows -= eh + 1
+          break
+        default:
+          continue
+      }
+
+      element.hidden = ew <= 0 || eh <= 0
+      if (!element.hidden) element.layout(ex, ey, ew, eh)
+    }
+
+    this._contentRect = { x, y, cols: Math.max(0, cols), rows: Math.max(0, rows) }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Reflow helpers
+  // ---------------------------------------------------------------------------
+
+  /** Reflow a single non-dock element against the current content rect. */
+  private _reflowElement(element: UILayoutElement): void {
+    const { x, y, cols, rows } = this._contentRect
+    element.reflow(cols, rows, x, y)
+  }
+
+  /** Reflow all non-dock elements against the current content rect. */
+  private _reflowNonDockElements(): void {
+    for (const element of this._elements.values()) {
+      if (element.dock !== undefined) continue
+      this._reflowElement(element)
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -377,7 +509,9 @@ export class UILayout {
         this._elementSegments.delete(id)
       }
 
-      element.reflow(this._cols, this._rows)
+      if (element.dock !== undefined) continue // already positioned by _recomputeContentRect
+      this._reflowElement(element)
+
       if (!element.hidden) {
         this._buildElementSegments(element)
         const segs = this._elementSegments.get(id)!

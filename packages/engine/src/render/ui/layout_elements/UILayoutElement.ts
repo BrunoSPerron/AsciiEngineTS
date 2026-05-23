@@ -18,6 +18,8 @@ export type UISpatialConfig = {
   pivotY?: number
 
   priority?: number
+
+  dock?: 'left' | 'right' | 'top' | 'bottom'
 }
 
 /**
@@ -35,6 +37,8 @@ export type UISpatialConfig = {
  *   - When only x / y are set they are used as the top-left corner directly.
  *   - The element is always clamped to the layout bounds. If after clamping
  *     the available space is smaller than minW / minH the element is hidden.
+ *   - When dock is set, x/y/anchor* are ignored. The element is pinned to the
+ *     given edge of the current content rect and spans its full extent.
  *
  * Lifecycle hooks (override in subclasses):
  *   - loaded()    — called once after the element is mounted into the layout.
@@ -69,6 +73,9 @@ export class UILayoutElement {
   pivotX: number = 0
   pivotY: number = 0
 
+  /** When set, the element is docked to this edge of the content rect. */
+  dock: 'left' | 'right' | 'top' | 'bottom' | undefined
+
   private _originalX: number = 0
   private _originalY: number = 0
 
@@ -83,6 +90,21 @@ export class UILayoutElement {
   constructor() {
     this.el = document.createElement('div')
     this.el.className = 'ui-layout-element'
+  }
+
+  get hidden(): boolean {
+    return this._hidden
+  }
+
+  set hidden(hide: boolean) {
+    if (this._hidden === hide) return
+    this._hidden = hide
+    this.el.style.display = hide ? 'none' : ''
+  }
+
+  get id(): number {
+    if (!this._id) throw new Error('ID not assigned')
+    return this._id
   }
 
   // ---------------------------------------------------------------------------
@@ -119,6 +141,8 @@ export class UILayoutElement {
     this._originalX = this.x
     this._originalY = this.y
 
+    this.dock = spatialConfig.dock
+
     this.tileMetrics = tileMetrics
   }
 
@@ -138,24 +162,21 @@ export class UILayoutElement {
   /** Called before the element is removed from the layout. Clean up here. */
   unloaded(): void {}
 
-  // ---------------------------------------------------------------------------
-  // Layout — called by UILayout on add and every resize
-  // ---------------------------------------------------------------------------
-
-  get hidden(): boolean {
-    return this._hidden
-  }
-
-  get id(): number {
-    if (!this._id) throw new Error('ID not assigned')
-    return this._id
-  }
-
   /**
    * Called by UILayout after creation and on every resize.
-   * Resolves percent-based config against container dimensions, then calls layout().
+   *
+   * For docked elements: UILayout computes position and size directly from the
+   * content rect and calls layout() directly — reflow() is bypassed.
+   *
+   * For non-dock elements: resolves percent-based config against content rect
+   * dimensions, then calls layout().
    */
-  reflow(containerCols: number, containerRows: number): void {
+  reflow(
+    containerCols: number,
+    containerRows: number,
+    offsetX: number = 0,
+    offsetY: number = 0,
+  ): void {
     let maxW = this.maxW
     let maxH = this.maxH
 
@@ -200,12 +221,17 @@ export class UILayoutElement {
     const minFitY = containerRows - this.minH - 2
 
     if (minFitX < minX || minFitY < minY) {
-      this.setHidden(true)
+      this.hidden = true
       return
     }
 
-    this.setHidden(false)
-    this.layout(clampedX, clampedY, Math.min(w, containerCols - 2), Math.min(h, containerRows - 2))
+    this.hidden = false
+    this.layout(
+      clampedX + offsetX,
+      clampedY + offsetY,
+      Math.min(w, containerCols - 2),
+      Math.min(h, containerRows - 2),
+    )
   }
 
   /**
@@ -258,15 +284,5 @@ export class UILayoutElement {
       coords.push([bx + bw - 1, row])
     }
     return coords
-  }
-
-  // ---------------------------------------------------------------------------
-  // Protected helpers
-  // ---------------------------------------------------------------------------
-
-  protected setHidden(hide: boolean): void {
-    if (this._hidden === hide) return
-    this._hidden = hide
-    this.el.style.display = hide ? 'none' : ''
   }
 }
