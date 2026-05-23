@@ -4,7 +4,8 @@
   "type": "module",
   "private": false,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && vite build"
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "prepublishOnly": "npm run build"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,6 +16,9 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "smol-toml": "^1.6.1",
     "deepmerge": "^4.3.1",

@@ -240,7 +240,7 @@
 
 .ascii-engine .ui-select-row.inverted {
   background-color: var(--ui-text);
-  color: var(var(--ui-bg));
+  color: var(--ui-bg);
 }
 
 .ascii-engine .ui-select-row--roller {

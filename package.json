@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "dev": "npm run dev -w ascii-engine-example",
+    "build": "npm run build -w ascii-engine",
+    "pack": "npm run build -w ascii-engine && npm pack -w ascii-engine",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
