@@ -906,7 +906,7 @@ export class UILayout {
     return `inset(${topPx}px 0 ${bottomPx}px 0)`
   }
 
-  private static _waitForAnimation(anim: Animation): Promise<void> {
+  private static _waitForAnimation(this: void, anim: Animation): Promise<void> {
     return new Promise((resolve) => {
       anim.onfinish = () => resolve()
       anim.oncancel = () => resolve()
