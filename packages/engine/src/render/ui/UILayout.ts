@@ -4,7 +4,6 @@ import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
 import type { UISelectBase } from './layout_elements/UISelectBase'
 import { UISelectElement } from './layout_elements/UISelectElement'
-import { animateBorderOpen, animateBorderClose, type BorderSegments } from './UILayoutAnimation'
 
 export type Segment = {
   el: HTMLPreElement
@@ -36,8 +35,39 @@ type ContentRect = {
   rows: number
 }
 
+type BorderSegments = {
+  top: Segment
+  bottom: Segment
+  left: Segment
+  right: Segment
+  bg: UILayoutElement
+  /** Width of border box in tiles (w + 2) */
+  bw: number
+  /** Height of border box in tiles (h + 2) */
+  bh: number
+  /** Pivot row within the border box, 0 = top border row */
+  pivotRow: number
+  tileW: number
+  tileH: number
+  /** Base CSS transform of top segment, captured before any animation mutation */
+  baseTopTransform: string
+  /** Base CSS transform of bottom segment, captured before any animation mutation */
+  baseBottomTransform: string
+}
+
 const FRAME_ID = -1
+
+// ---------------------------------------------------------------------------
+// Animation constants
+// ---------------------------------------------------------------------------
+
 const OPEN_CLOSE_DURATION = 700
+/** Fraction of total duration spent on the horizontal expand/collapse phase. */
+const PHASE1_RATIO = 0.4
+/** Fraction of total duration spent on the vertical reveal/collapse phase. */
+const PHASE2_RATIO = 0.6
+/** Minimum animation duration in ms — prevents 0ms WAAPI animations on degenerate pivots. */
+const MIN_DURATION = 1
 
 // ---------------------------------------------------------------------------
 // UILayout
@@ -160,7 +190,7 @@ export class UILayout {
       this._buildElementSegments(element)
 
       if (animate) {
-        // The open animation reconciliate and push to stack after completion
+        // The open animation reconciliates and pushes to stack after completion
         const openPromise = this._runOpenAnimation(element)
         this._openingAnimations.set(element.id, openPromise)
       } else {
@@ -337,26 +367,23 @@ export class UILayout {
     const pivotRow = this._pivotRow(element, bh)
 
     const borderSegs: BorderSegments = {
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
+      top,
+      bottom,
+      left,
+      right,
       bg: element,
       bw,
       bh,
       pivotRow,
       tileW: this.tileMetrics.w,
       tileH: this.tileMetrics.h,
+      baseTopTransform: top.el.style.transform,
+      baseBottomTransform: bottom.el.style.transform,
     }
 
-    await animateBorderOpen(
-      borderSegs,
-      this._cellOccupied.bind(this),
-      this._flushSegment.bind(this),
-      OPEN_CLOSE_DURATION,
-    )
+    await this._animateOpen(borderSegs)
 
-    if (!this._elements.has(element.id)) return // closing animation handle cleanup
+    if (!this._elements.has(element.id)) return // closing animation handles cleanup
 
     for (const seg of segs) {
       this._pushSegmentToStacks(seg, element.priority)
@@ -366,11 +393,9 @@ export class UILayout {
   }
 
   private async _runCloseAnimation(element: UILayoutElement, id: number): Promise<void> {
-    // If an open animation is still in flight, wait for it to finish first,
+    // If an open animation is still in flight, wait for it to finish first
     const opening = this._openingAnimations.get(id)
-    if (opening) {
-      await opening
-    }
+    if (opening) await opening
 
     const segs = this._elementSegments.get(id)
     if (!segs || segs.length < 4) {
@@ -384,21 +409,23 @@ export class UILayout {
     const pivotRow = this._pivotRow(element, bh)
 
     const borderSegs: BorderSegments = {
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
+      top,
+      bottom,
+      left,
+      right,
       bg: element,
       bw,
       bh,
       pivotRow,
       tileW: this.tileMetrics.w,
       tileH: this.tileMetrics.h,
+      baseTopTransform: top.el.style.transform,
+      baseBottomTransform: bottom.el.style.transform,
     }
 
-    await animateBorderClose(borderSegs, OPEN_CLOSE_DURATION)
+    await this._animateClose(borderSegs)
 
-    // Remove segment DOM elements (Stack is already clean)
+    // Remove segment DOM elements (stack is already clean)
     for (const seg of segs) seg.el.remove()
     this._elementSegments.delete(id)
 
@@ -412,6 +439,485 @@ export class UILayout {
   private _pivotRow(element: UILayoutElement, bh: number): number {
     const pivotY = element.pivotY ?? 0
     return Math.round(Math.max(0, Math.min(1, pivotY / 100)) * (bh - 1))
+  }
+
+  // ---------------------------------------------------------------------------
+  // ── Animation: open ─────────────────────────────────────────────────────────
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Two-phase open animation for a border box.
+   *
+   * Phase 1 (PHASE1_RATIO of duration):
+   *   A single line at pivotRow expands horizontally from the pivot column.
+   *
+   * Phase 2 (PHASE2_RATIO, speed-normalised to pivot position):
+   *   Top slides from pivotRow → row 0.
+   *   Bottom slides from pivotRow → row (bh-1).
+   *   Left / right reveal via vertical clip-path.
+   *   bg.el reveals via vertical clip-path.
+   */
+  private async _animateOpen(segs: BorderSegments): Promise<void> {
+    const { top, bottom, left, right, bg, bh, pivotRow, tileH } = segs
+    const duration = OPEN_CLOSE_DURATION
+    const p1 = duration * PHASE1_RATIO
+    const p2 = duration * PHASE2_RATIO
+
+    const distTop = pivotRow
+    const distBottom = bh - 1 - pivotRow
+    const maxDist = Math.max(distTop, distBottom, 1)
+
+    this._animOpenSetup(segs)
+    this._animOpenSetupPivotLine(segs)
+
+    // ── Phase 1: horizontal expand ──────────────────────────────────────────
+    await this._animOpenPhase1(top, pivotRow, tileH, p1)
+
+    // ── Transition between phases ───────────────────────────────────────────
+    this._animOpenPhase1Teardown(segs)
+
+    // ── Phase 2: vertical reveal ────────────────────────────────────────────
+    await this._animOpenPhase2(segs, p2, distTop, distBottom, maxDist)
+
+    // ── Cleanup ─────────────────────────────────────────────────────────────
+    UILayout._animCancelAll(top.el, bottom.el, left.el, right.el, bg.el)
+    this._animOpenCleanup(segs)
+  }
+
+  /**
+   * Initial hide and z-index setup before phase 1 begins.
+   * Left/right/bg are clipped to the pivot band; bottom is hidden.
+   * Top and bottom are raised so they draw over corners during animation.
+   */
+  private _animOpenSetup(segs: BorderSegments): void {
+    const { top, bottom, left, right, bg, bh, pivotRow, tileH } = segs
+
+    bottom.el.style.display = 'none'
+
+    // There's a slight offset between long sequence of glyphs and their computed position.
+    // To lessen the visual problem the left and right bar are drawn over the corner,
+    // but the corners need to move so we raise top and bottom over them during animation.
+    top.el.style.zIndex = '1'
+    bottom.el.style.zIndex = '1'
+
+    left.el.style.clipPath = 'inset(50% 0 50% 0)'
+    right.el.style.clipPath = 'inset(50% 0 50% 0)'
+    bg.el.style.clipPath = 'inset(50% 0 50% 0)'
+
+    // Blank the corners on left/right so they don't show through during the slide
+    left.chars[0] = ' '
+    left.chars[left.length - 1] = ' '
+    this._flushSegment(left)
+  }
+
+  /**
+   * Positions the top segment at pivotRow and sets the correct end-cap glyphs
+   * for the pivot collapse line, accounting for neighboring cells.
+   */
+  private _animOpenSetupPivotLine(segs: BorderSegments): void {
+    const { top, bottom, right, pivotRow, tileH, baseTopTransform } = segs
+
+    const pivotOffsetPx = pivotRow * tileH
+
+    top.el.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`
+    top.el.style.clipPath = 'inset(0 50% 0 50%)'
+
+    // Build left end-cap mask for pivot line
+    const pivotIsBottom = bottom.y === top.y + pivotRow
+    const pivotIsTop = pivotRow === 0
+
+    let maskL = LINE_MASK.DOUBLE | LINE_MASK.RIGHT
+    if (pivotIsBottom) {
+      maskL |= LINE_MASK.TOP
+      if (this._cellOccupied(top.x, pivotRow + 1)) maskL |= LINE_MASK.BOTTOM
+    } else if (pivotIsTop) {
+      maskL |= LINE_MASK.BOTTOM
+      if (this._cellOccupied(top.x, pivotRow - 1)) maskL |= LINE_MASK.TOP
+    } else {
+      maskL |= LINE_MASK.BOTTOM | LINE_MASK.TOP
+    }
+    if (this._cellOccupied(top.x - 1, top.y + pivotRow)) maskL |= LINE_MASK.LEFT
+    top.chars[0] = maskToGlyph(maskL)
+
+    // Right end-cap inherits its glyph from the bottom right corner
+    right.chars[right.length - 1] = top.chars[bottom.length - 1]
+
+    // Build right end-cap mask for pivot line
+    let maskR = LINE_MASK.DOUBLE | LINE_MASK.LEFT
+    if (pivotIsBottom) {
+      maskR |= LINE_MASK.TOP
+      if (this._cellOccupied(top.x + top.length, pivotRow)) maskR |= LINE_MASK.BOTTOM
+    } else if (pivotIsTop) {
+      maskR |= LINE_MASK.BOTTOM
+      if (this._cellOccupied(top.x + top.length - 1, pivotRow - 1)) maskR |= LINE_MASK.TOP
+    } else {
+      maskR |= LINE_MASK.BOTTOM | LINE_MASK.TOP
+    }
+    if (this._cellOccupied(top.x + top.length + 1, top.y + pivotRow)) maskR |= LINE_MASK.RIGHT
+    top.chars[top.length - 1] = maskToGlyph(maskR)
+
+    // Mirror pivot end-caps onto left/right corner slots when pivot sits at an edge
+    if (pivotIsBottom) {
+      segs.left.chars[segs.left.length - 1] = top.chars[0]
+      right.chars[segs.left.length - 1] = top.chars[top.length - 1]
+    } else if (pivotIsTop) {
+      segs.left.chars[0] = top.chars[0]
+      right.chars[0] = top.chars[top.length - 1]
+    }
+
+    this._flushSegment(top)
+  }
+
+  /** Runs phase 1: horizontally expands the pivot line. Returns when done. */
+  private async _animOpenPhase1(
+    top: Segment,
+    pivotRow: number,
+    tileH: number,
+    p1: number,
+  ): Promise<void> {
+    const anim = top.el.animate(
+      [{ clipPath: 'inset(0 50% 0 50%)' }, { clipPath: 'inset(0 0% 0 0%)' }],
+      { duration: p1, easing: 'ease-out', fill: 'forwards' },
+    )
+    await UILayout._waitForAnimation(anim)
+    UILayout._animCancelAll(top.el)
+  }
+
+  /**
+   * Updates corner glyphs and segment chars for the transition between phases.
+   * Shows bottom at pivotRow, sets left/right to full-border glyphs,
+   * repositions top/bottom to their pivot offsets before phase 2 begins.
+   */
+  private _animOpenPhase1Teardown(segs: BorderSegments): void {
+    const { top, bottom, left, right, bh, pivotRow, tileH, baseTopTransform, baseBottomTransform } =
+      segs
+
+    const pivotIsBottom = bottom.y === top.y + pivotRow
+    const pivotIsTop = pivotRow === 0
+
+    const pivotOffsetPx = pivotRow * tileH
+    const bottomFromPivotPx = (pivotRow - (bh - 1)) * tileH
+
+    if (pivotIsBottom) {
+      bottom.el.style.removeProperty('z-index')
+      left.chars[left.length - 1] = top.chars[0]
+      right.chars[right.length - 1] = top.chars[bottom.length - 1]
+    } else {
+      bottom.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.TOP | LINE_MASK.DOUBLE)
+      bottom.chars[bottom.length - 1] = maskToGlyph(
+        LINE_MASK.LEFT | LINE_MASK.TOP | LINE_MASK.DOUBLE,
+      )
+    }
+
+    if (pivotIsTop) {
+      top.el.style.removeProperty('z-index')
+      left.chars[0] = top.chars[0]
+      right.chars[0] = top.chars[top.length - 1]
+    } else {
+      top.chars[0] = maskToGlyph(LINE_MASK.RIGHT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
+      top.chars[top.length - 1] = maskToGlyph(LINE_MASK.LEFT | LINE_MASK.BOTTOM | LINE_MASK.DOUBLE)
+    }
+
+    this._flushSegment(top)
+    this._flushSegment(bottom)
+    this._flushSegment(left)
+    this._flushSegment(right)
+
+    // Reposition top to pivot, show bottom at pivot offset
+    top.el.style.transform = `${baseTopTransform} translateY(${pivotOffsetPx}px)`
+    top.el.style.clipPath = ''
+    bottom.el.style.display = ''
+    bottom.el.style.transform = `${baseBottomTransform} translateY(${bottomFromPivotPx}px)`
+  }
+
+  /**
+   * Runs phase 2: top/bottom slide to final positions while left/right and bg
+   * expand via clip-path. Returns when all animations complete.
+   */
+  private async _animOpenPhase2(
+    segs: BorderSegments,
+    p2: number,
+    distTop: number,
+    distBottom: number,
+    maxDist: number,
+  ): Promise<void> {
+    const {
+      top,
+      bottom,
+      left,
+      right,
+      bg,
+      bh,
+      pivotRow,
+      tileH,
+      baseTopTransform,
+      baseBottomTransform,
+    } = segs
+
+    const pivotOffsetPx = pivotRow * tileH
+    const bottomFromPivotPx = (pivotRow - (bh - 1)) * tileH
+    const bClip = UILayout._borderClip(pivotRow, bh, tileH)
+    const bgC = UILayout._bgClip(pivotRow, bh, tileH)
+
+    // Restore clip-path to pivot band before animating outward
+    left.el.style.clipPath = bClip
+    right.el.style.clipPath = bClip
+    bg.el.style.clipPath = bgC
+
+    const topSlide = top.el.animate(
+      [
+        { transform: `${baseTopTransform} translateY(${pivotOffsetPx}px)` },
+        { transform: `${baseTopTransform} translateY(0px)` },
+      ],
+      {
+        duration: Math.max(MIN_DURATION, p2 * (distTop / maxDist)),
+        easing: 'ease-out',
+        fill: 'forwards',
+      },
+    )
+
+    const bottomSlide = bottom.el.animate(
+      [
+        { transform: `${baseBottomTransform} translateY(${bottomFromPivotPx}px)` },
+        { transform: `${baseBottomTransform} translateY(0px)` },
+      ],
+      {
+        duration: Math.max(MIN_DURATION, p2 * (distBottom / maxDist)),
+        easing: 'ease-out',
+        fill: 'forwards',
+      },
+    )
+
+    // Cheat by +20ms to avoid seeing partial glyphs above top and below bottom
+    const sidesReveal = [left.el, right.el].map((el) =>
+      el.animate([{ clipPath: bClip }, { clipPath: 'inset(0px 0 0px 0)' }], {
+        duration: p2 + 20,
+        easing: 'ease-out',
+        fill: 'forwards',
+      }),
+    )
+
+    const bgReveal = bg.el.animate([{ clipPath: bgC }, { clipPath: 'inset(0px 0 0px 0)' }], {
+      duration: p2,
+      easing: 'ease-out',
+      fill: 'forwards',
+    })
+
+    await Promise.all([
+      UILayout._waitForAnimation(topSlide),
+      UILayout._waitForAnimation(bottomSlide),
+      ...sidesReveal.map(UILayout._waitForAnimation),
+      UILayout._waitForAnimation(bgReveal),
+    ])
+  }
+
+  /** Resets all animation artifacts so normal layout takes over after open. */
+  private _animOpenCleanup(segs: BorderSegments): void {
+    const { top, bottom, left, right, bg, baseTopTransform, baseBottomTransform } = segs
+
+    top.el.style.transform = baseTopTransform
+    top.el.style.removeProperty('z-index')
+    bottom.el.style.transform = baseBottomTransform
+    bottom.el.style.removeProperty('z-index')
+
+    for (const el of [top.el, bottom.el, left.el, right.el, bg.el]) {
+      el.style.clipPath = ''
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // ── Animation: close ────────────────────────────────────────────────────────
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Two-phase close animation — exact reverse of open.
+   *
+   * Phase 1 (PHASE2_RATIO of duration):
+   *   Top slides from 0 → pivotRow, bottom slides from (bh-1) → pivotRow.
+   *   Left/right collapse via clip-path. bg.el collapses via clip-path.
+   *
+   * Phase 2 (PHASE1_RATIO of duration):
+   *   Single pivot line collapses horizontally to nothing.
+   */
+  private async _animateClose(segs: BorderSegments): Promise<void> {
+    const { top, bottom, left, right, bg } = segs
+    const duration = OPEN_CLOSE_DURATION
+
+    this._animCloseSetup(segs)
+
+    // ── Phase 1: collapse to pivot row ──────────────────────────────────────
+    await this._animClosePhase1(segs, duration * PHASE2_RATIO)
+
+    // ── Transition: swap top for the pivot collapse line ─────────────────────
+    UILayout._animCancelAll(top.el, bottom.el, left.el, right.el, bg.el)
+    this._animCloseSetupPivotLine(segs)
+
+    // ── Phase 2: horizontal collapse ─────────────────────────────────────────
+    await this._animClosePhase2(top, duration * PHASE1_RATIO)
+
+    // ── Cleanup ─────────────────────────────────────────────────────────────
+    UILayout._animCancelAll(top.el, bottom.el, left.el, right.el, bg.el)
+    this._animCloseCleanup(segs)
+  }
+
+  /** Raises top/bottom over corners at close start. */
+  private _animCloseSetup(segs: BorderSegments): void {
+    segs.top.el.style.zIndex = '1'
+    segs.bottom.el.style.zIndex = '1'
+  }
+
+  /**
+   * Runs phase 1 of close: slides top/bottom toward pivot, collapses sides and bg.
+   * Returns when all animations complete.
+   */
+  private async _animClosePhase1(segs: BorderSegments, p2: number): Promise<void> {
+    const {
+      top,
+      bottom,
+      left,
+      right,
+      bg,
+      bh,
+      pivotRow,
+      tileH,
+      baseTopTransform,
+      baseBottomTransform,
+    } = segs
+
+    const pivotOffsetPx = pivotRow * tileH
+    const bottomFromPivotPx = (pivotRow - (bh - 1)) * tileH
+
+    const distTop = pivotRow
+    const distBottom = bh - 1 - pivotRow
+    const maxDist = Math.max(distTop, distBottom, 1)
+
+    const bClip = UILayout._borderClip(pivotRow, bh, tileH)
+    const bgC = UILayout._bgClip(pivotRow, bh, tileH)
+
+    const topSlide = top.el.animate(
+      [
+        { transform: `${baseTopTransform} translateY(0px)` },
+        { transform: `${baseTopTransform} translateY(${pivotOffsetPx}px)` },
+      ],
+      {
+        duration: Math.max(MIN_DURATION, p2 * (distTop / maxDist)),
+        easing: 'ease-in',
+        fill: 'forwards',
+      },
+    )
+
+    const bottomSlide = bottom.el.animate(
+      [
+        { transform: `${baseBottomTransform} translateY(0px)` },
+        { transform: `${baseBottomTransform} translateY(${bottomFromPivotPx}px)` },
+      ],
+      {
+        duration: Math.max(MIN_DURATION, p2 * (distBottom / maxDist)),
+        easing: 'ease-in',
+        fill: 'forwards',
+      },
+    )
+
+    // Hide glyph bleeding slightly early
+    const sidesCollapse = [left.el, right.el].map((el) =>
+      el.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bClip }], {
+        duration: Math.max(p2 - 40, 1),
+        easing: 'ease-in',
+        fill: 'forwards',
+      }),
+    )
+
+    const bgCollapse = bg.el.animate([{ clipPath: 'inset(0px 0 0px 0)' }, { clipPath: bgC }], {
+      duration: p2,
+      easing: 'ease-in',
+      fill: 'forwards',
+    })
+
+    await Promise.all([
+      UILayout._waitForAnimation(topSlide),
+      UILayout._waitForAnimation(bottomSlide),
+      ...sidesCollapse.map(UILayout._waitForAnimation),
+      UILayout._waitForAnimation(bgCollapse),
+    ])
+  }
+
+  /**
+   * Hides everything except top, then repositions top at pivotRow
+   * with the collapsed pivot line glyph string for phase 2.
+   */
+  private _animCloseSetupPivotLine(segs: BorderSegments): void {
+    const { top, bottom, left, right, bg, bw, pivotRow, tileH, baseTopTransform } = segs
+
+    left.el.style.display = 'none'
+    right.el.style.display = 'none'
+    bg.el.style.display = 'none'
+    bottom.el.style.display = 'none'
+
+    top.el.style.transform = `${baseTopTransform} translateY(${pivotRow * tileH}px)`
+    top.el.textContent = '╠' + '═'.repeat(Math.max(0, bw - 2)) + '╣'
+    top.el.style.clipPath = 'inset(0 0% 0 0%)'
+  }
+
+  /** Runs phase 2 of close: collapses the pivot line horizontally. Returns when done. */
+  private async _animClosePhase2(top: Segment, p1: number): Promise<void> {
+    const anim = top.el.animate(
+      [{ clipPath: 'inset(0 0% 0 0%)' }, { clipPath: 'inset(0 50% 0 50%)' }],
+      { duration: p1, easing: 'ease-in', fill: 'forwards' },
+    )
+    await UILayout._waitForAnimation(anim)
+  }
+
+  /** Resets all animation artifacts so DOM is clean after close. */
+  private _animCloseCleanup(segs: BorderSegments): void {
+    const { top, bottom, left, right, bg, baseTopTransform, baseBottomTransform } = segs
+
+    top.el.style.transform = baseTopTransform
+    bottom.el.style.transform = baseBottomTransform
+
+    for (const el of [top.el, bottom.el, left.el, right.el, bg.el]) {
+      el.style.clipPath = ''
+      el.style.display = ''
+      el.style.removeProperty('z-index')
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // ── Animation: static helpers ───────────────────────────────────────────────
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Clip-path string for left/right segment elements.
+   * These elements span bh rows; clip is in border-box pixel space.
+   */
+  private static _borderClip(pivotRow: number, bh: number, tileH: number): string {
+    const topPx = pivotRow * tileH
+    const bottomPx = Math.max(0, (bh - pivotRow - 1) * tileH)
+    return `inset(${topPx}px 0 ${bottomPx}px 0)`
+  }
+
+  /**
+   * Clip-path string for the bg element (interior content div).
+   * bg spans h = bh-2 rows, starting one row below the border top.
+   * pivotRow is in border coordinates; translated to bg-local coordinates.
+   */
+  private static _bgClip(pivotRow: number, bh: number, tileH: number): string {
+    const innerRows = bh - 2
+    // pivot in bg-local rows (row 0 of bg = border row 1)
+    const localPivot = Math.max(0, Math.min(innerRows, pivotRow - 1))
+    const topPx = localPivot * tileH
+    const bottomPx = Math.max(0, (innerRows - localPivot - 1) * tileH)
+    return `inset(${topPx}px 0 ${bottomPx}px 0)`
+  }
+
+  private static _waitForAnimation(anim: Animation): Promise<void> {
+    return new Promise((resolve) => {
+      anim.onfinish = () => resolve()
+      anim.oncancel = () => resolve()
+    })
+  }
+
+  private static _animCancelAll(...els: HTMLElement[]): void {
+    for (const el of els) el.getAnimations().forEach((a) => a.cancel())
   }
 
   // ---------------------------------------------------------------------------
@@ -453,7 +959,7 @@ export class UILayout {
 
   /**
    * Builds the four border <pre> elements for an element.
-   * Caller is responsible for pushing them in the cell stack.
+   * Caller is responsible for pushing them to the cell stack.
    */
   private _buildElementSegments(element: UILayoutElement): void {
     const bx = element.x
@@ -471,9 +977,7 @@ export class UILayout {
 
   /**
    * Remove segment from the line cell stack and reconcile.
-   * Caller is responsible for cleaning up the DOM element and _elementSegments entry
-   * @param id
-   * @returns
+   * Caller is responsible for cleaning up the DOM element and _elementSegments entry.
    */
   private _teardownElementSegments(id: number): void {
     const segments = this._elementSegments.get(id)
@@ -583,7 +1087,6 @@ export class UILayout {
       if (!stack) continue
 
       const idx = stack.findLastIndex((e) => e.seg === seg)
-
       if (idx !== -1) stack.splice(idx, 1)
       if (stack.length === 0) this._cellStacks.delete(key)
     }
@@ -622,7 +1125,7 @@ export class UILayout {
     topSeg.chars[i] = glyph
     this._flushSegment(topSeg)
 
-    // Apply to all cell in the stack
+    // Apply to all cells in the stack
     const stack = this._cellStacks.get(this._key(cx, cy))!
     for (let s = 0; s < stack.length - 1; s++) {
       const lowerSeg = stack[s].seg
