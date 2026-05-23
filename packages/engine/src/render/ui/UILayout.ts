@@ -2,6 +2,7 @@ import type { AsciiEngine } from '../../core/Engine'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
+import type { UISelectBase } from './layout_elements/UISelectBase'
 import { UISelectElement } from './layout_elements/UISelectElement'
 import { animateBorderOpen, animateBorderClose, type BorderSegments } from './UILayoutAnimation'
 
@@ -25,7 +26,7 @@ type CellEntry = {
 }
 
 const FRAME_ID = -1
-const OPEN_CLOSE_DURATION = 500
+const OPEN_CLOSE_DURATION = 700
 
 // ---------------------------------------------------------------------------
 // UILayout
@@ -167,13 +168,16 @@ export class UILayout {
     }
   }
 
-  public addPaletteElement(spatialConfig: UISpatialConfig): void {
+  public addPaletteElement(
+    spatialConfig: UISpatialConfig,
+    uiSelectClass?: new (themes: string[], ...args: unknown[]) => UISelectBase,
+  ): void {
     const themeManager = this._engine.renderer.themeManager
     const themes = themeManager.getThemeNames()
     const currentTheme = themeManager.current
     const previousTheme = currentTheme
 
-    const selectEl = new UISelectElement(themes)
+    const selectEl = uiSelectClass ? new uiSelectClass(themes) : new UISelectElement(themes)
     this._engine.renderer.ui.addElement(selectEl, spatialConfig)
     selectEl.currentIndex = themes.indexOf(currentTheme)
 

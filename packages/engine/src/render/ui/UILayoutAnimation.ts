@@ -74,18 +74,6 @@ function cancelAll(...els: HTMLElement[]): void {
 }
 
 /**
- * Compute phase-2 duration scaled so travel speed is constant
- * regardless of where the pivot sits within the border box.
- */
-function computePhase2Duration(baseDuration: number, bh: number, pivotRow: number): number {
-  const distTop = pivotRow
-  const distBottom = bh - 1 - pivotRow
-  const maxDist = Math.max(distTop, distBottom, 1)
-  const halfH = (bh - 1) / 2 // distance from center to edge at neutral pivot
-  return baseDuration * PHASE2_RATIO * (maxDist / Math.max(halfH, 1))
-}
-
-/**
  * Clip-path string for left/right segment elements.
  * These elements span bh rows; clip is in border-box pixel space.
  */
@@ -180,7 +168,7 @@ export async function animateBorderOpen(
 
   // Phase 1
   const p1 = duration * PHASE1_RATIO
-  const p2 = computePhase2Duration(duration, bh, pivotRow)
+  const p2 = duration * PHASE2_RATIO
 
   const distTop = pivotRow
   const distBottom = bh - 1 - pivotRow
@@ -310,7 +298,7 @@ export async function animateBorderClose(segs: BorderSegments, duration: number)
   bottom.el.style.zIndex = '1'
 
   const p1 = duration * PHASE1_RATIO
-  const p2 = computePhase2Duration(duration, bh, pivotRow)
+  const p2 = duration * PHASE2_RATIO
 
   const distTop = pivotRow
   const distBottom = bh - 1 - pivotRow
