@@ -166,7 +166,7 @@ export class UILayoutElement {
    * Called by UILayout after creation and on every resize.
    *
    * For docked elements: UILayout computes position and size directly from the
-   * content rect and calls layout() directly — reflow() is bypassed.
+   * content rect and calls layout() directly, reflow() is bypassed.
    *
    * For non-dock elements: resolves percent-based config against content rect
    * dimensions, then calls layout().
@@ -196,29 +196,29 @@ export class UILayoutElement {
 
     if (this.anchorX !== undefined) {
       const anchorX = (containerCols * this.anchorX) / 100
-      x = Math.round(anchorX - (w * this.pivotX) / 100) + this._originalX - 1
+      x = Math.round(anchorX - (w * this.pivotX) / 100) + this._originalX
     } else {
       x = this._originalX - Math.round((w * this.pivotX) / 100)
     }
 
     if (this.anchorY !== undefined) {
       const anchorY = (containerRows * this.anchorY) / 100
-      y = Math.round(anchorY - (h * this.pivotY) / 100) + this._originalY - 1
+      y = Math.round(anchorY - (h * this.pivotY) / 100) + this._originalY
     } else {
       y = this._originalY - Math.round((h * this.pivotY) / 100)
     }
 
     const minX = 0
     const minY = 0
-    const maxX = containerCols - w - 2
-    const maxY = containerRows - h - 2
+    const maxX = containerCols - w
+    const maxY = containerRows - h
 
     const clampedX = Math.max(minX, Math.min(x, maxX))
     const clampedY = Math.max(minY, Math.min(y, maxY))
 
     // Hide if the element can't fit even at minimum size
-    const minFitX = containerCols - this.minW - 2
-    const minFitY = containerRows - this.minH - 2
+    const minFitX = containerCols - this.minW
+    const minFitY = containerRows - this.minH
 
     if (minFitX < minX || minFitY < minY) {
       this.hidden = true
@@ -229,8 +229,8 @@ export class UILayoutElement {
     this.layout(
       clampedX + offsetX,
       clampedY + offsetY,
-      Math.min(w, containerCols - 2),
-      Math.min(h, containerRows - 2),
+      Math.min(w, containerCols),
+      Math.min(h, containerRows),
     )
   }
 

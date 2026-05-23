@@ -182,7 +182,7 @@ export class UILayout {
       this._reflowElement(element)
     }
 
-    // We load the element now so the UI is more reactive to user inputs
+    // Load the element early to imporve reactivity to inputs
     // Wait for event propagation to end before doing so.
     queueMicrotask(() => element.loaded())
 
@@ -194,7 +194,7 @@ export class UILayout {
         const openPromise = this._runOpenAnimation(element)
         this._openingAnimations.set(element.id, openPromise)
       } else {
-        // Push to stacks and reconcile immediately.
+        // Push to stacks and reconcile.
         const segs = this._elementSegments.get(element.id)!
         for (const seg of segs) this._pushSegmentToStacks(seg, element.priority)
         this._reconcileBorderNeighbors(element)
