@@ -34,12 +34,14 @@ const ENGINE_THEMES: Record<string, string> = {
 
 type ThemeDef = {
   name: string
-  css: string
+  css: string | null // null = URL-based
+  url: string | null // null = inline
 }
 
 export class ThemeManager {
   private themes = new Map<string, ThemeDef>()
-  private style: HTMLStyleElement
+  private _styleEl: HTMLStyleElement
+  private _linkEl: HTMLLinkElement
 
   private _current: string = ''
 
@@ -48,8 +50,13 @@ export class ThemeManager {
   }
 
   constructor() {
-    this.style = document.createElement('style')
-    document.head.appendChild(this.style)
+    this._styleEl = document.createElement('style')
+    document.head.appendChild(this._styleEl)
+
+    this._linkEl = document.createElement('link')
+    this._linkEl.rel = 'stylesheet'
+    this._linkEl.disabled = true
+    document.head.appendChild(this._linkEl)
   }
 
   init(engineThemeWhitelist: string[]) {
@@ -59,16 +66,29 @@ export class ThemeManager {
     }
   }
 
-  register(name: string, css: string) {
-    this.themes.set(name.toLowerCase(), { name, css })
+  register(name: string, cssOrUrl: string, isUrl = false) {
+    this.themes.set(name.toLowerCase(), {
+      name,
+      css: isUrl ? null : cssOrUrl,
+      url: isUrl ? cssOrUrl : null,
+    })
   }
 
   set(name: string) {
     const theme = this.themes.get(name.toLowerCase())
-    if (theme) {
-      this.style.textContent = theme.css
-      this._current = theme.name
+    if (!theme) return
+
+    if (theme.css) {
+      this._styleEl.textContent = theme.css
+      this._linkEl.disabled = true
+      this._linkEl.href = ''
+    } else if (theme.url) {
+      this._styleEl.textContent = ''
+      this._linkEl.href = theme.url
+      this._linkEl.disabled = false
     }
+
+    this._current = theme.name
   }
 
   getThemeNames(): string[] {

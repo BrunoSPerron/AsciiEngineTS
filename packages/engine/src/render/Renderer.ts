@@ -113,8 +113,8 @@ export class Renderer {
       document.head.appendChild(link)
     }
 
-    for (const { name, css } of assets.themes) {
-      this.themeManager.register(name, css)
+    for (const { name, url } of assets.themes) {
+      this.themeManager.register(name, url, true)
     }
     this.themeManager.set(config.game.initial_theme)
 

@@ -12,7 +12,6 @@ import { CHUNK_SIZE } from '../world/Chunk'
 export class AsciiEngine {
   private _container: HTMLDivElement
   assets!: GameAssets
-  private _assetsPromise: Promise<GameAssets>
   private _config!: EngineConfig
   private _boundContextMenu: ((e: PointerEvent) => void) | null = null
 
@@ -31,7 +30,7 @@ export class AsciiEngine {
 
   constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
     this._container = root
-    this._assetsPromise = loadGameAssets(glob)
+    this.assets = loadGameAssets(glob)
     root.classList.add('ascii-engine-host')
     const gameContainer = document.createElement('div')
     gameContainer.classList.add('ascii-engine')
@@ -60,7 +59,6 @@ export class AsciiEngine {
   }
 
   async init() {
-    this.assets = await this._assetsPromise
     this._config = await loadConfig(this.assets.configUrl)
     document.title = this._config.game.title
     await document.fonts.ready
