@@ -133,13 +133,13 @@ If `closeOnSelect` is `true` (default), the element removes itself before the li
 
 ## Implementing `IUSelectInterface`
 
-`UISelectElement` implements [[render/UISelectInterface|IUSelectInterface]]. When writing code that accepts a select element such as a helper that wraps `addPaletteElement` depend on the interface rather than the concrete class so custom implementations can be substituted.
+`UISelectElement` implements [[UISelectBase|IUSelectInterface]]. When writing code that accepts a select element such as a helper that wraps `addPaletteElement` depend on the interface rather than the concrete class so custom implementations can be substituted.
 
 ---
 
 ## Related
 
 - [[UILayoutElement]] — base class, lifecycle hooks, and spatial config reference
-- [[render/UISelectInterface|IUSelectInterface]] — the interface `UISelectElement` implements
+- [[UISelectBase|IUSelectInterface]] — the interface `UISelectElement` implements
 - [[UiLayout]] — `addElement`, `removeElement`, and layout management
 - [[input/ContextManager|ContextManager]] — how input contexts work

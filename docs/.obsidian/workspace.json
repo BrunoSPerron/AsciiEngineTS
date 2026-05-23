@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "render/UISelectInterface.md",
+                "file": "render/UISelectBase.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "UISelectInterface"
+              "title": "UISelectBase"
             }
           }
         ],
@@ -198,10 +198,10 @@
       "bases:Create new base": false
     }
   },
-  "active": "de4d67c5623448fe",
+  "active": "f8caccaef3719180",
   "lastOpenFiles": [
     "render/UISelectElement.md",
-    "render/UISelectInterface.md",
+    "render/UISelectBase.md",
     "render/UILayoutElement.md",
     "engine/Assets.md",
     "engine/engine-settings.md",

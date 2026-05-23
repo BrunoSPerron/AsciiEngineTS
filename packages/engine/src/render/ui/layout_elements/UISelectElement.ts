@@ -1,38 +1,15 @@
-import { UILayoutElement } from './UILayoutElement'
-import type { IUSelectInterface } from './UISelectInterface'
+import { UISelectBase } from './UISelectBase'
 
 const ROOT_ROLLER_CLS = 'ui-roller-fade'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 type Mode = 'list' | 'roller' | 'single'
 
-type ChangeHandler = (index: number) => void
-
-type SelectHandler = (index: number) => void
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Crop `text` to fit within `maxChars`.
- * - maxChars === 1 : first character only, no ellipsis
- * - maxChars >= 2  : crop, trim trailing whitespace, replace last char with '…'
- * - maxChars <= 0  : empty string
- */
 function cropLabel(text: string, maxChars: number): string {
   if (maxChars <= 0) return ''
   if (text.length <= maxChars) return text
   if (maxChars === 1) return text[0]
   return text.slice(0, maxChars - 1).trimEnd() + '…'
 }
-
-// ---------------------------------------------------------------------------
-// UISelectElement
-// ---------------------------------------------------------------------------
 
 /**
  * A managed select element for UILayout.
@@ -47,7 +24,7 @@ function cropLabel(text: string, maxChars: number): string {
  * to the bar rectangle only. Using the default css this result in perfect a↔b color
  * swapthat works with smooth scrolling and partial row transitions.
  */
-export class UISelectElement extends UILayoutElement implements IUSelectInterface {
+export class UISelectElement extends UISelectBase {
   private _items: string[]
   private _currentIndex: number = 0
   private _mode: Mode = 'list'
@@ -74,10 +51,6 @@ export class UISelectElement extends UILayoutElement implements IUSelectInterfac
   // Single-line mode
   private _singleLabelEl: HTMLDivElement | null = null
 
-  // Listeners
-  private _changeListeners = new Set<ChangeHandler>()
-  private _selectListeners = new Set<ChangeHandler>()
-
   // Arrow glyphs
   private static readonly ARROW_L = '◁'
   private static readonly ARROW_L_HOV = '◀'
@@ -94,16 +67,6 @@ export class UISelectElement extends UILayoutElement implements IUSelectInterfac
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
-
-  onChange(fn: ChangeHandler): () => void {
-    this._changeListeners.add(fn)
-    return () => this._changeListeners.delete(fn)
-  }
-
-  onSelect(fn: SelectHandler): () => void {
-    this._selectListeners.add(fn)
-    return () => this._selectListeners.delete(fn)
-  }
 
   confirm(): void {
     this._confirm(this._currentIndex)
@@ -546,17 +509,6 @@ export class UISelectElement extends UILayoutElement implements IUSelectInterfac
   // ---------------------------------------------------------------------------
   // Emit / cleanup
   // ---------------------------------------------------------------------------
-
-  private _emitChange(): void {
-    for (const fn of this._changeListeners) fn(this._currentIndex)
-  }
-
-  /**
-   * @param index Selected index, -1 if cancelled
-   */
-  private _emitSelect(index: number): void {
-    for (const fn of this._selectListeners) fn(index)
-  }
 
   private _cleanupPointer(): void {
     for (const dispose of this._pointerDisposers) dispose()
