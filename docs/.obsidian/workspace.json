@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "render/UISelectElement.md",
+                "file": "render/Theming.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "UISelectElement"
+              "title": "Theming"
             }
           }
         ]
@@ -185,8 +185,9 @@
   },
   "active": "fe0ee1a7efb0509b",
   "lastOpenFiles": [
-    "render/UISelectBase.md",
+    "guides/Adding a Tile Style.md",
     "render/UISelectElement.md",
+    "render/UISelectBase.md",
     "render/UILayoutElement.md",
     "engine/Assets.md",
     "engine/engine-settings.md",
@@ -196,7 +197,6 @@
     "input/PointerManager.md",
     "input/ActionManager.md",
     "input/ContextManager.md",
-    "guides/Adding a Tile Style.md",
     "render/ThemeManager.md",
     "render/layout_elements",
     "world/Entity.md",

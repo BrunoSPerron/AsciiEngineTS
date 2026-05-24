@@ -16,13 +16,9 @@ export class UIContainerVertical extends UIContainerBase {
     let cursorY = 0
 
     for (let i = 0; i < this._children.length; i++) {
-      const { element, config } = this._children[i]
-      const childH = config.h
-
-      element.el.style.top = `${cursorY * tm.h}px`
-      element.el.style.width = `${this.w * tm.w}px`
-      element.el.style.height = `${childH * tm.h}px`
-      element.layout(0, cursorY, this.w, childH)
+      const child = this._children[i]
+      const childH = child.maxH
+      child.layout(0, cursorY, this.w, childH)
 
       cursorY += childH
       if (i < this._children.length - 1) {
@@ -36,9 +32,8 @@ export class UIContainerVertical extends UIContainerBase {
     let cursorY = 0
 
     for (let i = 0; i < this._children.length - 1; i++) {
-      const { config } = this._children[i]
-      const childH = (config as { h: number }).h
-      cursorY += childH
+      const child = this._children[i]
+      cursorY += child.h
 
       lines.push({
         x: 0,

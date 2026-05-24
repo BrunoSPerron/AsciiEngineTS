@@ -83,6 +83,10 @@
   position: relative;
 }
 
+.ascii-game-engine span {
+  display: inline-block;
+}
+
 .ascii-game-engine .layer {
   position: absolute;
   inset: 0;

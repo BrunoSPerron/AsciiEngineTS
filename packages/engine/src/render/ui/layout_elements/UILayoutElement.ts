@@ -4,8 +4,8 @@ import type { TileMetricsData } from '../../tileMetrics'
 export type UISpatialConfig = {
   x?: number
   y?: number
-  w: number
-  h: number
+  w?: number
+  h?: number
 
   minW?: number
   minH?: number
@@ -124,13 +124,13 @@ export class UILayoutElement {
 
     this.x = spatialConfig.x ?? 0
     this.y = spatialConfig.y ?? 0
-    this.w = spatialConfig.w
-    this.h = spatialConfig.h
+    this.w = spatialConfig.w ?? 0
+    this.h = spatialConfig.h ?? 0
 
-    this.minW = spatialConfig.minW !== undefined ? spatialConfig.minW : spatialConfig.w
-    this.minH = spatialConfig.minH !== undefined ? spatialConfig.minH : spatialConfig.h
-    this.maxW = spatialConfig.w
-    this.maxH = spatialConfig.h
+    this.minW = spatialConfig.minW !== undefined ? spatialConfig.minW : this.w
+    this.minH = spatialConfig.minH !== undefined ? spatialConfig.minH : this.h
+    this.maxW = this.w
+    this.maxH = this.h
 
     this.anchorX = spatialConfig.anchorX
     this.anchorY = spatialConfig.anchorY

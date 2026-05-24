@@ -9,7 +9,7 @@ export type InnerLineData = {
   vertical: boolean
 }
 
-type ChildEntry = {
+type UnMountedChildEntry = {
   element: UILayoutElement
   config: UISpatialConfig
 }
@@ -29,7 +29,10 @@ type ChildEntry = {
  * with the container automatically.
  */
 export abstract class UIContainerBase extends UILayoutElement {
-  protected _children: ChildEntry[] = []
+  private _unmountedChildren: UnMountedChildEntry[] = []
+
+  protected _children: UILayoutElement[] = []
+
   private _mounted = false
 
   // ---------------------------------------------------------------------------
@@ -37,18 +40,20 @@ export abstract class UIContainerBase extends UILayoutElement {
   // ---------------------------------------------------------------------------
 
   addChild(element: UILayoutElement, config: UISpatialConfig): void {
-    this._children.push({ element, config })
     if (this._mounted) {
       this._mountChild(element, config)
       this._layoutChildren()
+      this._children.push(element)
+    } else {
+      this._unmountedChildren.push({ element, config })
     }
   }
 
   removeChild(id: number): void {
-    const idx = this._children.findIndex((c) => c.element.id === id)
+    const idx = this._children.findIndex((c) => c.id === id)
     if (idx === -1) return
 
-    const { element } = this._children[idx]
+    const element = this._children[idx]
     this._children.splice(idx, 1)
 
     element.unloaded()
@@ -83,11 +88,11 @@ export abstract class UIContainerBase extends UILayoutElement {
   resized(): void {}
 
   unloaded(): void {
-    for (const { element } of this._children) element.unloaded()
+    for (const element of this._children) element.unloaded()
   }
 
   destroy(): void {
-    for (const { element } of this._children) element.destroy()
+    for (const element of this._children) element.destroy()
     super.destroy()
   }
 
@@ -103,9 +108,11 @@ export abstract class UIContainerBase extends UILayoutElement {
   ): void {
     super._mount(id, spatialConfig, tileMetrics, engine)
     this._mounted = true
-    for (const { element, config } of this._children) {
+    for (const { element, config } of this._unmountedChildren) {
+      this._children.push(element)
       this._mountChild(element, config)
     }
+    this._unmountedChildren.length = 0
   }
 
   layout(x: number, y: number, w: number, h: number): void {
@@ -123,7 +130,7 @@ export abstract class UIContainerBase extends UILayoutElement {
     // We use a simple counter embedded in the element entry index.
 
     // TODO replace this ugly hack
-    const childId = this.id * 1000 + this._children.findIndex((c) => c.element === element)
+    const childId = this.id * 1000 + this._children.findIndex((c) => c === element)
 
     element._mount(childId, config, this.tileMetrics!, this.engine)
     this.el.appendChild(element.el)
