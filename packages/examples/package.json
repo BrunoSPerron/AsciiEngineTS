@@ -1,5 +1,5 @@
 {
-  "name": "ascii-engine-example",
+  "name": "ascii-game-engine-example",
   "version": "0.3.0",
   "type": "module",
   "private": true,
@@ -13,6 +13,6 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
-    "ascii-engine": "*"
+    "ascii-game-engine": "*"
   }
 }

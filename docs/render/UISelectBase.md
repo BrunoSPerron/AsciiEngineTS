@@ -31,12 +31,12 @@ Abstract. The currently highlighted item index. Readable and writable. Implement
 ```ts
 export class UISelectElement extends UISelectBase {
   private _currentIndex: number = 0
-  
-  set currentIndex(value: number) {
-	this._currentIndex = value
-    this.myUpdateDisplay()
-    this._emitChange()
-  }
+
+  set currentIndex(value: number) {
+    this._currentIndex = value
+    this.myUpdateDisplay()
+    this._emitChange()
+  }
 }
 ```
 
@@ -101,7 +101,7 @@ select.onSelect((index) => {
 Subclass `UISelectBase` to create a drop-in replacement for `UISelectElement`. Implement `currentIndex` and the `UILayoutElement` lifecycle hooks.
 
 ```ts
-import { UISelectBase } from 'ascii-engine'
+import { UISelectBase } from 'ascii-game-engine'
 
 class MyCustomSelect extends UISelectBase {
   private _index = 0

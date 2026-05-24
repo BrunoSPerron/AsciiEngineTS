@@ -31,9 +31,9 @@ export class AsciiEngine {
   constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
     this._container = root
     this.assets = loadGameAssets(glob)
-    root.classList.add('ascii-engine-host')
+    root.classList.add('ascii-game-engine-host')
     const gameContainer = document.createElement('div')
-    gameContainer.classList.add('ascii-engine')
+    gameContainer.classList.add('ascii-game-engine')
     root.appendChild(gameContainer)
 
     const tileMetrics = { w: 19.90625, h: 18 }

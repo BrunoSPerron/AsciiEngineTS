@@ -1,4 +1,4 @@
-import { AsciiEngine } from 'ascii-engine'
+import { AsciiEngine } from 'ascii-game-engine'
 import { Game } from './Game'
 
 export async function bootstrap(container: HTMLDivElement) {

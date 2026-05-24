@@ -7,7 +7,7 @@
 Instantiate the engine with a container element and an [[engine/Assets|asset glob]], then call `init()` and `start()`.
 
 ```ts
-import { AsciiEngine } from 'ascii-engine'
+import { AsciiEngine } from 'ascii-game-engine'
 
 const container = document.querySelector<HTMLDivElement>('#asciiEngine')!
 

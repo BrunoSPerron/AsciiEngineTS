@@ -1,5 +1,5 @@
-import type { AsciiEngine, Chunk } from 'ascii-engine'
-import { GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-engine'
+import type { AsciiEngine, Chunk } from 'ascii-game-engine'
+import { GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-game-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {

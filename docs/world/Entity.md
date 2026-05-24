@@ -7,7 +7,7 @@ An Entity is a living object in the world: a player, an NPC, a projectile, anyth
 Subclass `Entity` and override `act()` to define behavior. The constructor takes a glyph, a starting position, and a speed in milliseconds.
 
 ```ts
-import { Entity, GridVector } from 'ascii-engine'
+import { Entity, GridVector } from 'ascii-game-engine'
 
 export class Goblin extends Entity {
   act(): number {

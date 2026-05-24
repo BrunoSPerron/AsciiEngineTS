@@ -1,14 +1,14 @@
 {
-  "name": "ascii-engine-repo",
+  "name": "ascii-game-engine-repo",
   "private": true,
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w ascii-engine-example",
-    "build": "npm run build -w ascii-engine",
-    "pack": "npm run build -w ascii-engine && npm pack -w ascii-engine",
+    "dev": "npm run dev -w ascii-game-engine-example",
+    "build": "npm run build -w ascii-game-engine",
+    "pack": "npm run build -w ascii-game-engine && npm pack -w ascii-game-engine",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",

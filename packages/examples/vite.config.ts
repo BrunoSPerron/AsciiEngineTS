@@ -4,7 +4,7 @@ import { resolve } from 'path'
 export default defineConfig({
   resolve: {
     alias: {
-      'ascii-engine': resolve(__dirname, '../engine/src/index.ts'),
+      'ascii-game-engine': resolve(__dirname, '../engine/src/index.ts'),
     },
   },
 })

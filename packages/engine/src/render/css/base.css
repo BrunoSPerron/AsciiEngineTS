@@ -1,4 +1,4 @@
-.ascii-engine-host {
+.ascii-game-engine-host {
   position: fixed !important;
   inset: 0px;
 }
@@ -39,7 +39,7 @@
   initial-value: #bbb;
 }
 
-.ascii-engine {
+.ascii-game-engine {
   --ui-bg: var(--color-bg);
   --ui-text: var(--color-text);
 
@@ -79,11 +79,11 @@
     --actor-text 250ms ease;
 }
 
-.ascii-engine {
+.ascii-game-engine {
   position: relative;
 }
 
-.ascii-engine .layer {
+.ascii-game-engine .layer {
   position: absolute;
   inset: 0;
   /*
@@ -94,7 +94,7 @@
 
 /* ----- Background Layer ----- */
 
-.ascii-engine .chunk {
+.ascii-game-engine .chunk {
   position: absolute;
   white-space: pre;
   margin: 0 !important;
@@ -103,7 +103,7 @@
 
 /* ----- Entity Layer ----- */
 
-.ascii-engine .actor {
+.ascii-game-engine .actor {
   position: absolute;
   top: 0;
   left: 0;
@@ -115,68 +115,68 @@
 
 /* ----- UI Layer ----- */
 
-.ascii-engine .layer-ui {
+.ascii-game-engine .layer-ui {
   user-select: none;
   -webkit-user-select: none;
 }
 
-.ascii-engine .ui-selectable.selected {
+.ascii-game-engine .ui-selectable.selected {
   background-color: var(--selected-bg);
   color: var(--selected-text);
 }
 
-.ascii-engine .ui-selectable {
+.ascii-game-engine .ui-selectable {
   white-space: pre;
   transition:
     background-color 0.12s,
     color 0.12s;
 }
 
-.ascii-engine .ui-node.ui-line {
+.ascii-game-engine .ui-node.ui-line {
   font-weight: 100;
 }
 
 /* ----- UI Panel ----- */
 
-.ascii-engine .ui-panel {
+.ascii-game-engine .ui-panel {
   padding: 4px;
   inset: -4px;
   /*z-index: -1;*/
 }
 
-/*.ascii-engine .ui-panel-container {
+/*.ascii-game-engine .ui-panel-container {
   z-index: 1;
 }*/
 
-.ascii-engine .ui-layout-element {
+.ascii-game-engine .ui-layout-element {
   position: absolute !important;
   background-color: var(--ui-bg);
 }
 
 /* ----- UI Roller menu ----- */
 
-.ascii-engine .ui-roller {
+.ascii-game-engine .ui-roller {
   background-color: var(--ui-bg);
   color: var(--ui-text);
   transition: opacity 0.1s;
 }
 
-.ascii-engine .ui-roller.fade-low {
+.ascii-game-engine .ui-roller.fade-low {
   opacity: 0.45;
 }
 
-.ascii-engine .ui-roller.fade-high {
+.ascii-game-engine .ui-roller.fade-high {
   opacity: 0.2;
 }
 
 /* ----- UI layout ----- */
 
-.ascii-engine .ui-layout-inlay {
+.ascii-game-engine .ui-layout-inlay {
   position: absolute;
   inset: 0px;
 }
 
-.ascii-engine .ui-layout-line {
+.ascii-game-engine .ui-layout-line {
   position: absolute;
   margin: 0;
   color: var(--ui-text);
@@ -185,16 +185,16 @@
 
 /* ----- Select Element ----- */
 
-.ascii-engine .ui-select {
+.ascii-game-engine .ui-select {
   position: relative;
   overflow: hidden;
 }
 
-.ascii-engine .ui-select-bar--list {
+.ascii-game-engine .ui-select-bar--list {
   transition: top 80ms ease;
 }
 
-.ascii-engine .ui-layout-element.ui-select.ui-roller-fade::after {
+.ascii-game-engine .ui-layout-element.ui-select.ui-roller-fade::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -205,18 +205,18 @@
   mix-blend-mode: normal;
 }
 
-.ascii-engine .ui-select-scroll {
+.ascii-game-engine .ui-select-scroll {
   position: absolute;
   left: 0;
   top: 0;
   width: 100%;
 }
 
-.ascii-engine .ui-select-scroll--normal {
+.ascii-game-engine .ui-select-scroll--normal {
   color: var(--ui-text);
 }
 
-.ascii-engine .ui-select-scroll--inverted {
+.ascii-game-engine .ui-select-scroll--inverted {
   width: 100%;
   height: 100%;
   color: var(--ui-bg);
@@ -224,13 +224,13 @@
   z-index: 1;
 }
 
-.ascii-engine .ui-select-scroll--roller {
+.ascii-game-engine .ui-select-scroll--roller {
   transition:
     transform 180ms ease,
     clip-path 180ms ease;
 }
 
-.ascii-engine .ui-select-row {
+.ascii-game-engine .ui-select-row {
   position: absolute;
   left: 0;
   width: 100%;
@@ -238,16 +238,16 @@
   cursor: pointer;
 }
 
-.ascii-engine .ui-select-row.inverted {
+.ascii-game-engine .ui-select-row.inverted {
   background-color: var(--ui-text);
   color: var(--ui-bg);
 }
 
-.ascii-engine .ui-select-row--roller {
+.ascii-game-engine .ui-select-row--roller {
   transition: opacity 150ms ease;
 }
 
-.ascii-engine .ui-select-hit {
+.ascii-game-engine .ui-select-hit {
   position: absolute;
   left: 0;
   width: 100%;
@@ -257,7 +257,7 @@
 
 /* Single-line mode */
 
-.ascii-engine .ui-select-single {
+.ascii-game-engine .ui-select-single {
   position: absolute;
   inset: 0;
   display: flex;
@@ -265,12 +265,12 @@
   white-space: pre;
 }
 
-.ascii-engine .ui-select-arrow {
+.ascii-game-engine .ui-select-arrow {
   flex-shrink: 0;
   cursor: pointer;
 }
 
-.ascii-engine .ui-select-label {
+.ascii-game-engine .ui-select-label {
   flex: 1;
   overflow: hidden;
   text-align: center;

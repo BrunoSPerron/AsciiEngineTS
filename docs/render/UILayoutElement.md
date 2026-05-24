@@ -25,7 +25,7 @@ See [[UiLayout]] for the full positioning and sizing reference.
 `UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. The engine calls them at the right time.
 
 ```ts
-import { UILayoutElement } from 'ascii-engine'
+import { UILayoutElement } from 'ascii-game-engine'
 
 class StatusBar extends UILayoutElement {
   private _unlisten: (() => void) | null = null

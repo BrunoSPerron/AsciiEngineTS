@@ -1,4 +1,4 @@
-.ascii-engine .layer-ui::before {
+.ascii-game-engine .layer-ui::before {
   content: '';
   position: absolute;
   inset: 0;

@@ -1,4 +1,4 @@
-Themes control the color palette of the engine. Each theme is a CSS file that sets a small set of CSS variables on the `.ascii-engine` root element. Switching themes transitions all colors smoothly.
+Themes control the color palette of the engine. Each theme is a CSS file that sets a small set of CSS variables on the `.ascii-game-engine` root element. Switching themes transitions all colors smoothly.
 
 ---
 
@@ -9,7 +9,7 @@ Add a `.css` file under a `themes/` folder anywhere in your asset glob. The file
 ```css
 /* assets/themes/My Theme.css */
 
-.ascii-engine {
+.ascii-game-engine {
   --color-bg: #1a1a2e;
   --color-text: #e0e0e0;
 }
@@ -48,7 +48,7 @@ These are computed from the base palette unless you override them explicitly.
 Override any of these in your theme file to break from the derived defaults:
 
 ```css
-.ascii-engine {
+.ascii-game-engine {
   --color-bg: #0a174e;
   --color-text: #f5d042;
 
@@ -80,7 +80,7 @@ Tile styles let you color individual background tiles beyond the theme palette. 
 Define a tile style in your theme file (or any CSS loaded into the page):
 
 ```css
-.ascii-engine .tile-water {
+.ascii-game-engine .tile-water {
   color: #adefd1;
   background-color: #00203f;
 }
@@ -99,7 +99,7 @@ engine.world.setTilesStyle('water', [
 To keep tile styles theme-agnostic, reference CSS variables instead of hardcoded colors:
 
 ```css
-.ascii-engine .tile-highlight {
+.ascii-game-engine .tile-highlight {
   color: var(--color-bg);
   background-color: var(--color-text);
 }
@@ -176,17 +176,17 @@ There's also an [[engine/engine-settings|'engine_themes' settings]] used as a wh
 Your theme file is a full CSS file — it can contain anything beyond variable declarations. Use this to add world layer effects, custom animations, or tile class styles alongside your palette.
 
 ```css
-.ascii-engine {
+.ascii-game-engine {
   --color-bg: #0a174e;
   --color-text: #f5d042;
 }
 
-.ascii-engine .tile-wall {
+.ascii-game-engine .tile-wall {
   color: #ed6f63;
   background-color: #2d2926;
 }
 
-.ascii-engine .layer-ui::before {
+.ascii-game-engine .layer-ui::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -204,7 +204,7 @@ Your theme file is a full CSS file — it can contain anything beyond variable d
 }
 ```
 
-All selectors should be scoped under `.ascii-engine` to avoid affecting elements outside the game container.
+All selectors should be scoped under `.ascii-game-engine` to avoid affecting elements outside the game container.
 
 ---
 

@@ -2,7 +2,7 @@
  * css files in /themes are loaded automatically as selectable themes
  */
 
-.ascii-engine {
+.ascii-game-engine {
   --color-bg: #0a174e;
   --color-text: #f5d042;
 
@@ -21,7 +21,7 @@
 /*
  * Add any .tile-* for per-tile styling (See doc)
  */
-.ascii-engine .tile-wall {
+.ascii-game-engine .tile-wall {
   color: #ed6f63;
   background-color: #2d2926;
 }
@@ -29,7 +29,7 @@
 /*
  * And any fancy css you want
  */
-.ascii-engine .layer.layer-ui::before {
+.ascii-game-engine .layer.layer-ui::before {
   content: '';
   position: fixed;
   inset: 0;

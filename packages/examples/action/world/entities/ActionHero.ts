@@ -1,4 +1,4 @@
-import { Entity, GridVector } from 'ascii-engine'
+import { Entity, GridVector } from 'ascii-game-engine'
 
 const ACTION_TO_DIR: Record<string, GridVector> = {
   up: GridVector.UP,

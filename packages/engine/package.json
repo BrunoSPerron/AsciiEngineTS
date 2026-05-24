@@ -1,6 +1,6 @@
 {
-  "name": "ascii-engine",
-  "version": "0.0.3",
+  "name": "ascii-game-engine",
+  "version": "0.3.2",
   "type": "module",
   "private": false,
   "scripts": {
