@@ -2,6 +2,7 @@ import type { AsciiEngine } from '../../core/Engine'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
+import type { UIContainerBase } from './layout_elements/UIContainerBase'
 import type { UISelectBase } from './layout_elements/UISelectBase'
 import { UISelectElement } from './layout_elements/UISelectElement'
 
@@ -81,7 +82,7 @@ export class UILayout {
   // TODO get rid of inlayEl
   //  Currently used to fill the outside of the frame.
   //  We should be able to achieve this using pure css
-  private inlayEl: HTMLDivElement
+  //private inlayEl: HTMLDivElement
 
   tileMetrics: TileMetricsData
 
@@ -129,13 +130,14 @@ export class UILayout {
   ) {
     this.parentRoot = parentRoot
     this.root = root
+    this.root.style.position = 'absolute'
     this._engine = engine
     this.tileMetrics = tileMetrics
 
-    const inlayEl = document.createElement('div')
+    /*const inlayEl = document.createElement('div')
     inlayEl.className = 'ui-layout-inlay'
     parentRoot.prepend(inlayEl)
-    this.inlayEl = inlayEl
+    this.inlayEl = inlayEl*/
   }
 
   // ---------------------------------------------------------------------------
@@ -152,12 +154,13 @@ export class UILayout {
     const paddingY = (rawRows - rows) * this.tileMetrics.h
 
     this.root.style.padding = `${paddingY / 2}px ${paddingX / 2}px`
-    this.inlayEl.style.boxShadow = `inset 0 0 0 ${Math.max(paddingX, paddingY)}px var(--ui-bg)`
+    this.root.style.left = `${this.tileMetrics.w}px`
+    this.root.style.top = `${this.tileMetrics.h}px`
 
     if (this._frame && cols === this._cols && rows === this._rows) return
 
-    this._cols = cols
-    this._rows = rows
+    this._cols = cols - 2
+    this._rows = rows - 2
 
     this._recomputeContentRect()
     this._buildFrame()
@@ -274,23 +277,14 @@ export class UILayout {
    * Must be called after _cols / _rows change or after any dock add/remove.
    */
   private _recomputeContentRect(): void {
-    // Running rect in element interior coordinates.
-    // Starts as the full inner grid (frame border tiles excluded).
-    // x/y: first available interior tile on each axis.
-    // cols/rows: span of available interior tiles.
     let x = 0
     let y = 0
-    let cols = this._cols - 2
-    let rows = this._rows - 2
+    let cols = this._cols
+    let rows = this._rows
 
     for (const element of this._elements.values()) {
       if (element.dock === undefined) continue
 
-      // Position this panel from the running rect, then shrink.
-      // The panel's border on the docked side merges with either the outer
-      // frame or the previous dock panel's inner border (both already occupy
-      // that tile). The border on the content side becomes the new edge.
-      // Consumed = interior size + 1 (the new shared border on content side).
       let ex: number, ey: number, ew: number, eh: number
 
       switch (element.dock) {
@@ -894,15 +888,13 @@ export class UILayout {
 
   /**
    * Clip-path string for the bg element (interior content div).
-   * bg spans h = bh-2 rows, starting one row below the border top.
+   * bg spans h = bh rows, starting one row below the border top.
    * pivotRow is in border coordinates; translated to bg-local coordinates.
    */
   private static _bgClip(pivotRow: number, bh: number, tileH: number): string {
-    const innerRows = bh - 2
-    // pivot in bg-local rows (row 0 of bg = border row 1)
-    const localPivot = Math.max(0, Math.min(innerRows, pivotRow - 1))
+    const localPivot = Math.max(0, Math.min(bh, pivotRow - 1))
     const topPx = localPivot * tileH
-    const bottomPx = Math.max(0, (innerRows - localPivot - 1) * tileH)
+    const bottomPx = Math.max(0, (bh - localPivot - 1) * tileH)
     return `inset(${topPx}px 0 ${bottomPx}px 0)`
   }
 
@@ -939,10 +931,10 @@ export class UILayout {
     const cols = this._cols
     const rows = this._rows
 
-    const top = this._makeSegment(0, 0, cols, FRAME_ID, '═')
-    const bottom = this._makeSegment(0, rows - 1, cols, FRAME_ID, '═')
-    const left = this._makeSegment(0, 0, rows, FRAME_ID, '║', true)
-    const right = this._makeSegment(cols - 1, 0, rows, FRAME_ID, '║', true)
+    const top = this._makeSegment(0, -1, cols + 1, FRAME_ID, '═')
+    const bottom = this._makeSegment(0, rows, cols + 1, FRAME_ID, '═')
+    const left = this._makeSegment(-1, -1, rows + 2, FRAME_ID, '║', true)
+    const right = this._makeSegment(cols, -1, rows + 2, FRAME_ID, '║', true)
 
     this._frame = { top, bottom, left, right }
     for (const seg of [top, bottom, left, right]) {
@@ -959,8 +951,8 @@ export class UILayout {
    * Caller is responsible for pushing them to the cell stack.
    */
   private _buildElementSegments(element: UILayoutElement): void {
-    const bx = element.x
-    const by = element.y
+    const bx = element.x - 1
+    const by = element.y - 1
     const bw = element.w + 2
     const bh = element.h + 2
 
@@ -970,6 +962,28 @@ export class UILayout {
     const right = this._makeSegment(bx + bw - 1, by, bh, element.id, '║', true)
 
     this._elementSegments.set(element.id, [top, bottom, left, right])
+    this._buildInnerLineSegments(element)
+  }
+
+  /**
+   * If element implements UIContainerBase, build extra segments for its inner
+   * divider lines.
+   * The DOM elements are appended to element.el so they animate and are
+   * destroyed with the container automatically.
+   */
+  private _buildInnerLineSegments(element: UILayoutElement): void {
+    const container = element as unknown as UIContainerBase
+    if (typeof container.getInnerLineData !== 'function') return
+
+    const lines = container.getInnerLineData()
+    const segs = this._elementSegments.get(element.id)!
+
+    for (const line of lines) {
+      const vx = element.x + line.x
+      const vy = element.y + line.y
+      const seg = this._makeInnerLineSeg(vx, vy, line, element)
+      segs.push(seg)
+    }
   }
 
   /**
@@ -1034,6 +1048,7 @@ export class UILayout {
     ownerId: number,
     glyph: string = ' ',
     vertical: boolean = false,
+    parentEl: HTMLElement = this.root,
   ): Segment {
     const el = document.createElement('pre')
     el.className = 'ui-layout-line'
@@ -1042,7 +1057,36 @@ export class UILayout {
     const chars = new Array<string>(length).fill(glyph)
     const seg: Segment = { el, vertical, x, y, length, chars, ownerId }
     this._flushSegment(seg)
-    this.root.appendChild(el)
+    parentEl.appendChild(el)
+    return seg
+  }
+
+  private _makeInnerLineSeg(
+    vx: number,
+    vy: number,
+    line: { x: number; y: number; length: number; vertical: boolean },
+    element: UILayoutElement,
+  ): Segment {
+    const { w, h } = this.tileMetrics
+    const el = document.createElement('pre')
+    el.className = 'ui-layout-line'
+
+    // Position relative to element.el interior (local space)
+    el.style.transform = `translate(${line.x * w}px, ${line.y * h}px)`
+
+    const glyph = line.vertical ? '║' : '═'
+    const chars = new Array<string>(line.length).fill(glyph)
+    const seg: Segment = {
+      el,
+      vertical: line.vertical,
+      x: vx,
+      y: vy,
+      length: line.length,
+      chars,
+      ownerId: element.id,
+    }
+    this._flushSegment(seg)
+    element.el.appendChild(el)
     return seg
   }
 

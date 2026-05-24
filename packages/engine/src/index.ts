@@ -13,9 +13,11 @@ export type { Tile } from './world/Tile'
 
 export { Camera } from './render/Camera'
 export { UILayout } from './render/ui/UILayout'
-export type { UISelectBase } from './render/ui/layout_elements/UISelectBase'
+export { UIContainerBase } from './render/ui/layout_elements/UIContainerBase'
+export { UISelectBase } from './render/ui/layout_elements/UISelectBase'
 export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
+export { UIContainerVertical } from './render/ui/layout_elements/UIContainerVertical'
 
 export { GridVector } from './math/GridVector'
 export { clamp, lerp } from './math/utils'

@@ -243,7 +243,7 @@ export class UILayoutElement {
     this.y = y
     this.w = w
     this.h = h
-    this.el.style.transform = `translate(${(x + 1) * this.tileMetrics!.w}px, ${(y + 1) * this.tileMetrics!.h}px)`
+    this.el.style.transform = `translate(${x * this.tileMetrics!.w}px, ${y * this.tileMetrics!.h}px)`
     this.el.style.width = `${w * this.tileMetrics!.w}px`
     this.el.style.height = `${h * this.tileMetrics!.h}px`
     this.resized()

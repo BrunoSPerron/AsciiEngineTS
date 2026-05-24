@@ -5,6 +5,7 @@ export default [
   {
     ignores: [
       'packages/engine/dist/**',
+      'packages/perso/**',
       'dist/**',
       'build/**',
       'coverage/**',
