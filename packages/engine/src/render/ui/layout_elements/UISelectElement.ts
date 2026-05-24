@@ -28,6 +28,7 @@ export class UISelectElement extends UISelectBase {
   private _items: string[]
   private _currentIndex: number = 0
   private _mode: Mode = 'list'
+  private _captureInput: boolean = true
 
   suppressOnClose = new Set(['confirm', 'cancel', 'pause'])
 
@@ -57,11 +58,12 @@ export class UISelectElement extends UISelectBase {
   private static readonly ARROW_R = '▷'
   private static readonly ARROW_R_HOV = '▶'
 
-  constructor(items: string[], closeOnSelect: boolean = true) {
+  constructor(items: string[], options: { closeOnSelect?: boolean; captureInput?: boolean } = {}) {
     super()
     this._items = new Array<string>(items.length)
     for (let i = 0; i < items.length; i++) this._items[i] = ` ${items[i]} `
-    this.closeOnSelect = closeOnSelect
+    this.closeOnSelect = options.closeOnSelect ?? true
+    this._captureInput = options.captureInput ?? true
   }
 
   // ---------------------------------------------------------------------------
@@ -89,9 +91,11 @@ export class UISelectElement extends UISelectBase {
   // ---------------------------------------------------------------------------
 
   loaded(): void {
-    this._contextName = `select_element_${this.id}`
-    this.engine.contextManager.pushContext(this._contextName)
-    this._registerKeys()
+    if (this._captureInput) {
+      this._contextName = `select_element_${this.id}`
+      this.engine.contextManager.pushContext(this._contextName)
+      this._registerKeys()
+    }
   }
 
   resized(): void {
@@ -102,7 +106,9 @@ export class UISelectElement extends UISelectBase {
     this._unlistenKey?.()
     this._unlistenKey = null
     this._cleanupPointer()
-    this.engine.contextManager.popContext(this._contextName)
+    if (this._captureInput && this._contextName) {
+      this.engine.contextManager.popContext(this._contextName)
+    }
   }
 
   // ---------------------------------------------------------------------------
