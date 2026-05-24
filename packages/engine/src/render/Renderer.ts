@@ -120,6 +120,7 @@ export class Renderer {
 
     this.setTileHAndW()
     this.camera.onFrame((now) => this._onCameraFrame(now))
+    this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
 
     this.ui.drawFrame()
   }

@@ -261,6 +261,15 @@ export class UILayout {
   // Content rect
   // ---------------------------------------------------------------------------
 
+  getContentCenterOffset(): { x: number; y: number } {
+    const { x, y, cols, rows } = this._contentRect
+    // Center of content rect vs center of full grid
+    return {
+      x: x + (cols - this._cols) / 2,
+      y: y + (rows - this._rows) / 2,
+    }
+  }
+
   /**
    * Single-pass replay of all docked elements in insertion order.
    *

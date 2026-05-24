@@ -12,6 +12,8 @@ export class Camera {
   private tileMetrics: TileMetricsData
   private _unlistenMove: (() => void) | null = null
 
+  private _getContentOffset: () => { x: number; y: number } = () => ({ x: 0, y: 0 })
+
   private _rafId = 0
   private _last = 0
 
@@ -45,6 +47,10 @@ export class Camera {
     this._halfLife = Math.max(halfLife, 0)
   }
 
+  setContentOffsetProvider(fn: () => { x: number; y: number }) {
+    this._getContentOffset = fn
+  }
+
   onChunksInvalidated = (fn: () => void): (() => void) => {
     this._chunksInvalidatedListeners.add(fn)
     return () => this._chunksInvalidatedListeners.delete(fn)
@@ -73,8 +79,9 @@ export class Camera {
     const now = performance.now()
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2
-    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2
+    const offset = this._getContentOffset()
+    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2 + offset.x
+    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2 + offset.y
   }
 
   start() {
@@ -108,8 +115,9 @@ export class Camera {
   private _update(now: number, delta: number) {
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2 + 0.5
-    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2 + 0.5
+    const offset = this._getContentOffset()
+    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2 - offset.x + 0.5
+    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2 - offset.y + 0.5
     const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
     this.pos.x = lerp(this.pos.x, tx, alpha)
     this.pos.y = lerp(this.pos.y, ty, alpha)
