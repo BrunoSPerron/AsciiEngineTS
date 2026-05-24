@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 public
 !packages/example/public/
+packages/perso
 dist
 dist-ssr
 *.local
