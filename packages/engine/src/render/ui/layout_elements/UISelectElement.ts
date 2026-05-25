@@ -394,7 +394,7 @@ export class UISelectElement extends UISelectBase {
     wrap.appendChild(left)
 
     const label = document.createElement('div')
-    label.className = 'ui-select-label'
+    label.className = 'ui-select-label ui-selectable'
     wrap.appendChild(label)
     this._singleLabelEl = label
 
@@ -425,7 +425,19 @@ export class UISelectElement extends UISelectBase {
         if (btn === 0) this._setSelected(this._clamp(this._currentIndex + 1))
       },
     })
-    this._pointerDisposers.push(disposeLeft, disposeRight)
+
+    const disposeLabel = this.engine.pointerManager.registerUIElement(label, {
+      hover: () => {
+        label.classList.add('selected')
+      },
+      hoverEnd: () => {
+        label.classList.remove('selected')
+      },
+      pointerDown: (btn) => {
+        if (btn === 0) this._confirm(this._currentIndex)
+      },
+    })
+    this._pointerDisposers.push(disposeLeft, disposeRight, disposeLabel)
 
     this._singleRefresh()
   }
