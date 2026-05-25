@@ -226,12 +226,13 @@
   color: var(--ui-bg);
   background-color: var(--ui-text);
   z-index: 1;
+  transition: clip-path 120ms ease;
 }
 
 .ascii-game-engine .ui-select-scroll--roller {
   transition:
     transform 180ms ease,
-    clip-path 180ms ease;
+    clip-path 220ms ease;
 }
 
 .ascii-game-engine .ui-select-row {

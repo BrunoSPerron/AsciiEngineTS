@@ -233,8 +233,8 @@ export class UISelectElement extends UISelectBase {
 
   private _buildList(): void {
     const tm = this.tileMetrics!
-    const count = Math.max(this._items.length, this.h)
-    const totalH = count * tm.h
+    const count = Math.min(this._items.length, this.h)
+    const totalH = Math.max(this._items.length, this.h) * tm.h
     const barTopPx = this._currentIndex * tm.h
 
     // Scroll pair, clip must match bar
@@ -269,8 +269,8 @@ export class UISelectElement extends UISelectBase {
 
   private _listRefresh(): void {
     const tm = this.tileMetrics!
-    const count = Math.max(this._items.length, this.h)
-    const totalH = count * tm.h
+    const count = Math.min(this._items.length, this.h)
+    const totalH = Math.max(this._items.length, this.h) * tm.h
     const barTopPx = this._currentIndex * tm.h
 
     if (this._listBarEl) {
