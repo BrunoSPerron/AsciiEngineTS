@@ -43,6 +43,7 @@ export const DEFAULT_CONFIG = {
     down: ['KeyS', 'ArrowDown', 'Numpad1', 'Numpad2', 'Numpad3'],
     left: ['KeyA', 'ArrowLeft', 'Numpad1', 'Numpad4', 'Numpad7'],
     right: ['KeyD', 'ArrowRight', 'Numpad3', 'Numpad6', 'Numpad9'],
+    cycle_focus: ['Tab'],
   } as Record<string, string[]>,
 }
 

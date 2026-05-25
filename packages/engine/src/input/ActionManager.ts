@@ -2,204 +2,200 @@ import type { ContextManager, ContextListener } from './ContextManager'
 
 type ActionHandler = (action: string) => void
 
-type HeldKey = { key: string; code: string }
-
-type InputContext = {
-  name: string
-  actionDownListeners: Map<string, ActionHandler>
-  actionUpListeners: Map<string, ActionHandler>
+type ListenerEntry = {
+  fn: ActionHandler
+  context: string // 'global' | any context name
 }
 
+// ---------------------------------------------------------------------------
+// ActionManager
+// ---------------------------------------------------------------------------
+
 export class ActionManager implements ContextListener {
-  private codeToActions = new Map<string, string[]>()
-  private actionToKeys = new Map<string, string[]>()
+  private _codeToActions = new Map<string, string[]>()
 
   private _contextManager: ContextManager
-  private _inputContexts = new Map<string, InputContext>()
+  private _idCounter = 0
 
-  private keyDownState = new Map<string, HeldKey>()
-  private actionPressCount = new Map<string, number>()
-  private idCounter = 0
+  private _downListeners = new Map<string, ListenerEntry>()
+  private _upListeners = new Map<string, ListenerEntry>()
 
-  private boundKeyDown = (e: KeyboardEvent) => {
-    if (this.keyDownState.has(e.code)) return
-    this.keyDownState.set(e.code, { key: e.key, code: e.code })
-    for (const action of this.codeToActions.get(e.code) ?? []) this._pressAction(action)
+  private _keyDownState = new Map<string, string>() // code → key
+  private _actionPressCount = new Map<string, number>()
+
+  private _boundKeyDown = (e: KeyboardEvent) => {
+    if (this._keyDownState.has(e.code)) return
+    this._keyDownState.set(e.code, e.key)
+    for (const action of this._codeToActions.get(e.code) ?? []) {
+      this._pressAction(action)
+    }
   }
 
-  private boundKeyUp = (e: KeyboardEvent) => {
-    if (!this.keyDownState.has(e.code)) return
-    this.keyDownState.delete(e.code)
-    for (const action of this.codeToActions.get(e.code) ?? []) this._releaseAction(action)
+  private _boundKeyUp = (e: KeyboardEvent) => {
+    if (!this._keyDownState.has(e.code)) return
+    this._keyDownState.delete(e.code)
+    for (const action of this._codeToActions.get(e.code) ?? []) {
+      this._releaseAction(action)
+    }
   }
 
-  private boundBlur = () => this._resetKeys()
+  private _boundBlur = () => this._resetKeys()
 
-  private boundVisibility = () => {
+  private _boundVisibility = () => {
     if (document.visibilityState === 'hidden') this._resetKeys()
   }
 
   constructor(bindings: Record<string, string[]>, contextManager: ContextManager) {
     this._contextManager = contextManager
     this._loadBindings(bindings)
-
-    // Create the root input context that ContextManager already has
-    this._ensureInputContext('root')
     contextManager.registerListener(this)
 
-    window.addEventListener('keydown', this.boundKeyDown)
-    window.addEventListener('keyup', this.boundKeyUp)
-    window.addEventListener('blur', this.boundBlur)
-    document.addEventListener('visibilitychange', this.boundVisibility)
+    window.addEventListener('keydown', this._boundKeyDown)
+    window.addEventListener('keyup', this._boundKeyUp)
+    window.addEventListener('blur', this._boundBlur)
+    document.addEventListener('visibilitychange', this._boundVisibility)
   }
 
-  // --------------------------------------------------------------------------
-  // ContextListener implementation
-  // --------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // ContextListener
+  // ---------------------------------------------------------------------------
 
-  onPush(outgoing: string, incoming: string): void {
-    const outCtx = this._ensureInputContext(outgoing)
-    // Release all held actions in the outgoing context
-    for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) this._emitAction(outCtx.actionUpListeners, action)
+  onActivate(outgoing: string, incoming: string): void {
+    // Emit synthetic keyUp for held actions in the outgoing context
+    for (const [action, count] of this._actionPressCount) {
+      if (count > 0) this._emitUp(outgoing, action)
     }
-    this._ensureInputContext(incoming)
+    // Emit synthetic keyDown for held actions in the incoming context
+    for (const [action, count] of this._actionPressCount) {
+      if (count > 0) this._emitDown(incoming, action)
+    }
   }
 
-  onPop(outgoing: string, incoming: string, suppressActions?: Set<string>): void {
-    const outCtx = this._inputContexts.get(outgoing)
-    if (outCtx) {
-      for (const [action, count] of this.actionPressCount.entries()) {
-        if (count > 0) this._emitAction(outCtx.actionUpListeners, action)
-      }
-      this._inputContexts.delete(outgoing)
+  onDeactivate(outgoing: string, incoming: string, suppressActions?: Set<string>): void {
+    for (const [action, count] of this._actionPressCount) {
+      if (count > 0) this._emitUp(outgoing, action)
     }
-    const inCtx = this._ensureInputContext(incoming)
-    for (const [action, count] of this.actionPressCount.entries()) {
+    for (const [action, count] of this._actionPressCount) {
       if (count > 0 && !suppressActions?.has(action)) {
-        this._emitAction(inCtx.actionDownListeners, action)
+        this._emitDown(incoming, action)
       }
     }
   }
 
-  clearAllKeyDown() {
-    const ctx = this._activeInputCtx()
-    if (ctx) {
-      for (const [action, count] of this.actionPressCount.entries()) {
-        if (count > 0) this._emitAction(ctx.actionUpListeners, action)
-      }
-      this.keyDownState.clear()
-      this.actionPressCount.clear()
-    }
-  }
+  // ---------------------------------------------------------------------------
+  // Public API
+  // ---------------------------------------------------------------------------
 
-  // --------------------------------------------------------------------------
-  // Action listeners — registered on the currently active context
-  // --------------------------------------------------------------------------
-
-  onActionKeyDown(fn: ActionHandler): () => void {
+  /**
+   * Register a keydown listener.
+   * @param layer - omit for current active context, pass 'global' to always fire
+   */
+  onActionKeyDown(fn: ActionHandler, layer?: 'global'): () => void {
     const key = this._nextId()
-    this._activeInputCtx().actionDownListeners.set(key, fn)
-    return () => {
-      for (const ctx of this._inputContexts.values()) ctx.actionDownListeners.delete(key)
-    }
+    const context = layer === 'global' ? 'global' : this._contextManager.active
+    this._downListeners.set(key, { fn, context })
+    return () => this._downListeners.delete(key)
   }
 
-  onActionKeyUp(fn: ActionHandler): () => void {
+  /**
+   * Register a keyup listener.
+   * @param layer - omit for current active context, pass 'global' to always fire
+   */
+  onActionKeyUp(fn: ActionHandler, layer?: 'global'): () => void {
     const key = this._nextId()
-    this._activeInputCtx().actionUpListeners.set(key, fn)
-    return () => {
-      for (const ctx of this._inputContexts.values()) ctx.actionUpListeners.delete(key)
-    }
+    const context = layer === 'global' ? 'global' : this._contextManager.active
+    this._upListeners.set(key, { fn, context })
+    return () => this._upListeners.delete(key)
   }
 
-  // --------------------------------------------------------------------------
-  // Queries
-  // --------------------------------------------------------------------------
-
+  /**
+   * Returns true if the action is currently held and the given context is active.
+   */
   isActionKeyDown(action: string, context: string): boolean {
     if (this._contextManager.active !== context) return false
-    return (this.actionPressCount.get(action) ?? 0) > 0
+    return (this._actionPressCount.get(action) ?? 0) > 0
   }
 
-  // --------------------------------------------------------------------------
-  // Cleanup
-  // --------------------------------------------------------------------------
-
-  destroy() {
-    window.removeEventListener('keydown', this.boundKeyDown)
-    window.removeEventListener('keyup', this.boundKeyUp)
-    window.removeEventListener('blur', this.boundBlur)
-    document.removeEventListener('visibilitychange', this.boundVisibility)
-    this._inputContexts.clear()
-    this.keyDownState.clear()
-    this.actionPressCount.clear()
-  }
-
-  // --------------------------------------------------------------------------
-  // Private
-  // --------------------------------------------------------------------------
-
-  private _pressAction(action: string) {
-    const count = this.actionPressCount.get(action) ?? 0
-    if (count === 0) {
-      this._emitAction(this._activeInputCtx().actionDownListeners, action)
+  clearAllKeyDown(): void {
+    const active = this._contextManager.active
+    for (const [action, count] of this._actionPressCount) {
+      if (count > 0) this._emitUp(active, action)
     }
-    this.actionPressCount.set(action, count + 1)
+    this._keyDownState.clear()
+    this._actionPressCount.clear()
   }
 
-  private _releaseAction(action: string) {
-    const count = this.actionPressCount.get(action) ?? 0
+  destroy(): void {
+    window.removeEventListener('keydown', this._boundKeyDown)
+    window.removeEventListener('keyup', this._boundKeyUp)
+    window.removeEventListener('blur', this._boundBlur)
+    document.removeEventListener('visibilitychange', this._boundVisibility)
+    this._downListeners.clear()
+    this._upListeners.clear()
+    this._keyDownState.clear()
+    this._actionPressCount.clear()
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private
+  // ---------------------------------------------------------------------------
+
+  private _pressAction(action: string): void {
+    const count = this._actionPressCount.get(action) ?? 0
+    if (count === 0) {
+      this._emitDown(this._contextManager.active, action)
+      this._emitDown('global', action)
+    }
+    this._actionPressCount.set(action, count + 1)
+  }
+
+  private _releaseAction(action: string): void {
+    const count = this._actionPressCount.get(action) ?? 0
     if (count <= 1) {
-      this.actionPressCount.delete(action)
-      this._emitAction(this._activeInputCtx().actionUpListeners, action)
+      this._actionPressCount.delete(action)
+      this._emitUp(this._contextManager.active, action)
+      this._emitUp('global', action)
       return
     }
-    this.actionPressCount.set(action, count - 1)
+    this._actionPressCount.set(action, count - 1)
   }
 
-  private _loadBindings(bindings: Record<string, string[]>) {
-    this.codeToActions.clear()
-    this.actionToKeys.clear()
-    for (const [action, keys] of Object.entries(bindings)) {
-      this.actionToKeys.set(action, keys)
-      for (const key of keys) {
-        const existing = this.codeToActions.get(key) ?? []
-        existing.push(action)
-        this.codeToActions.set(key, existing)
+  private _emitDown(context: string, action: string): void {
+    for (const { fn, context: c } of this._downListeners.values()) {
+      if (c === context) fn(action)
+    }
+  }
+
+  private _emitUp(context: string, action: string): void {
+    for (const { fn, context: c } of this._upListeners.values()) {
+      if (c === context) fn(action)
+    }
+  }
+
+  private _resetKeys(): void {
+    const active = this._contextManager.active
+    for (const [action, count] of this._actionPressCount) {
+      if (count > 0) {
+        this._emitUp(active, action)
+        this._emitUp('global', action)
       }
     }
+    this._keyDownState.clear()
+    this._actionPressCount.clear()
   }
 
-  private _ensureInputContext(name: string): InputContext {
-    let ctx = this._inputContexts.get(name)
-    if (!ctx) {
-      ctx = { name, actionDownListeners: new Map(), actionUpListeners: new Map() }
-      this._inputContexts.set(name, ctx)
+  private _loadBindings(bindings: Record<string, string[]>): void {
+    this._codeToActions.clear()
+    for (const [action, keys] of Object.entries(bindings)) {
+      for (const key of keys) {
+        const existing = this._codeToActions.get(key) ?? []
+        existing.push(action)
+        this._codeToActions.set(key, existing)
+      }
     }
-    return ctx
-  }
-
-  private _activeInputCtx(): InputContext {
-    return this._ensureInputContext(this._contextManager.active)
   }
 
   private _nextId(): string {
-    return `lk_${++this.idCounter}`
-  }
-
-  private _emitAction(listeners: Map<string, ActionHandler>, action: string) {
-    for (const fn of listeners.values()) fn(action)
-  }
-
-  private _resetKeys() {
-    const ctx = this._activeInputCtx()
-    for (const [action, count] of this.actionPressCount.entries()) {
-      if (count > 0) {
-        this._emitAction(ctx.actionUpListeners, action)
-      }
-    }
-    this.keyDownState.clear()
-    this.actionPressCount.clear()
+    return `lk_${++this._idCounter}`
   }
 }

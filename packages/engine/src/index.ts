@@ -3,7 +3,7 @@ export { AsciiEngine } from './core/Engine'
 export type { GameAssets } from './core/GameAssets'
 
 export { ActionManager } from './input/ActionManager'
-export { ContextManager } from './input/ContextManager'
+export { ContextManager, type ZoneOptions } from './input/ContextManager'
 export { PointerManager } from './input/PointerManager'
 
 export { World } from './world/World'

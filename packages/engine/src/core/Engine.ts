@@ -13,7 +13,11 @@ export class AsciiEngine {
   private _container: HTMLDivElement
   assets!: GameAssets
   private _config!: EngineConfig
+
   private _boundContextMenu: ((e: PointerEvent) => void) | null = null
+  private _boundTabKey: ((e: KeyboardEvent) => void) | null = null
+
+  private _unlistenCycleFocus: (() => void) | null = null
 
   world: World
   renderer: Renderer
@@ -64,8 +68,19 @@ export class AsciiEngine {
     await document.fonts.ready
 
     this.actionManager = new ActionManager(this._config.bindings, this.contextManager)
+    this._unlistenCycleFocus = this.actionManager.onActionKeyDown((action) => {
+      if (action === 'cycle_focus') this.contextManager.cycleFocus(1)
+      // TODO Shift+Tab would need a separate 'cycle_focus_back' binding, or
+      // ActionManager could detect shift state.
+    })
+
     this.renderer.init(this._config, this.assets)
     this._setupContextMenu(this._config.game.disable_context_menu)
+
+    this._boundTabKey = (e: KeyboardEvent) => {
+      if (e.code === 'Tab') e.preventDefault()
+    }
+    window.addEventListener('keydown', this._boundTabKey)
   }
 
   start() {
@@ -83,6 +98,7 @@ export class AsciiEngine {
     this.suspend()
     this.world.local.entities.forEach((e) => e.unschedule())
     this.pointerManager?.destroy()
+    this._unlistenCycleFocus?.()
 
     document.removeEventListener('visibilitychange', this.handleVisibility)
     window.removeEventListener('resize', this.handleResize)
