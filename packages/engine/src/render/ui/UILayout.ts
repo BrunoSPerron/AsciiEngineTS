@@ -156,6 +156,8 @@ export class UILayout {
     this.root.style.padding = `${paddingY / 2}px ${paddingX / 2}px`
     this.root.style.left = `${this.tileMetrics.w}px`
     this.root.style.top = `${this.tileMetrics.h}px`
+    this.root.style.width = `${(cols - 2) * this.tileMetrics.w}px`
+    this.root.style.height = `${(rows - 2) * this.tileMetrics.h}px`
 
     if (this._frame && cols === this._cols && rows === this._rows) return
 
