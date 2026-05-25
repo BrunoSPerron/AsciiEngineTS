@@ -79,11 +79,6 @@ export class UILayout {
   private root: HTMLDivElement
   private _engine: AsciiEngine
 
-  // TODO get rid of inlayEl
-  //  Currently used to fill the outside of the frame.
-  //  We should be able to achieve this using pure css
-  //private inlayEl: HTMLDivElement
-
   tileMetrics: TileMetricsData
 
   private _cols = 0
@@ -133,11 +128,6 @@ export class UILayout {
     this.root.style.position = 'absolute'
     this._engine = engine
     this.tileMetrics = tileMetrics
-
-    /*const inlayEl = document.createElement('div')
-    inlayEl.className = 'ui-layout-inlay'
-    parentRoot.prepend(inlayEl)
-    this.inlayEl = inlayEl*/
   }
 
   // ---------------------------------------------------------------------------
