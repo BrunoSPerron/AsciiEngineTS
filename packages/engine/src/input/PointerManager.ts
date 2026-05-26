@@ -179,30 +179,23 @@ export class PointerManager implements ContextListener {
   private _onPointerMove = (e: PointerEvent): void => {
     if (this._hoveredUIElements.size > 0) return
 
-    const { cellX, cellY } = this._pixelToUICell(e)
-    const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
-
+    const { wx, wy } = this._pixelToWorldCell(e)
     const prev = this._hoveredWorldCell
-    const sameWorld = prev !== null && prev.x === wx && prev.y === wy
-    if (sameWorld) return
-
+    if (prev !== null && prev.x === wx && prev.y === wy) return
     if (prev !== null) this._emitWorldHoverEnd(prev.x, prev.y)
-
     this._hoveredWorldCell = { x: wx, y: wy }
     this._emitWorldHover(wx, wy)
   }
 
   private _onPointerDown = (e: PointerEvent): void => {
     if (this._hoveredUIElements.size > 0) return
-    const { cellX, cellY } = this._pixelToUICell(e)
-    const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
+    const { wx, wy } = this._pixelToWorldCell(e)
     this._emitWorldPointerDown(wx, wy, e.button)
   }
 
   private _onPointerUp = (e: PointerEvent): void => {
     if (this._hoveredUIElements.size > 0) return
-    const { cellX, cellY } = this._pixelToUICell(e)
-    const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
+    const { wx, wy } = this._pixelToWorldCell(e)
     this._emitWorldPointerUp(wx, wy, e.button)
   }
 
@@ -215,20 +208,13 @@ export class PointerManager implements ContextListener {
   // Coordinate Conversion
   // ---------------------------------------------------------------------------
 
-  private _pixelToUICell(e: PointerEvent): { cellX: number; cellY: number } {
+  private _pixelToWorldCell(e: PointerEvent): { wx: number; wy: number } {
     const rect = this._container.getBoundingClientRect()
-    const px = e.clientX - rect.left + this._camera.pos.x * this._tileMetrics.w
-    const py = e.clientY - rect.top + this._camera.pos.y * this._tileMetrics.h
+    const px = e.clientX - rect.left
+    const py = e.clientY - rect.top
     return {
-      cellX: Math.floor(px / this._tileMetrics.w),
-      cellY: Math.floor(py / this._tileMetrics.h),
-    }
-  }
-
-  private _uiCellToWorldCell(cellX: number, cellY: number): { wx: number; wy: number } {
-    return {
-      wx: Math.floor(cellX + this._camera.pos.x),
-      wy: Math.floor(cellY + this._camera.pos.y),
+      wx: Math.floor(px / this._tileMetrics.w + this._camera.pos.x),
+      wy: Math.floor(py / this._tileMetrics.h + this._camera.pos.y),
     }
   }
 

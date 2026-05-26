@@ -48,6 +48,7 @@ export class UITextBox extends UILayoutElement {
     const height = ((this.h - this.content.length) * this.tileMetrics!.h) / 2
     const width = ((this.w - longestStringLen) * this.tileMetrics!.h) / 2
 
+    if (this.container == null) return
     this.container!.style.top = `${height} px`
     this.container!.style.left = `${(width - this.content.length) / 2}px`
   }

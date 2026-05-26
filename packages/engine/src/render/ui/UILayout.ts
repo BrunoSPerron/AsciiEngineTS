@@ -1,4 +1,5 @@
 import type { AsciiEngine } from '../../core/Engine'
+import type { Camera } from '../Camera'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
 import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
@@ -7,6 +8,7 @@ import type { UISelectBase } from './layout_elements/UISelectBase'
 import { UISelectElement } from './layout_elements/UISelectElement'
 import type { Segment } from './segment'
 import { BorderAnimator } from './BorderAnimator'
+import { WorldUILayer } from './WorldUILayer'
 
 export type { Segment }
 
@@ -42,6 +44,9 @@ export class UILayout {
   private _engine: AsciiEngine
 
   tileMetrics: TileMetricsData
+
+  /** World-space anchored elements — speech bubbles, labels, health bars, etc. */
+  readonly world: WorldUILayer
 
   private _cols = 0
   private _rows = 0
@@ -80,6 +85,8 @@ export class UILayout {
     root: HTMLDivElement,
     tileMetrics: TileMetricsData,
     engine: AsciiEngine,
+    camera: Camera,
+    worldLayerEl: HTMLDivElement,
   ) {
     this.parentRoot = parentRoot
     this.root = root
@@ -87,11 +94,27 @@ export class UILayout {
     this._engine = engine
     this.tileMetrics = tileMetrics
 
+    this.world = new WorldUILayer(camera, tileMetrics, engine, worldLayerEl)
+
     this._animator = new BorderAnimator({
       tileMetrics,
       cellOccupied: (x, y) => this._cellOccupied(x, y),
       flushSegment: (seg) => this._flushSegment(seg),
     })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
+  /** Start the world-UI frame loop. Called by Renderer after camera is live. */
+  _start(): void {
+    this.world._start()
+  }
+
+  /** Stop the world-UI frame loop. Called by Renderer on destroy. */
+  _stop(): void {
+    this.world._stop()
   }
 
   // ---------------------------------------------------------------------------

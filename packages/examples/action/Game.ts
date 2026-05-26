@@ -1,9 +1,11 @@
 import type { AsciiEngine, Chunk } from 'ascii-game-engine'
-import { GridVector, CHUNK_SIZE, UISelectElement } from 'ascii-game-engine'
+import { GridVector, CHUNK_SIZE, UISelectElement, UITextBox } from 'ascii-game-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
   private engine: AsciiEngine
+
+  private _player!: ActionHero
 
   constructor(engine: AsciiEngine) {
     this.engine = engine
@@ -22,6 +24,9 @@ export class Game {
 
   private processActionDown(action: string) {
     switch (action) {
+      case 'speak':
+        this._speak()
+        break
       case 'pause':
         this.openEscapeMenu()
         break
@@ -88,8 +93,21 @@ export class Game {
   }
 
   private spawnPlayer() {
-    const unit = this.engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 20), 80))
-    this.engine.renderer.camera.target = unit
+    this._player = this.engine.world.spawnEntity(new ActionHero('☺', new GridVector(20, 20), 80))
+    this.engine.renderer.camera.target = this._player
+  }
+
+  private _speak() {
+    const bubble = new UITextBox(['Time to kick ass and chew bubblegum'])
+    const remove = this.engine.renderer.ui.world.addToEntity(
+      bubble,
+      { w: 38, h: 1 },
+      this._player,
+      0,
+      -1,
+    )
+
+    setTimeout(() => remove(), 5000)
   }
 
   private _testZones() {

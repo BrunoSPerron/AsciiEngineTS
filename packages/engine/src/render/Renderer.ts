@@ -87,15 +87,15 @@ export class Renderer {
     this.camera = camera
 
     this.worldEl = this._makeLayer('layer-world')
-    this.bg = this._makeLayerInto(this.worldEl, 'layer-background')
-    this.actors = this._makeLayerInto(this.worldEl, 'layer-actor')
+    this.bg = this._makeLayer('layer-background', this.worldEl)
+    this.actors = this._makeLayer('layer-actor', this.worldEl)
 
     const uiLayerEl = this._makeLayer('layer-ui')
-    const uiLayoutRoot = document.createElement('div')
-    uiLayoutRoot.className = 'ui-layout-root'
-    uiLayerEl.appendChild(uiLayoutRoot)
+    const worldUILayerEl = this._makeLayer('layer-world-ui', uiLayerEl)
+    const uiLayoutEl = this._makeLayer('ui-layout-root', uiLayerEl)
 
-    this.ui = new UILayout(uiLayerEl, uiLayoutRoot, this.tileMetrics, engine)
+    this.ui = new UILayout(uiLayerEl, uiLayoutEl, tileMetrics, engine, camera, worldUILayerEl)
+
     this.bindWorld(world)
   }
 
@@ -123,7 +123,12 @@ export class Renderer {
       this.camera.onFrame((now) => this._onCameraFrame(now))
       this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
       this.ui.drawFrame()
+      this.ui._start()
     }, 200)
+  }
+
+  destroy(): void {
+    this.ui._stop()
   }
 
   setTileHAndW() {
@@ -198,7 +203,7 @@ export class Renderer {
 
   removeCssFromActor(entity: Entity, cssClass: string) {
     const el = this.actorEls.get(entity.uid)
-    el?.classList.add(cssClass)
+    el?.classList.remove(cssClass)
   }
 
   private _onCameraFrame(_now: number) {
@@ -213,17 +218,11 @@ export class Renderer {
     }
   }
 
-  private _makeLayer(css: string): HTMLDivElement {
+  private _makeLayer(css: string, parent: HTMLElement | null = null): HTMLDivElement {
     const el = document.createElement('div')
     el.className = `layer ${css}`
-    this.root.appendChild(el)
-    return el
-  }
-
-  private _makeLayerInto(parent: HTMLDivElement, css: string): HTMLDivElement {
-    const el = document.createElement('div')
-    el.className = `layer ${css}`
-    parent.appendChild(el)
+    if (parent) parent.appendChild(el)
+    else this.root.appendChild(el)
     return el
   }
 

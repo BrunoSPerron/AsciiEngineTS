@@ -19,6 +19,7 @@ export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
 export { UISelectBase } from './render/ui/layout_elements/UISelectBase'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
 export { UITextBox } from './render/ui/layout_elements/UITextBox'
+export { WorldUILayer } from './render/ui/WorldUILayer'
 
 export { GridVector } from './math/GridVector'
 export { clamp, lerp } from './math/utils'
