@@ -28,24 +28,18 @@ type Zone = {
 // ---------------------------------------------------------------------------
 
 export class ContextManager {
-  // ── Modal stack ───────────────────────────────────────────────────────────
   private _modalStack: string[] = []
-
-  // ── Zone registry ─────────────────────────────────────────────────────────
   private _zones = new Map<string, Zone>()
+  private _focusedZone: string | null = null
+  private _listeners = new Set<ContextListener>()
 
   /**
    * Per-group focus history: ordered list of zone names, most-recently-focused last.
    */
   private _groupHistory = new Map<string, string[]>()
 
-  private _focusedZone: string | null = null
-
-  // ── Listeners ─────────────────────────────────────────────────────────────
-  private _listeners = new Set<ContextListener>()
-
   // ---------------------------------------------------------------------------
-  // Public reads
+  // Public
   // ---------------------------------------------------------------------------
 
   /**
