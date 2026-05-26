@@ -414,6 +414,7 @@ export class UISelectElement extends UISelectBase {
         if (btn === 0) this._setSelected(this._clamp(this._currentIndex - 1))
       },
     })
+
     const disposeRight = this.engine.pointerManager.registerUIElement(right, {
       hover: () => {
         right.textContent = UISelectElement.ARROW_R_HOV

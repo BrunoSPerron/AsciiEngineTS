@@ -118,11 +118,12 @@ export class Renderer {
     }
     this.themeManager.set(config.game.initial_theme)
 
-    this.setTileHAndW()
-    this.camera.onFrame((now) => this._onCameraFrame(now))
-    this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
-
-    this.ui.drawFrame()
+    setTimeout(() => {
+      this.setTileHAndW()
+      this.camera.onFrame((now) => this._onCameraFrame(now))
+      this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
+      this.ui.drawFrame()
+    }, 200)
   }
 
   setTileHAndW() {
@@ -140,9 +141,8 @@ export class Renderer {
     span.textContent = 'M'
 
     this.root.appendChild(span)
-    const bcr = span.getBoundingClientRect()
-    this.tileMetrics.w = bcr.width
-    this.tileMetrics.h = bcr.height
+    this.tileMetrics.w = span.getBoundingClientRect().width
+    this.tileMetrics.h = parseFloat(getComputedStyle(span).lineHeight)
     span.remove()
   }
 
@@ -165,7 +165,7 @@ export class Renderer {
 
   private _registerActor(entity: Entity) {
     const el = document.createElement('div')
-    el.className = 'actor'
+    el.className = `actor ${[...entity.extraCss].join(' ')}`
     el.textContent = entity.glyph
     el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
     this.actors.appendChild(el)
@@ -185,9 +185,20 @@ export class Renderer {
   renderActor(entity: Entity) {
     const el = this.actorEls.get(entity.uid)
     if (!el) return
-    if (entity.pos.equal(entity.previousPos)) return
-    el.style.transition = `transform ${entity.currentActMs}ms linear`
-    el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
+    if (!entity.pos.equal(entity.previousPos)) {
+      el.style.transition = `transform ${entity.currentActMs}ms linear`
+      el.style.transform = `translate(${entity.pos.x * this.tileMetrics.w}px, ${entity.pos.y * this.tileMetrics.h}px)`
+    }
+  }
+
+  addCssToActor(entity: Entity, cssClass: string) {
+    const el = this.actorEls.get(entity.uid)
+    el?.classList.add(cssClass)
+  }
+
+  removeCssFromActor(entity: Entity, cssClass: string) {
+    const el = this.actorEls.get(entity.uid)
+    el?.classList.add(cssClass)
   }
 
   private _onCameraFrame(_now: number) {

@@ -14,6 +14,12 @@ export class Entity {
 
   engine!: AsciiEngine
 
+  private _extraCss: Set<string> = new Set()
+
+  get extraCss(): Set<String> {
+    return this._extraCss
+  }
+
   private _currentActMs: number = MIN_ACTION_INTERVAL
   private _speed: number = 1000
   private _timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -38,6 +44,16 @@ export class Entity {
 
   public set currentActMs(value: number) {
     this._currentActMs = Math.max(value, MIN_ACTION_INTERVAL)
+  }
+
+  public addCss(cssClass: string) {
+    this._extraCss.add(cssClass)
+    this.engine?.renderer.addCssToActor(this, cssClass)
+  }
+
+  public removeCss(cssClass: string) {
+    this._extraCss.delete(cssClass)
+    this.engine?.renderer.removeCssFromActor(this, cssClass)
   }
 
   public get speed(): number {

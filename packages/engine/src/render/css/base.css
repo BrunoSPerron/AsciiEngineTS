@@ -79,10 +79,6 @@
     --actor-text 250ms ease;
 }
 
-.ascii-game-engine {
-  position: relative;
-}
-
 .ascii-game-engine span {
   display: inline-block;
 }

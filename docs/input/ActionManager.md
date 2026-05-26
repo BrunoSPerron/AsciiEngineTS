@@ -10,15 +10,17 @@ Actions are defined in `engine-settings.toml` under `[bindings]`. Each key is an
 
 ```toml
 [bindings]
-pause   = ["Escape"]
-confirm = ["Enter", "NumpadEnter", "Space"]
-up      = ["KeyW", "ArrowUp", "Numpad7", "Numpad8", "Numpad9"]
-down    = ["KeyS", "ArrowDown", "Numpad1", "Numpad2", "Numpad3"]
-left    = ["KeyA", "ArrowLeft", "Numpad1", "Numpad4", "Numpad7"]
-right   = ["KeyD", "ArrowRight", "Numpad3", "Numpad6", "Numpad9"]
+pause       = ["Escape"]
+confirm     = ["Enter", "NumpadEnter", "Space"]
+cancel      = ["Escape", "ShiftLeft"]
+up          = ["KeyW", "ArrowUp", "Numpad7", "Numpad8", "Numpad9"]
+down        = ["KeyS", "ArrowDown", "Numpad1", "Numpad2", "Numpad3"]
+left        = ["KeyA", "ArrowLeft", "Numpad1", "Numpad4", "Numpad7"]
+right       = ["KeyD", "ArrowRight", "Numpad3", "Numpad6", "Numpad9"]
+cycle_focus = ["Tab"]
 ```
 
-Multiple keys can map to the same action. One key can trigger multiple actions if it appears in several lists. Add any action name you need, there is no fixed set beyond the engine defaults.
+Multiple keys can map to the same action. One key can trigger multiple actions if it appears in several lists. Add any action name you need — there is no fixed set beyond the engine defaults.
 
 See [[engine-settings]] for the full default binding table.
 
@@ -26,9 +28,9 @@ See [[engine-settings]] for the full default binding table.
 
 ## Listening for input
 
-### `onActionKeyDown(fn)`
+### `onActionKeyDown(fn, options?)`
 
-Fires once when an action transitions from un-pressed to pressed. Registered on the currently active context.
+Fires once when an action transitions from un-pressed to pressed. Registered on the currently active context by default.
 
 ```ts
 const unlisten = engine.actionManager.onActionKeyDown((action) => {
@@ -41,9 +43,20 @@ const unlisten = engine.actionManager.onActionKeyDown((action) => {
 unlisten()
 ```
 
-### `onActionKeyUp(fn)`
+Pass `{ global: true }` to receive events regardless of the active context:
 
-Fires once when an action is released.
+```ts
+const unlisten = engine.actionManager.onActionKeyDown(
+  (action) => {
+    if (action === 'pause') toggleDebugOverlay()
+  },
+  { global: true },
+)
+```
+
+### `onActionKeyUp(fn, options?)`
+
+Fires once when an action is released. Accepts the same `{ global: true }` option.
 
 ```ts
 const unlisten = engine.actionManager.onActionKeyUp((action) => {
@@ -63,8 +76,6 @@ engine.actionManager.isActionKeyDown('up', 'root') // boolean
 
 Returns `true` if the action is currently held **and** the given context is the active one. Useful inside `act()` when you want to read held direction keys without registering a listener.
 
-Tips
-
 ---
 
 ## Context awareness
@@ -76,21 +87,23 @@ Listeners registered via `onActionKeyDown` / `onActionKeyUp` are scoped to which
 
 This means a listener in the `root` context will not receive events while a menu context is active, and will automatically "re-receive" any held keys when the menu closes.
 
+Global listeners (registered with `{ global: true }`) bypass this scoping entirely and always fire.
+
 See [[input/ContextManager|context manager]] for how to push and pop contexts.
 
 ---
 
 ## Usage inside entities
 
-Register the active context and listeners in `loaded()`. Clean the listeners in `unloaded()`.
+Register listeners in `loaded()` and clean them up in `unloaded()`. Store the active context at load time so `isActionKeyDown` can query it correctly.
 
 ```ts
 export class PlayerEntity extends Entity {
   private _unlisten: () => void = () => {}
-  private _inputCtx: string = ""
+  private _inputCtx: string = ''
 
   loaded(): void {
-	this._inputCtx = this.engine.contextManager.active
+    this._inputCtx = this.engine.contextManager.active
 
     this._unlisten = this.engine.actionManager.onActionKeyDown((action) => {
       if (action === 'confirm') this.shoot()
@@ -101,17 +114,14 @@ export class PlayerEntity extends Entity {
     this._unlisten()
   }
 
-  act(): number {
-    if (actionManager.isActionKeyDown('down', this._inputCtx))
-      this.pos.y++
-      return this._speed
-    )
-    return 0
-  }
+  act(): number {
+    if (this.engine.actionManager.isActionKeyDown('down', this._inputCtx)) {
+      this.pos.y++
+    }
+    return this._speed
+  }
 }
 ```
-
-This should only be used for off-turn actions in `act()` you likely want to [[ActionManager#Querying held state|query held states]] instead.
 
 ---
 
