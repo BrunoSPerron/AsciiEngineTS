@@ -38,10 +38,13 @@ export class PointerManager implements ContextListener {
   private _hoveredWorldCell: { x: number; y: number } | null = null
 
   /**
-   * Prevent world hover while hovering UI.
-   * Uses a depth counter to safely support nested DOM.
+   * Tracks the set of UI elements the pointer is currently inside.
+   * Using a Set instead of a depth counter makes this immune to:
+   *   - Missed pointerleave events during DOM removal
+   *   - Unbalanced enter/leave pairs from programmatic dispose
+   * World events are suppressed whenever this set is non-empty.
    */
-  private _uiHoverDepth = 0
+  private _hoveredUIElements = new Set<HTMLElement>()
 
   constructor(
     container: HTMLElement,
@@ -82,16 +85,19 @@ export class PointerManager implements ContextListener {
 
   registerUIElement(el: HTMLElement, handlers: UIHandlers): () => void {
     const onEnter = (): void => {
-      this._uiHoverDepth++
-      if (this._hoveredWorldCell) {
+      const wasOverUI = this._hoveredUIElements.size > 0
+      this._hoveredUIElements.add(el)
+
+      if (!wasOverUI && this._hoveredWorldCell) {
         this._emitWorldHoverEnd(this._hoveredWorldCell.x, this._hoveredWorldCell.y)
         this._hoveredWorldCell = null
       }
+
       handlers.hover?.()
     }
 
     const onLeave = (): void => {
-      this._uiHoverDepth = Math.max(0, this._uiHoverDepth - 1)
+      this._hoveredUIElements.delete(el)
       handlers.hoverEnd?.()
     }
 
@@ -109,6 +115,11 @@ export class PointerManager implements ContextListener {
     el.addEventListener('pointerup', onUp)
 
     return () => {
+      // Explicitly remove the element from the hover set on dispose so that
+      // world events resume correctly even if pointerleave never fired
+      // (e.g. element removed from DOM while cursor was inside it).
+      this._hoveredUIElements.delete(el)
+
       el.removeEventListener('pointerenter', onEnter)
       el.removeEventListener('pointerleave', onLeave)
       el.removeEventListener('pointerdown', onDown)
@@ -158,6 +169,7 @@ export class PointerManager implements ContextListener {
     this._worldHoverEndListeners.clear()
     this._worldPointerDownListeners.clear()
     this._worldPointerUpListeners.clear()
+    this._hoveredUIElements.clear()
   }
 
   // ---------------------------------------------------------------------------
@@ -165,7 +177,7 @@ export class PointerManager implements ContextListener {
   // ---------------------------------------------------------------------------
 
   private _onPointerMove = (e: PointerEvent): void => {
-    if (this._uiHoverDepth > 0) return
+    if (this._hoveredUIElements.size > 0) return
 
     const { cellX, cellY } = this._pixelToUICell(e)
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
@@ -181,14 +193,14 @@ export class PointerManager implements ContextListener {
   }
 
   private _onPointerDown = (e: PointerEvent): void => {
-    if (this._uiHoverDepth > 0) return
+    if (this._hoveredUIElements.size > 0) return
     const { cellX, cellY } = this._pixelToUICell(e)
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
     this._emitWorldPointerDown(wx, wy, e.button)
   }
 
   private _onPointerUp = (e: PointerEvent): void => {
-    if (this._uiHoverDepth > 0) return
+    if (this._hoveredUIElements.size > 0) return
     const { cellX, cellY } = this._pixelToUICell(e)
     const { wx, wy } = this._uiCellToWorldCell(cellX, cellY)
     this._emitWorldPointerUp(wx, wy, e.button)

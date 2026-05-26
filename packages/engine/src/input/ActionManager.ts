@@ -4,7 +4,12 @@ type ActionHandler = (action: string) => void
 
 type ListenerEntry = {
   fn: ActionHandler
-  context: string // 'global' | any context name
+  context: string | null // null = global
+}
+
+type ListenOptions = {
+  /** When true, the listener fires regardless of active context. */
+  global?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -87,23 +92,23 @@ export class ActionManager implements ContextListener {
   // ---------------------------------------------------------------------------
 
   /**
-   * Register a keydown listener.
-   * @param layer - omit for current active context, pass 'global' to always fire
+   * Register a keydown listener scoped to the currently active context.
+   * Pass `{ global: true }` to receive events regardless of active context.
    */
-  onActionKeyDown(fn: ActionHandler, layer?: 'global'): () => void {
+  onActionKeyDown(fn: ActionHandler, options: ListenOptions = {}): () => void {
     const key = this._nextId()
-    const context = layer === 'global' ? 'global' : this._contextManager.active
+    const context = options.global === true ? null : this._contextManager.active
     this._downListeners.set(key, { fn, context })
     return () => this._downListeners.delete(key)
   }
 
   /**
-   * Register a keyup listener.
-   * @param layer - omit for current active context, pass 'global' to always fire
+   * Register a keyup listener scoped to the currently active context.
+   * Pass `{ global: true }` to receive events regardless of active context.
    */
-  onActionKeyUp(fn: ActionHandler, layer?: 'global'): () => void {
+  onActionKeyUp(fn: ActionHandler, options: ListenOptions = {}): () => void {
     const key = this._nextId()
-    const context = layer === 'global' ? 'global' : this._contextManager.active
+    const context = options.global === true ? null : this._contextManager.active
     this._upListeners.set(key, { fn, context })
     return () => this._upListeners.delete(key)
   }
@@ -119,7 +124,10 @@ export class ActionManager implements ContextListener {
   clearAllKeyDown(): void {
     const active = this._contextManager.active
     for (const [action, count] of this._actionPressCount) {
-      if (count > 0) this._emitUp(active, action)
+      if (count > 0) {
+        this._emitUp(active, action)
+        this._emitGlobalUp(action)
+      }
     }
     this._keyDownState.clear()
     this._actionPressCount.clear()
@@ -144,7 +152,7 @@ export class ActionManager implements ContextListener {
     const count = this._actionPressCount.get(action) ?? 0
     if (count === 0) {
       this._emitDown(this._contextManager.active, action)
-      this._emitDown('global', action)
+      this._emitGlobalDown(action)
     }
     this._actionPressCount.set(action, count + 1)
   }
@@ -154,7 +162,7 @@ export class ActionManager implements ContextListener {
     if (count <= 1) {
       this._actionPressCount.delete(action)
       this._emitUp(this._contextManager.active, action)
-      this._emitUp('global', action)
+      this._emitGlobalUp(action)
       return
     }
     this._actionPressCount.set(action, count - 1)
@@ -172,12 +180,24 @@ export class ActionManager implements ContextListener {
     }
   }
 
+  private _emitGlobalDown(action: string): void {
+    for (const { fn, context } of this._downListeners.values()) {
+      if (context === null) fn(action)
+    }
+  }
+
+  private _emitGlobalUp(action: string): void {
+    for (const { fn, context } of this._upListeners.values()) {
+      if (context === null) fn(action)
+    }
+  }
+
   private _resetKeys(): void {
     const active = this._contextManager.active
     for (const [action, count] of this._actionPressCount) {
       if (count > 0) {
         this._emitUp(active, action)
-        this._emitUp('global', action)
+        this._emitGlobalUp(action)
       }
     }
     this._keyDownState.clear()
