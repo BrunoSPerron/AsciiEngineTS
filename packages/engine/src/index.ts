@@ -12,6 +12,7 @@ export { type Chunk, CHUNK_SIZE } from './world/Chunk'
 export type { Tile } from './world/Tile'
 
 export { Camera } from './render/Camera'
+export { MASK, maskToGlyph } from './render/lineGlyph'
 export { UILayout } from './render/ui/UILayout'
 export { UIContainerBase } from './render/ui/layout_elements/UIContainerBase'
 export { UIContainerVertical } from './render/ui/layout_elements/UIContainerVertical'

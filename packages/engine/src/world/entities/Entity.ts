@@ -16,6 +16,10 @@ export class Entity {
 
   private _extraCss: Set<string> = new Set()
 
+  get el(): HTMLDivElement | null {
+    return this.engine.renderer.actorEls.get(this.uid) ?? null
+  }
+
   get extraCss(): Set<String> {
     return this._extraCss
   }

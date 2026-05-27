@@ -90,8 +90,10 @@ export class World {
     this._moveUnlisteners.set(entity.uid, unlistenMove)
 
     entity.engine = this.engine
-    entity.loaded()
     entity.scheduleFirst()
+    queueMicrotask(() => {
+      entity.loaded()
+    })
     for (const fn of this._spawnListeners) fn(entity)
     return entity
   }

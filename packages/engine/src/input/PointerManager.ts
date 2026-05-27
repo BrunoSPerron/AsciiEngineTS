@@ -65,6 +65,10 @@ export class PointerManager implements ContextListener {
     container.addEventListener('pointerleave', this._onPointerLeave)
   }
 
+  getHoveredWorldCell(): { x: number; y: number } | null {
+    return this._hoveredWorldCell
+  }
+
   // ---------------------------------------------------------------------------
   // ContextListener
   // ---------------------------------------------------------------------------
