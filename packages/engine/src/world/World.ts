@@ -98,6 +98,10 @@ export class World {
     return entity
   }
 
+  deleteEntity(entity: Entity) {
+    this.extractEntity(entity.uid)
+  }
+
   extractEntity(id: number): Entity | undefined {
     const entity = this.local.entities.get(id)
     if (!entity) return undefined
@@ -106,6 +110,8 @@ export class World {
 
     this._moveUnlisteners.get(id)?.()
     this._moveUnlisteners.delete(id)
+
+    entity.unloaded()
 
     this.local.entities.delete(id)
 

@@ -1,0 +1,145 @@
+/*
+.ascii-game-engine .layer-ui::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 25%,
+    rgba(0, 0, 0, 0.15) 45%,
+    rgba(0, 0, 0, 0.55) 70%,
+    rgba(0, 0, 0, 0.92) 100%
+  );
+
+  mix-blend-mode: multiply;
+}
+*/
+
+.ascii-game-engine {
+  --font-size: 18px;
+  --line-height: 16px;
+}
+
+/* ===--- Background ---===*/
+
+.ascii-game-engine .tile-odd {
+  background-color: #161616;
+}
+
+.ascii-game-engine .tile-fixed {
+  background-color: var(--color-text);
+  color: var(--color-bg);
+  font-weight: bolder;
+}
+
+/* ===--- Actor ---===*/
+
+.ascii-game-engine .actor {
+  background-color: initial;
+}
+
+.ascii-game-engine .actor.arrow {
+  background-color: var(--actor-text);
+  color: var(--actor-bg);
+  animation: arrow-blink 1.2s linear infinite;
+}
+
+.ascii-game-engine .actor.arrow.reversed {
+  background-color: var(--actor-bg);
+  color: var(--actor-text);
+  animation: arrow-blink 1.2s linear infinite;
+}
+
+@keyframes arrow-blink {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+/* ===--- Laser ---===*/
+
+.ascii-game-engine .laser-line {
+  position: absolute;
+  overflow: hidden;
+  white-space: pre;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Reveal keyframes – each direction clips from the appropriate edge */
+@keyframes laser-reveal-top {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes laser-reveal-bottom {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes laser-reveal-right {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes laser-reveal-left {
+  0% {
+    clip-path: inset(0 0 0 100%);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Hide keyframes – mirror of reveal */
+@keyframes laser-hide-top {
+  0% {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@keyframes laser-hide-bottom {
+  0% {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(100% 0 0 0);
+  }
+}
+@keyframes laser-hide-right {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+@keyframes laser-hide-left {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 100% 0 0);
+  }
+}

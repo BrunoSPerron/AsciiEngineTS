@@ -86,10 +86,6 @@
 .ascii-game-engine .layer {
   position: absolute;
   inset: 0;
-  /*
-  TODO make ui works with scale and use for zoom
-  */
-  transform: scale(1);
 }
 
 /* ----- Background Layer ----- */
@@ -141,12 +137,7 @@
 .ascii-game-engine .ui-panel {
   padding: 4px;
   inset: -4px;
-  /*z-index: -1;*/
 }
-
-/*.ascii-game-engine .ui-panel-container {
-  z-index: 1;
-}*/
 
 .ascii-game-engine .ui-layout-element {
   position: absolute !important;

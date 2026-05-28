@@ -10,6 +10,16 @@ export function maskToGlyph(mask: number): string {
   return GLYPHS[mask] ?? ' '
 }
 
+export function invertDirectionMask(mask: number) {
+  return (
+    (mask & MASK.TOP ? MASK.BOTTOM : 0) |
+    (mask & MASK.RIGHT ? MASK.LEFT : 0) |
+    (mask & MASK.BOTTOM ? MASK.TOP : 0) |
+    (mask & MASK.LEFT ? MASK.RIGHT : 0) |
+    (mask & MASK.DOUBLE)
+  )
+}
+
 const GLYPHS: Record<number, string> = {
   [MASK.DOUBLE | MASK.RIGHT]: '═',
   [MASK.DOUBLE | MASK.LEFT]: '═',

@@ -12,14 +12,17 @@ export { type Chunk, CHUNK_SIZE } from './world/Chunk'
 export type { Tile } from './world/Tile'
 
 export { Camera } from './render/Camera'
-export { MASK, maskToGlyph } from './render/lineGlyph'
+export { MASK, maskToGlyph, invertDirectionMask } from './render/lineGlyph'
+export type { TileMetricsData } from './render/tileMetrics'
 export { UILayout } from './render/ui/UILayout'
+
 export { UIContainerBase } from './render/ui/layout_elements/UIContainerBase'
 export { UIContainerVertical } from './render/ui/layout_elements/UIContainerVertical'
 export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
 export { UISelectBase } from './render/ui/layout_elements/UISelectBase'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
 export { UITextBox } from './render/ui/layout_elements/UITextBox'
+
 export { WorldUILayer } from './render/ui/WorldUILayer'
 
 export { GridVector } from './math/GridVector'

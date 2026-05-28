@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/laser-chess/*"
   ],
   "scripts": {
     "dev": "npm run dev -w ascii-game-engine-example",
-    "perso": "npm run dev -w perso",
+    "chess": "npm run dev -w laser-chess-legacy",
     "build": "npm run build -w ascii-game-engine",
     "pack": "npm run build -w ascii-game-engine && npm pack -w ascii-game-engine",
     "lint": "eslint .",

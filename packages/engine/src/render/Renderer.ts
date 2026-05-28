@@ -118,6 +118,10 @@ export class Renderer {
     }
     this.themeManager.set(config.game.initial_theme)
 
+    // TODO Replace SetTimeout with something clean.
+    //  Dirty hack Let the style load before calculating h and w.
+    //  Do not always work
+    //  SetTileHAndW also need to be called on theme change
     setTimeout(() => {
       this.setTileHAndW()
       this.camera.onFrame((now) => this._onCameraFrame(now))
