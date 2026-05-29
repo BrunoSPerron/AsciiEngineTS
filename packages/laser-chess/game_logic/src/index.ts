@@ -1,4 +1,4 @@
-export { CELL } from './gameState'
+export { CELL } from './GameState'
 export type {
   CellChar,
   Pawn,
@@ -9,7 +9,7 @@ export type {
   MoveAction,
   MirrorAction,
   ShootAction,
-} from './gameState'
+} from './GameState'
 
 export {
   loadBoard,

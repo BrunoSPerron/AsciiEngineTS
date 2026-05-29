@@ -7,7 +7,7 @@ export class UITextBox extends UILayoutElement {
   private _content: string[]
   private _mode: string
 
-  container: HTMLDivElement | null = null
+  private _contentContainer: HTMLDivElement | null = null
 
   constructor(content: string[], mode: string = 'simple') {
     super()
@@ -21,6 +21,7 @@ export class UITextBox extends UILayoutElement {
 
   set content(value: string | string[]) {
     this._content = typeof value === 'string' ? [value] : value
+    this._updateContent()
   }
 
   get mode(): string {
@@ -39,17 +40,32 @@ export class UITextBox extends UILayoutElement {
   }
 
   loaded(): void {
-    this.container = document.createElement('div')
+    this._contentContainer = document.createElement('div')
+    this._contentContainer.style.position = 'absolute'
+    this.el.append(this._contentContainer)
+    this._updateContent()
+  }
+
+  private _updateContent() {
+    console.log(`w: ${this.tileMetrics.w}, h: ${this.tileMetrics.h}`)
+    let longestStringLen = Math.max(...this.content.map((str) => str.length))
+
+    const height = this.content.length * this.tileMetrics!.h
+    const width = (longestStringLen * this.tileMetrics!.w) / 2
+
+    this._contentContainer!.innerHTML = this._content.join('<br>')
+    this._contentContainer!.style.height = `${height}px`
+    this._contentContainer!.style.width = `${width}px`
   }
 
   resized(): void {
     const longestStringLen = Math.max(...this.content.map((str) => str.length))
 
-    const height = ((this.h - this.content.length) * this.tileMetrics!.h) / 2
-    const width = ((this.w - longestStringLen) * this.tileMetrics!.h) / 2
+    const top = (this.h - this.content.length) * this.tileMetrics!.h
+    const left = (this.w - longestStringLen) * this.tileMetrics!.w
 
-    if (this.container == null) return
-    this.container!.style.top = `${height} px`
-    this.container!.style.left = `${(width - this.content.length) / 2}px`
+    if (this._contentContainer == null) return
+    this._contentContainer!.style.top = `${top}px`
+    this._contentContainer!.style.left = `${left}px`
   }
 }

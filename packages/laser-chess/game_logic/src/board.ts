@@ -1,4 +1,5 @@
-import { CELL, type CellChar, type GameState, type Pawn } from './gameState'
+import { GameRule } from './GameRules'
+import { CELL, type CellChar, type GameState, type Pawn } from './GameState'
 
 // ---------------------------------------------------------------------------
 // Index helpers
@@ -27,11 +28,14 @@ export function setCell(state: GameState, x: number, y: number, char: CellChar):
  * Expected txt format: 31x31 chars per line, 'K' = player one king,
  * 'k' = player two king, '#' = wall, '/' '\' = mirror, 'F' 'f' = fixed.
  */
-export function loadBoard(txt: string, size: number): Pick<GameState, 'board' | 'pawns'> {
+export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board' | 'pawns'> {
   const lines = txt.split('\n')
+  let size: number = 0
+  for (const line of lines) {
+    if (line.length > size) size = line.length
+  }
   const board: string[] = new Array(size * size).fill(CELL.EMPTY)
   const pawns: Record<number, Pawn> = {}
-
   for (let y = 0; y < size; y++) {
     const line = (lines[y] ?? '').replace('\r', '')
     for (let x = 0; x < size; x++) {
@@ -41,11 +45,11 @@ export function loadBoard(txt: string, size: number): Pick<GameState, 'board' | 
       switch (ch) {
         case 'K':
           board[i] = CELL.PAWN_1
-          pawns[i] = { player: 1, hp: 5, moveType: 'king' }
+          pawns[i] = { player: 1, hp: rules.kingHP, moveType: rules.kingMoveType }
           break
         case 'k':
           board[i] = CELL.PAWN_2
-          pawns[i] = { player: 2, hp: 5, moveType: 'king' }
+          pawns[i] = { player: 2, hp: rules.kingHP, moveType: rules.kingMoveType }
           break
         case CELL.WALL:
         case CELL.MIRROR:

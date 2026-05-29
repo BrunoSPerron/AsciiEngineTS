@@ -1,5 +1,6 @@
-import { CELL } from './gameState'
-import type { Action, GameState, MirrorAction, MoveAction, Phase, ShootAction } from './gameState'
+import { GameRule } from './GameRules'
+import { CELL } from './GameState'
+import type { Action, GameState, MirrorAction, MoveAction, Phase, ShootAction } from './GameState'
 import { cellAt, getPawnIndex, idx, isSolid, movePawn, setCell } from './board'
 import { computeLaser, applyLaserResult } from './laser'
 import type { Direction } from './laser'
@@ -80,7 +81,7 @@ function nextPlayer(player: 1 | 2): 1 | 2 {
 // applyAction — returns new state (immutable), throws on illegal action
 // ---------------------------------------------------------------------------
 
-export function applyAction(state: GameState, action: Action): GameState {
+export function applyAction(state: GameState, action: Action, rule: GameRule): GameState {
   // Deep clone to keep old state intact (useful for server replay / undo)
   const next: GameState = {
     board: [...state.board],
@@ -96,7 +97,7 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'mirror':
       return applyMirror(next, action)
     case 'shoot':
-      return applyShoot(next, action)
+      return applyShoot(next, action, rule)
   }
 }
 
@@ -127,12 +128,12 @@ function applyMirror(state: GameState, action: MirrorAction): GameState {
   return state
 }
 
-function applyShoot(state: GameState, action: ShootAction): GameState {
+function applyShoot(state: GameState, action: ShootAction, rule: GameRule): GameState {
   if (state.phase !== 'shoot') throw new Error('Not in shoot phase')
   if (action.dx !== 0 && action.dy !== 0) throw new Error('Diagonal shooting not supported')
 
   const dir = shootDir(action.dx, action.dy)
-  const result = computeLaser(state, state.currentPlayer, dir)
+  const result = computeLaser(state, state.currentPlayer, dir, rule)
   applyLaserResult(state, result)
 
   // Don't advance the turn if the game is over — let the caller handle it

@@ -84,7 +84,7 @@ export class UILayoutElement {
   /** True when the element was hidden because it could not fit in the layout */
   private _hidden = false
 
-  protected tileMetrics?: TileMetricsData
+  protected tileMetrics!: TileMetricsData
   protected engine!: AsciiEngine
 
   constructor() {

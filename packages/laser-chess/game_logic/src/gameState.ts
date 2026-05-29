@@ -7,8 +7,8 @@ export const CELL = {
   WALL: '#',
   MIRROR: '/',
   MIRROR_FLIP: '\\',
-  FIXED: 'F',
-  FIXED_FLIP: 'f',
+  FIXED: 'f',
+  FIXED_FLIP: 'F',
   PAWN_1: 'P',
   PAWN_2: 'p',
 } as const

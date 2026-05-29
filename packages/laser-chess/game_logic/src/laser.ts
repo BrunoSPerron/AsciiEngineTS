@@ -1,5 +1,6 @@
-import { CELL } from './gameState'
-import type { GameState } from './gameState'
+import { GameRule } from './GameRules'
+import { CELL } from './GameState'
+import type { GameState } from './GameState'
 import { cellAt, wrapCoord, idx } from './board'
 
 // ---------------------------------------------------------------------------
@@ -68,6 +69,7 @@ export function computeLaser(
   state: GameState,
   shooterPlayer: 1 | 2,
   direction: Direction,
+  rule: GameRule,
 ): LaserResult {
   const result: LaserResult = {
     waypoints: [],
@@ -109,7 +111,8 @@ export function computeLaser(
     if (isMirror(ch)) {
       const isFixed = ch === CELL.FIXED || ch === CELL.FIXED_FLIP
       if (!isFixed) result.mirrorsFlipped.push(idx(state, x, y))
-      result.damage++
+
+      result.damage += rule.bounceDamage
       dir = deflect(dir, ch)
       result.waypoints.push({ x, y })
     }
