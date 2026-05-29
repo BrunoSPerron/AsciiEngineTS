@@ -1,4 +1,4 @@
-import { GameRule } from './GameRules'
+import { type GameRule } from './GameRules'
 import { CELL } from './GameState'
 import type { Action, GameState, MirrorAction, MoveAction, Phase, ShootAction } from './GameState'
 import { cellAt, getPawnIndex, idx, isSolid, movePawn, setCell } from './board'

@@ -1,4 +1,4 @@
-import { GameRule } from './GameRules'
+import { type GameRule } from './GameRules'
 import { CELL, type CellChar, type GameState, type Pawn } from './GameState'
 
 // ---------------------------------------------------------------------------

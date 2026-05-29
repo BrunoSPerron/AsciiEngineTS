@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w ascii-game-engine-example",
-    "chess": "npm run dev -w laser-chess-legacy",
+    "chess": "npm run dev -w laser-chess-client",
     "build": "npm run build -w ascii-game-engine",
     "pack": "npm run build -w ascii-game-engine && npm pack -w ascii-game-engine",
     "lint": "eslint .",

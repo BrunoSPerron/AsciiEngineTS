@@ -1,4 +1,4 @@
-import { GameRule } from './GameRules'
+import { type GameRule } from './GameRules'
 import { CELL } from './GameState'
 import type { GameState } from './GameState'
 import { cellAt, wrapCoord, idx } from './board'

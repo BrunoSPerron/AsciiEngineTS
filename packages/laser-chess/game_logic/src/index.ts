@@ -29,3 +29,5 @@ export type { Direction, LaserResult } from './laser'
 
 export { applyAction, getLegalMoves, getLegalShots, canPlaceMirror, checkVictory } from './actions'
 export type { VictoryResult } from './actions'
+
+export type { GameRule } from './GameRules'
