@@ -9,7 +9,11 @@ import { cellAt, wrapCoord, idx } from './board'
 
 export type Direction = 'up' | 'right' | 'down' | 'left'
 
-export type LaserWaypoint = { x: number; y: number }
+export type LaserWaypoint = {
+  x: number
+  y: number
+  kind: 'origin' | 'wrap' | 'mirror' | 'hit'
+}
 
 export type LaserResult = {
   waypoints: LaserWaypoint[]
@@ -81,7 +85,7 @@ export function computeLaser(
   let x = originX
   let y = originY
 
-  result.waypoints.push({ x, y })
+  result.waypoints.push({ x, y, kind: 'origin' })
 
   const maxSteps = state.sizeX * state.sizeY
   let steps = 0
@@ -90,19 +94,22 @@ export function computeLaser(
     const [dx, dy] = DIR_DELTA[dir]
     x += dx
     y += dy
-    ;[x, y] = wrapCoord(state, x, y)
-
+    const [wx, wy] = wrapCoord(state, x + dx, y + dy)
+    const wrapped = wx !== x + dx || wy !== y + dy
+    x = wx
+    y = wy
+    if (wrapped) result.waypoints.push({ x, y, kind: 'wrap' })
     const ch = cellAt(state, x, y)
 
     if (ch === CELL.WALL) {
       result.wallHit = idx(state, x, y)
-      result.waypoints.push({ x, y })
+      result.waypoints.push({ x, y, kind: 'hit' })
       break
     }
 
     if (ch === CELL.PAWN_1 || ch === CELL.PAWN_2) {
       result.pawnHit = idx(state, x, y)
-      result.waypoints.push({ x, y })
+      result.waypoints.push({ x, y, kind: 'hit' })
       break
     }
 
@@ -112,7 +119,7 @@ export function computeLaser(
 
       result.damage += rule.bounceDamage
       dir = deflect(rule, dir, ch)
-      result.waypoints.push({ x, y })
+      result.waypoints.push({ x, y, kind: 'mirror' })
     }
   }
 

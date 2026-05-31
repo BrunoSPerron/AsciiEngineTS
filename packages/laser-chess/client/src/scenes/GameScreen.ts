@@ -424,29 +424,20 @@ export class GameScreen implements BaseGameScene {
       const to = result.waypoints[wi + 1]
       const isLastSegment = wi === result.waypoints.length - 2
 
-      // Detect wrap: raw delta larger than half the board
-      const rawDx = to.x - from.x
-      const rawDy = to.y - from.y
-      const wraps = Math.abs(rawDx) > sizeX / 2 || Math.abs(rawDy) > sizeY / 2
-
-      // Step count from `from` to `to`, accounting for wrap
-      let steps: number
-      if (!wraps) {
-        steps = Math.abs(rawDx) + Math.abs(rawDy)
-      } else {
-        if (currentDir === 'right') steps = sizeX - 1 - from.x + to.x + 1
-        else if (currentDir === 'left') steps = from.x + (sizeX - 1 - to.x)
-        else if (currentDir === 'down') steps = sizeY - 1 - from.y + to.y + 1
-        else steps = from.y + (sizeY - 1 - to.y) // up
+      if (to.kind === 'wrap') {
+        currentSeg = newSegment(to.x, to.y, currentDir)
+        continue
       }
+
+      const steps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
 
       const [ddx, ddy] = DIR_DELTA[currentDir]
       let cx = from.x
       let cy = from.y
 
       for (let step = 0; step < steps; step++) {
-        cx = (((cx + ddx) % sizeX) + sizeX) % sizeX
-        cy = (((cy + ddy) % sizeY) + sizeY) % sizeY
+        cx += ddx
+        cy += ddy
 
         const isLastStep = step === steps - 1
 
