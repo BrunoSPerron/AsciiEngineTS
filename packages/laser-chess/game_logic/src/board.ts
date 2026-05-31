@@ -71,21 +71,6 @@ export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board'
 // Pawn helpers
 // ---------------------------------------------------------------------------
 
-/*export function pawnCell(player: 1 | 2): CellChar {
-  return player === 1 ? CELL.PAWN_1 : CELL.PAWN_2
-}
-
-export function getPawnIndex(state: GameState, player: 1 | 2): number | null {
-  const marker = pawnCell(player)
-  const i = state.board.indexOf(marker)
-  return i === -1 ? null : i
-}
-
-export function getPawn(state: GameState, player: 1 | 2): Pawn | null {
-  const i = getPawnIndex(state, player)
-  return i === null ? null : (state.pawns[i] ?? null)
-}*/
-
 export function movePawn(
   _rule: GameRule,
   state: GameState,
@@ -112,9 +97,13 @@ export function movePawn(
 // ---------------------------------------------------------------------------
 
 export function wrapCoord(state: GameState, x: number, y: number): [number, number] {
-  const sizeX = state.sizeX
-  const sizeY = state.sizeY
-  return [((x % sizeX) + sizeX) % sizeX, ((y % sizeY) + sizeY) % sizeY]
+  if (x < 0) x = state.sizeX
+  else if (x > state.sizeX) x = -1
+
+  if (y < 0) y = state.sizeY
+  else if (y > state.sizeY) y = -1
+
+  return [x, y]
 }
 
 // ---------------------------------------------------------------------------

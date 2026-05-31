@@ -133,7 +133,7 @@ function syncStateToChunk(state: GameState, board: Board): void {
           break
         case CELL.PAWN_1:
         case CELL.PAWN_2:
-          // Pawns are rendered as entities; keep background empty
+          // Pawns are rendered as entities;
           tile.glyph = ' '
           tile.solid = false
           tile.style = undefined
@@ -152,7 +152,7 @@ function syncStateToChunk(state: GameState, board: Board): void {
 // GameScreen
 // ---------------------------------------------------------------------------
 
-const GAME_RULE: GameRule = { bounceDamage: 1, kingHP: 5, kingMoveType: 'king' as const }
+const GAME_RULE: GameRule = { bounceDamage: 1, kingHP: 5, kingMoveType: 'king' }
 
 export class GameScreen implements BaseGameScene {
   sceneManager: SceneManager
@@ -170,7 +170,6 @@ export class GameScreen implements BaseGameScene {
     this._engine = sceneManager.engine
 
     this._state = buildGameState(board)
-    // Sync chunk so tiles match logic state from the start
     syncStateToChunk(this._state, this.board)
 
     this._startPhase()
@@ -242,7 +241,6 @@ export class GameScreen implements BaseGameScene {
           toY: y,
         })
 
-        // Move the entity pawn visually
         king.pos.setXY(x, y)
         this._engine.renderer.renderActor(king)
 
@@ -290,7 +288,6 @@ export class GameScreen implements BaseGameScene {
         const glyph = cursor.glyph as '/' | '\\'
         this._state = this._logic.applyAction(this._state, { type: 'mirror', x, y, glyph })
 
-        // Update chunk tile immediately
         const tile = this.board.tile(x, y)
         tile.glyph = glyph
         tile.solid = true
@@ -299,7 +296,7 @@ export class GameScreen implements BaseGameScene {
         this._engine.world.extractEntity(cursor.uid)
         for (const fn of unlisteners) fn()
 
-        queueMicrotask(() => this._startPhase())
+        queueMicrotask(() => this._startPhase()) // avoid current click propagation
       }),
     )
   }
@@ -372,9 +369,9 @@ export class GameScreen implements BaseGameScene {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Laser animation — convert game_logic LaserResult into animation segments
-  // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------
+  // Laser animation - convert LaserResult from the game_logic into animation segments
+  // ---------------------------------------------------------------------------------
 
   private async _animateLaser(result: LaserResult, startDir: Direction): Promise<void> {
     const animSeqs: LaserAnimSeqInfo[] = []
@@ -389,8 +386,6 @@ export class GameScreen implements BaseGameScene {
     const cornerGlyph = (incoming: Direction, outgoing: Direction): string =>
       maskToGlyph(invertDirectionMask(DIR_TO_MASK[incoming]) | DIR_TO_MASK[outgoing])
 
-    // Mirrors the legacy _addGlyph: appends or prepends to segment,
-    // shifts origin for UP/LEFT directions.
     const addGlyph = (seg: LaserAnimSeqInfo, glyph: string, dir: Direction): void => {
       const isVertical = dir === 'up' || dir === 'down'
       const prepend = dir === 'up' || dir === 'left'
@@ -406,8 +401,8 @@ export class GameScreen implements BaseGameScene {
     }
 
     // Creates a new segment anchored at (x, y) in the given direction.
-    // Note: x,y is the shooter or mirror position — the anchor, not the first glyph cell.
-    // _addGlyph will shift the origin as glyphs are added for UP/LEFT.
+    // Note: x,y is the shooter or mirror position, the anchor, not the first glyph cell.
+    // _addGlyph shift the origin as glyphs are added for UP/LEFT.
     const newSegment = (x: number, y: number, dir: Direction): LaserAnimSeqInfo => {
       const seg: LaserAnimSeqInfo = {
         line: document.createElement('pre'),

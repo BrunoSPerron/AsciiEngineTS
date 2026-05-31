@@ -114,5 +114,5 @@ export async function runLaserSequence(
 ): Promise<void> {
   placeLaserLines(container, animSeqInfos, tile)
   await revealLaserLines(animSeqInfos)
-  hideLaserLines(animSeqInfos)
+  void hideLaserLines(animSeqInfos)
 }

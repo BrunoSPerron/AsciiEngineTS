@@ -88,7 +88,9 @@ export function computeLaser(
 
   while (steps++ < maxSteps) {
     const [dx, dy] = DIR_DELTA[dir]
-    ;[x, y] = wrapCoord(state, x + dx, y + dy)
+    x += dx
+    y += dy
+    ;[x, y] = wrapCoord(state, x, y)
 
     const ch = cellAt(state, x, y)
 
