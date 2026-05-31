@@ -24,7 +24,7 @@ export function getLegalMoves(state: GameState): MoveAction[] {
   const pawnIdx = getPawnIndex(state, state.currentPlayer)
   if (pawnIdx === null) return []
 
-  const px = pawnIdx % state.sizeY
+  const px = pawnIdx % state.sizeX
   const py = Math.floor(pawnIdx / state.sizeX)
 
   const moves: MoveAction[] = []

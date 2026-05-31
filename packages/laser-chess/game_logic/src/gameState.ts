@@ -34,9 +34,9 @@ export type Pawn = {
 export type Phase = 'move' | 'mirror' | 'shoot'
 
 export type GameState = {
-  /** Flat char array, length = size * size. Index via y * size + x. */
+  /** Flat char array, length = size * size. Index via y * sizeX + x. */
   board: string[]
-  /** Rich pawn data keyed by board index (y * size + x). */
+  /** Rich pawn data keyed by board index (y * sizeX + x). */
   pawns: Record<number, Pawn>
   sizeX: number
   sizeY: number
