@@ -38,7 +38,8 @@ export type GameState = {
   board: string[]
   /** Rich pawn data keyed by board index (y * size + x). */
   pawns: Record<number, Pawn>
-  size: number
+  sizeX: number
+  sizeY: number
   currentPlayer: 1 | 2
   phase: Phase
 }
@@ -49,6 +50,6 @@ export type GameState = {
 
 export type MoveAction = { type: 'move'; toX: number; toY: number }
 export type MirrorAction = { type: 'mirror'; x: number; y: number; glyph: '/' | '\\' }
-export type ShootAction = { type: 'shoot'; dx: number; dy: number }
+export type ShootAction = { type: 'shoot'; x: number; y: number; dx: number; dy: number }
 
 export type Action = MoveAction | MirrorAction | ShootAction

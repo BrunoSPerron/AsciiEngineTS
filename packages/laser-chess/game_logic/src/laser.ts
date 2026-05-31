@@ -64,7 +64,8 @@ export function isMirror(ch: string): boolean {
 
 export function computeLaser(
   state: GameState,
-  shooterPlayer: 1 | 2,
+  originX: number,
+  originY: number,
   direction: Direction,
   rule: GameRule,
 ): LaserResult {
@@ -76,17 +77,13 @@ export function computeLaser(
     damage: 1,
   }
 
-  const shooterMarker = shooterPlayer === 1 ? CELL.PAWN_1 : CELL.PAWN_2
-  const shooterIdx = state.board.indexOf(shooterMarker)
-  if (shooterIdx === -1) return result
-
-  let x = shooterIdx % state.size
-  let y = Math.floor(shooterIdx / state.size)
   let dir = direction
+  let x = originX
+  let y = originY
 
   result.waypoints.push({ x, y })
 
-  const maxSteps = state.size * state.size
+  const maxSteps = state.sizeX * state.sizeY
   let steps = 0
 
   while (steps++ < maxSteps) {

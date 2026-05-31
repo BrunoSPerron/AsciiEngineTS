@@ -1,7 +1,7 @@
 import { type GameRule } from './GameRules'
 import { CELL } from './GameState'
 import type { Action, GameState, MirrorAction, MoveAction, Phase, ShootAction } from './GameState'
-import { cellAt, getPawnIndex, idx, isSolid, movePawn, setCell } from './board'
+import { cellAt, getPawnIndex, movePawn, setCell } from './board'
 import { computeLaser, applyLaserResult } from './laser'
 import type { Direction } from './laser'
 
@@ -24,14 +24,14 @@ export function getLegalMoves(state: GameState): MoveAction[] {
   const pawnIdx = getPawnIndex(state, state.currentPlayer)
   if (pawnIdx === null) return []
 
-  const px = pawnIdx % state.size
-  const py = Math.floor(pawnIdx / state.size)
+  const px = pawnIdx % state.sizeY
+  const py = Math.floor(pawnIdx / state.sizeX)
 
   const moves: MoveAction[] = []
   for (const [dx, dy] of KING_DELTAS) {
     const tx = px + dx
     const ty = py + dy
-    if (tx < 0 || ty < 0 || tx >= state.size || ty >= state.size) continue
+    if (tx < 0 || ty < 0 || tx >= state.sizeX || ty >= state.sizeY) continue
     if (cellAt(state, tx, ty) === CELL.EMPTY) {
       moves.push({ type: 'move', toX: tx, toY: ty })
     }
@@ -45,12 +45,12 @@ export function getLegalMoves(state: GameState): MoveAction[] {
 
 export type ShootDirection = { dx: 0 | 1 | -1; dy: 0 | 1 | -1 }
 
-export function getLegalShots(): ShootAction[] {
+export function getLegalShots(x: number, y: number): ShootAction[] {
   return [
-    { type: 'shoot', dx: 0, dy: -1 },
-    { type: 'shoot', dx: 1, dy: 0 },
-    { type: 'shoot', dx: 0, dy: 1 },
-    { type: 'shoot', dx: -1, dy: 0 },
+    { type: 'shoot', x, y, dx: 0, dy: -1 },
+    { type: 'shoot', x, y, dx: 1, dy: 0 },
+    { type: 'shoot', x, y, dx: 0, dy: 1 },
+    { type: 'shoot', x, y, dx: -1, dy: 0 },
   ]
 }
 
@@ -59,7 +59,7 @@ export function getLegalShots(): ShootAction[] {
 // ---------------------------------------------------------------------------
 
 export function canPlaceMirror(state: GameState, x: number, y: number): boolean {
-  if (x < 0 || y < 0 || x >= state.size || y >= state.size) return false
+  if (x < 0 || y < 0 || x >= state.sizeX || y >= state.sizeY) return false
   return cellAt(state, x, y) === CELL.EMPTY
 }
 
@@ -78,7 +78,7 @@ function nextPlayer(player: 1 | 2): 1 | 2 {
 }
 
 // ---------------------------------------------------------------------------
-// applyAction — returns new state (immutable), throws on illegal action
+// applyAction, throws on illegal action
 // ---------------------------------------------------------------------------
 
 export function applyAction(state: GameState, action: Action, rule: GameRule): GameState {
@@ -86,7 +86,8 @@ export function applyAction(state: GameState, action: Action, rule: GameRule): G
   const next: GameState = {
     board: [...state.board],
     pawns: Object.fromEntries(Object.entries(state.pawns).map(([k, v]) => [k, { ...v }])),
-    size: state.size,
+    sizeX: state.sizeX,
+    sizeY: state.sizeY,
     currentPlayer: state.currentPlayer,
     phase: state.phase,
   }
@@ -133,10 +134,10 @@ function applyShoot(state: GameState, action: ShootAction, rule: GameRule): Game
   if (action.dx !== 0 && action.dy !== 0) throw new Error('Diagonal shooting not supported')
 
   const dir = shootDir(action.dx, action.dy)
-  const result = computeLaser(state, state.currentPlayer, dir, rule)
+  const result = computeLaser(state, action.x, action.y, dir, rule)
   applyLaserResult(state, result)
 
-  // Don't advance the turn if the game is over — let the caller handle it
+  // Don't advance the turn if the game is over, let the caller handle it
   if (checkVictory(state) !== null) return state
 
   state.phase = nextPhase(state.phase)

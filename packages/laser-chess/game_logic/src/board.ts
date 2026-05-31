@@ -6,7 +6,7 @@ import { CELL, type CellChar, type GameState, type Pawn } from './GameState'
 // ---------------------------------------------------------------------------
 
 export function idx(state: GameState, x: number, y: number): number {
-  return y * state.size + x
+  return y * state.sizeX + x
 }
 
 export function cellAt(state: GameState, x: number, y: number): CellChar {
@@ -93,7 +93,7 @@ export function movePawn(state: GameState, player: 1 | 2, toX: number, toY: numb
   const pawn = state.pawns[fromIdx]
   const toIdx = idx(state, toX, toY)
 
-  setCell(state, fromIdx % state.size, Math.floor(fromIdx / state.size), CELL.EMPTY)
+  setCell(state, fromIdx % state.sizeY, Math.floor(fromIdx / state.sizeX), CELL.EMPTY)
   delete state.pawns[fromIdx]
 
   setCell(state, toX, toY, pawnCell(player))
@@ -105,8 +105,9 @@ export function movePawn(state: GameState, player: 1 | 2, toX: number, toY: numb
 // ---------------------------------------------------------------------------
 
 export function wrapCoord(state: GameState, x: number, y: number): [number, number] {
-  const s = state.size
-  return [((x % s) + s) % s, ((y % s) + s) % s]
+  const sizeX = state.sizeX
+  const sizeY = state.sizeX
+  return [((x % sizeX) + sizeX) % sizeX, ((y % sizeY) + sizeY) % sizeY]
 }
 
 // ---------------------------------------------------------------------------

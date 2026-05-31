@@ -49,16 +49,17 @@ const DIR_TO_MASK: Record<Direction, number> = {
  * tile glyphs and then inject pawn markers at the entity positions.
  */
 function buildGameState(board: Board): GameState {
-  const size = board.size.x // 31×31
+  const sizeX = board.size.x
+  const sizeY = board.size.y
 
   // Build the flat board array from tiles (walls, mirrors, spaces)
-  const boardArr: string[] = new Array(size * size).fill(CELL.EMPTY)
+  const boardArr: string[] = new Array(sizeX * sizeY).fill(CELL.EMPTY)
   const pawns: GameState['pawns'] = {}
 
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
+  for (let y = 0; y < sizeY; y++) {
+    for (let x = 0; x < sizeX; x++) {
       const tile = board.tile(x, y)
-      const i = y * size + x
+      const i = y * sizeX + x
       switch (tile.glyph) {
         case '#':
           boardArr[i] = CELL.WALL
@@ -77,14 +78,14 @@ function buildGameState(board: Board): GameState {
 
   // Inject player one pawns
   for (const pawn of board.playerOneUnits) {
-    const i = pawn.pos.y * size + pawn.pos.x
+    const i = pawn.pos.y * sizeX + pawn.pos.x
     boardArr[i] = CELL.PAWN_1
     pawns[i] = { player: 1, hp: 5, moveType: 'king' }
   }
 
   // Inject player two pawns
   for (const pawn of board.playerTwoUnits) {
-    const i = pawn.pos.y * size + pawn.pos.x
+    const i = pawn.pos.y * sizeX + pawn.pos.x
     boardArr[i] = CELL.PAWN_2
     pawns[i] = { player: 2, hp: 5, moveType: 'king' }
   }
@@ -92,7 +93,8 @@ function buildGameState(board: Board): GameState {
   return {
     board: boardArr,
     pawns,
-    size,
+    sizeX,
+    sizeY,
     currentPlayer: 1,
     phase: 'move',
   }
@@ -100,10 +102,11 @@ function buildGameState(board: Board): GameState {
 
 /** Sync a GameState back into the Board's chunk tiles so the renderer stays accurate. */
 function syncStateToChunk(state: GameState, board: Board): void {
-  const size = state.size
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const ch = state.board[y * size + x]
+  const sizeX = state.sizeX
+  const sizeY = state.sizeY
+  for (let y = 0; y < sizeY; y++) {
+    for (let x = 0; x < sizeX; x++) {
+      const ch = state.board[y * sizeX + x]
       const tile = board.tile(x, y)
 
       switch (ch) {
@@ -303,7 +306,7 @@ export class GameScreen implements BaseGameScene {
 
   private _shootPhase(): void {
     const king = this._getActiveKing()
-    const legalShots = getLegalShots()
+    const legalShots = getLegalShots(king.pos.x, king.pos.y)
     const shotEntities: Entity[] = []
 
     for (const shot of legalShots) {
@@ -352,23 +355,14 @@ export class GameScreen implements BaseGameScene {
   ): Promise<void> {
     // Compute laser path before mutating state so we can animate it
     const dir = this._dxDyToDir(dx, dy)
-    const laserResult = computeLaser(this._state, this._state.currentPlayer, dir, GAME_RULE)
-
-    // Apply the shoot action to the logic state
-    this._state = applyAction(this._state, { type: 'shoot', dx, dy }, GAME_RULE)
-
-    // Animate the laser using the waypoints from the logic
-    await this._animateLaser(laserResult, dir)
-
-    // Sync visual chunk state (mirrors may have flipped, walls may have been hit)
-    syncStateToChunk(this._state, this.board)
-
-    // Sync pawn health visually (entities are already at correct positions)
-    this._syncPawnHealth()
-
-    // Clean up shot arrows
+    const x = shooter.pos.x
+    const y = shooter.pos.y
+    const laserResult = computeLaser(this._state, x, y, dir, GAME_RULE)
+    this._state = applyAction(this._state, { type: 'shoot', x, y, dx, dy }, GAME_RULE)
     for (const e of shotEntities) this._engine.world.extractEntity(e.uid)
-
+    await this._animateLaser(laserResult, dir)
+    syncStateToChunk(this._state, this.board)
+    this._syncPawnHealth()
     if (!this._checkAndShowVictory()) {
       this._startPhase()
     }
@@ -380,7 +374,8 @@ export class GameScreen implements BaseGameScene {
 
   private async _animateLaser(result: LaserResult, startDir: Direction): Promise<void> {
     const animSeqs: LaserAnimSeqInfo[] = []
-    const size = this._state.size
+    const sizeX = this._state.sizeX
+    const sizeY = this._state.sizeY
 
     const straightGlyph = (dir: Direction): string =>
       dir === 'left' || dir === 'right'
@@ -433,17 +428,17 @@ export class GameScreen implements BaseGameScene {
       // Detect wrap: raw delta larger than half the board
       const rawDx = to.x - from.x
       const rawDy = to.y - from.y
-      const wraps = Math.abs(rawDx) > size / 2 || Math.abs(rawDy) > size / 2
+      const wraps = Math.abs(rawDx) > sizeX / 2 || Math.abs(rawDy) > sizeY / 2
 
       // Step count from `from` to `to`, accounting for wrap
       let steps: number
       if (!wraps) {
         steps = Math.abs(rawDx) + Math.abs(rawDy)
       } else {
-        if (currentDir === 'right') steps = size - 1 - from.x + to.x + 1
-        else if (currentDir === 'left') steps = from.x + (size - 1 - to.x)
-        else if (currentDir === 'down') steps = size - 1 - from.y + to.y + 1
-        else steps = from.y + (size - 1 - to.y) // up
+        if (currentDir === 'right') steps = sizeX - 1 - from.x + to.x + 1
+        else if (currentDir === 'left') steps = from.x + (sizeX - 1 - to.x)
+        else if (currentDir === 'down') steps = sizeY - 1 - from.y + to.y + 1
+        else steps = from.y + (sizeY - 1 - to.y) // up
       }
 
       const [ddx, ddy] = DIR_DELTA[currentDir]
@@ -451,19 +446,15 @@ export class GameScreen implements BaseGameScene {
       let cy = from.y
 
       for (let step = 0; step < steps; step++) {
-        cx = (((cx + ddx) % size) + size) % size
-        cy = (((cy + ddy) % size) + size) % size
+        cx = (((cx + ddx) % sizeX) + sizeX) % sizeX
+        cy = (((cy + ddy) % sizeY) + sizeY) % sizeY
 
         const isLastStep = step === steps - 1
 
-        // Detect wrap crossing mid-segment: start a new segment at the wrapped cell
-        const crossedX = ddx !== 0 && ((ddx > 0 && cx === 0) || (ddx < 0 && cx === size - 1))
-        const crossedY = ddy !== 0 && ((ddy > 0 && cy === 0) || (ddy < 0 && cy === size - 1))
-
-        if (crossedX || crossedY) {
-          // Start fresh segment at the wrapped position, same direction
-          currentSeg = newSegment(cx, cy, currentDir)
-        }
+        // Detect wrap crossing mid-segment
+        const crossedX = ddx !== 0 && ((ddx > 0 && cx === 0) || (ddx < 0 && cx === sizeX - 1))
+        const crossedY = ddy !== 0 && ((ddy > 0 && cy === 0) || (ddy < 0 && cy === sizeY - 1))
+        if (crossedX || crossedY) currentSeg = newSegment(cx, cy, currentDir)
 
         if (isLastStep && !isLastSegment) {
           // This is the mirror cell:
@@ -491,13 +482,14 @@ export class GameScreen implements BaseGameScene {
   }
 
   private _waypointDir(from: { x: number; y: number }, to: { x: number; y: number }): Direction {
-    const size = this._state.size
+    const sizeX = this._state.sizeX
+    const sizeY = this._state.sizeX
     const rawDx = to.x - from.x
     const rawDy = to.y - from.y
-    const wx = ((rawDx % size) + size) % size
-    const wy = ((rawDy % size) + size) % size
-    const ndx = wx > size / 2 ? wx - size : wx
-    const ndy = wy > size / 2 ? wy - size : wy
+    const wx = ((rawDx % sizeX) + sizeX) % sizeX
+    const wy = ((rawDy % sizeY) + sizeY) % sizeY
+    const ndx = wx > sizeX / 2 ? wx - sizeX : wx
+    const ndy = wy > sizeY / 2 ? wy - sizeY : wy
     if (ndx > 0) return 'right'
     if (ndx < 0) return 'left'
     if (ndy > 0) return 'down'
