@@ -466,7 +466,6 @@ export class GameScreen implements BaseGameScene {
           currentDir = nextDir
           currentSeg = newSegment(cx, cy, currentDir)
         } else {
-          // Normal empty cell — straight glyph
           addGlyph(currentSeg, straightGlyph(currentDir), currentDir)
         }
       }

@@ -109,25 +109,4 @@ export class Game {
 
     setTimeout(() => remove(), 5000)
   }
-
-  private _testZones() {
-    const cm = this.engine.contextManager
-
-    // A groupless zone never cycles out, like the world view
-    cm.registerZone('game_world')
-
-    // Two sidebar panels that cycle together
-    cm.registerZone('panel_a', { group: 'sidebar', parent: 'game_world' })
-    cm.registerZone('panel_b', { group: 'sidebar', parent: 'game_world' })
-
-    // A form inside panel_b with two fields
-    cm.registerZone('field_name', { group: 'form', parent: 'panel_b' })
-    cm.registerZone('field_email', { group: 'form', parent: 'panel_b' })
-
-    // Log active context on every action so you can see focus moving
-    this.engine.actionManager.onActionKeyDown((action) => {
-      /* eslint-disable-next-line no-console */
-      console.log(`[ctx] action="${action}" active="${this.engine.contextManager.active}"`)
-    })
-  }
 }

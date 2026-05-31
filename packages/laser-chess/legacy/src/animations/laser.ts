@@ -54,7 +54,6 @@ export function placeLaserLines(
 
     el.style.left = `${(info.x + offset) * tile.w}px`
     el.style.top = `${info.y * tile.h}px`
-    console.log(info.x + ' - ' + info.y)
 
     if (info.direction === MASK.LEFT || info.direction === MASK.RIGHT) {
       el.style.width = `${info.length * tile.w}px`

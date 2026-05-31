@@ -241,8 +241,7 @@ export class GameScreen implements BaseGameScene {
     const directionY = directionPosition.y - shooter.pos.y
 
     if (directionX !== 0 && directionY !== 0) {
-      console.log('ERROR: Diagonal shooting is not implemented')
-      return
+      throw Error('ERROR: Diagonal shooting is not implemented')
     }
 
     let currentDirection: number = 0
