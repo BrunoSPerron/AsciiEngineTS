@@ -481,7 +481,7 @@ export class GameScreen implements BaseGameScene {
 
   private _waypointDir(from: { x: number; y: number }, to: { x: number; y: number }): Direction {
     const sizeX = this._state.sizeX
-    const sizeY = this._state.sizeX
+    const sizeY = this._state.sizeY
     const rawDx = to.x - from.x
     const rawDy = to.y - from.y
     const wx = ((rawDx % sizeX) + sizeX) % sizeX

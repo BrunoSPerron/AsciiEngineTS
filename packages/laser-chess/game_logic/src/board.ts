@@ -97,11 +97,11 @@ export function movePawn(
 // ---------------------------------------------------------------------------
 
 export function wrapCoord(state: GameState, x: number, y: number): [number, number] {
-  if (x < 0) x = state.sizeX
-  else if (x > state.sizeX) x = -1
+  if (x < 0) x = state.sizeX - 1
+  else if (x >= state.sizeX) x = 0
 
-  if (y < 0) y = state.sizeY
-  else if (y > state.sizeY) y = -1
+  if (y < 0) y = state.sizeY - 1
+  else if (y >= state.sizeY) y = 0
 
   return [x, y]
 }

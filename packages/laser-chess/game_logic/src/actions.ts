@@ -27,7 +27,6 @@ export function getLegalMoves(
   y: number,
 ): MoveAction[] {
   const pawnIdx = idx(state, x, y)
-  if (pawnIdx === null) return []
 
   const px = pawnIdx % state.sizeX
   const py = Math.floor(pawnIdx / state.sizeX)
