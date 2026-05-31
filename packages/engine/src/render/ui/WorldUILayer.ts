@@ -2,7 +2,8 @@ import type { AsciiEngine } from '../../core/Engine'
 import type { Camera } from '../Camera'
 import type { Entity } from '../../world/entities/Entity'
 import type { TileMetricsData } from '../tileMetrics'
-import { UILayoutElement, type UISpatialConfig } from './layout_elements/UILayoutElement'
+import type { UILayoutElement} from './layout_elements/UILayoutElement';
+import { type UISpatialConfig } from './layout_elements/UILayoutElement'
 
 export type PositionProvider = (now: number) => [number, number]
 

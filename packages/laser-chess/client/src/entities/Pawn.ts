@@ -1,4 +1,5 @@
-import { Entity, GridVector } from 'ascii-game-engine'
+import type { GridVector } from 'ascii-game-engine';
+import { Entity } from 'ascii-game-engine'
 
 export const PAWN_TYPE = {
   KING: 0,

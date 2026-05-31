@@ -1,4 +1,5 @@
-import { AsciiEngine, CHUNK_SIZE, GridVector, type Chunk, type Tile } from 'ascii-game-engine'
+import type { AsciiEngine} from 'ascii-game-engine';
+import { CHUNK_SIZE, GridVector, type Chunk, type Tile } from 'ascii-game-engine'
 import { MOVE_TYPE, Pawn, PAWN_TYPE } from './entities/Pawn'
 
 export class Board {
@@ -31,8 +32,8 @@ export class Board {
    *  '\', '/' = Fixed mirror
    */
   private _prepareForGame() {
-    for (var x = 0; x < 31; x++) {
-      for (var y = 0; y < 31; y++) {
+    for (let x = 0; x < 31; x++) {
+      for (let y = 0; y < 31; y++) {
         const tile = this._chunk.get(x, y)
         switch (tile.glyph) {
           case 'K':

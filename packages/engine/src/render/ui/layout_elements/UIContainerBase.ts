@@ -132,7 +132,7 @@ export abstract class UIContainerBase extends UILayoutElement {
     // TODO replace this ugly hack
     const childId = this.id * 1000 + this._children.findIndex((c) => c === element)
 
-    element._mount(childId, config, this.tileMetrics!, this.engine)
+    element._mount(childId, config, this.tileMetrics, this.engine)
     this.el.appendChild(element.el)
     element.loaded()
   }

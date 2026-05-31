@@ -34,7 +34,7 @@ export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board'
   for (const line of lines) {
     if (line.length > size) size = line.length
   }
-  const board: string[] = new Array(size * size).fill(CELL.EMPTY)
+  const board: string[] = new Array<string>(size * size).fill(CELL.EMPTY)
   const pawns: Record<number, Pawn> = {}
   for (let y = 0; y < size; y++) {
     const line = (lines[y] ?? '').replace('\r', '')
@@ -71,7 +71,7 @@ export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board'
 // Pawn helpers
 // ---------------------------------------------------------------------------
 
-export function pawnCell(player: 1 | 2): CellChar {
+/*export function pawnCell(player: 1 | 2): CellChar {
   return player === 1 ? CELL.PAWN_1 : CELL.PAWN_2
 }
 
@@ -84,19 +84,26 @@ export function getPawnIndex(state: GameState, player: 1 | 2): number | null {
 export function getPawn(state: GameState, player: 1 | 2): Pawn | null {
   const i = getPawnIndex(state, player)
   return i === null ? null : (state.pawns[i] ?? null)
-}
+}*/
 
-export function movePawn(state: GameState, player: 1 | 2, toX: number, toY: number): void {
-  const fromIdx = getPawnIndex(state, player)
+export function movePawn(
+  _rule: GameRule,
+  state: GameState,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+): void {
+  const fromIdx = idx(state, fromX, fromY)
   if (fromIdx === null) return
 
   const pawn = state.pawns[fromIdx]
   const toIdx = idx(state, toX, toY)
 
-  setCell(state, fromIdx % state.sizeX, Math.floor(fromIdx / state.sizeX), CELL.EMPTY)
-  delete state.pawns[fromIdx]
+  setCell(state, fromX, fromY, CELL.EMPTY)
+  setCell(state, toX, toY, pawn.player === 1 ? CELL.PAWN_1 : CELL.PAWN_2)
 
-  setCell(state, toX, toY, pawnCell(player))
+  delete state.pawns[fromIdx]
   state.pawns[toIdx] = pawn
 }
 

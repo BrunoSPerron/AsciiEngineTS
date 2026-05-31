@@ -47,12 +47,12 @@ const DEFLECT_BACKSLASH: Record<Direction, Direction> = {
   down: 'right',
 }
 
-export function deflect(dir: Direction, ch: string): Direction {
+export function deflect(_rule: GameRule, dir: Direction, ch: string): Direction {
   const map = ch === CELL.MIRROR || ch === CELL.FIXED ? DEFLECT_SLASH : DEFLECT_BACKSLASH
   return map[dir]
 }
 
-export function isMirror(ch: string): boolean {
+export function isMirror(_rule: GameRule, ch: string): boolean {
   return (
     ch === CELL.MIRROR || ch === CELL.MIRROR_FLIP || ch === CELL.FIXED || ch === CELL.FIXED_FLIP
   )
@@ -63,11 +63,11 @@ export function isMirror(ch: string): boolean {
 // ---------------------------------------------------------------------------
 
 export function computeLaser(
+  rule: GameRule,
   state: GameState,
   originX: number,
   originY: number,
   direction: Direction,
-  rule: GameRule,
 ): LaserResult {
   const result: LaserResult = {
     waypoints: [],
@@ -104,12 +104,12 @@ export function computeLaser(
       break
     }
 
-    if (isMirror(ch)) {
+    if (isMirror(rule, ch)) {
       const isFixed = ch === CELL.FIXED || ch === CELL.FIXED_FLIP
       if (!isFixed) result.mirrorsFlipped.push(idx(state, x, y))
 
       result.damage += rule.bounceDamage
-      dir = deflect(dir, ch)
+      dir = deflect(rule, dir, ch)
       result.waypoints.push({ x, y })
     }
   }
@@ -121,7 +121,7 @@ export function computeLaser(
 // Apply laser result to state
 // ---------------------------------------------------------------------------
 
-export function applyLaserResult(state: GameState, result: LaserResult): void {
+export function applyLaserResult(_rule: GameRule, state: GameState, result: LaserResult): void {
   for (const i of result.mirrorsFlipped) {
     state.board[i] = state.board[i] === CELL.MIRROR ? CELL.MIRROR_FLIP : CELL.MIRROR
   }

@@ -1,4 +1,5 @@
-import { UILayout, UISelectElement, UITextBox } from 'ascii-game-engine'
+import type { UILayout} from 'ascii-game-engine';
+import { UISelectElement, UITextBox } from 'ascii-game-engine'
 import type { SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 

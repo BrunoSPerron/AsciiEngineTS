@@ -78,11 +78,10 @@ export async function revealLaserLines(animSeqInfos: LaserAnimSeqInfo[]): Promis
 
     const el = info.line
     const name = animationName(info.direction, 'reveal')
-    const prom = waitForAnimation(el)
     el.style.opacity = '1'
     el.style.animation = `${name} ${stepDuration}ms linear`
 
-    await prom
+    await waitForAnimation(el)
   }
 }
 

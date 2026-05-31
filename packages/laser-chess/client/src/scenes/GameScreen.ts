@@ -1,5 +1,5 @@
+import type { AsciiEngine } from 'ascii-game-engine'
 import {
-  AsciiEngine,
   Entity,
   GridVector,
   MASK,
@@ -9,24 +9,20 @@ import {
   UISelectElement,
 } from 'ascii-game-engine'
 import {
-  applyAction,
-  getLegalMoves,
-  getLegalShots,
-  canPlaceMirror,
-  checkVictory,
-  computeLaser,
-  CELL,
-  type GameState,
-  type Direction,
-  type LaserResult,
+  createGame,
   type GameRule,
   DIR_DELTA,
+  type Direction,
+  type GameState,
+  CELL,
+  type GameLogic,
+  type LaserResult,
 } from 'laser-chess-game-logic'
-import { Board } from '../Board'
+import type { Board } from '../Board'
 import type { SceneManager } from '../SceneManager'
 import type { BaseGameScene } from './BaseGameScene'
 import { MirrorCursor } from '../entities/MirrorCursor'
-import { Pawn } from '../entities/Pawn'
+import type { Pawn } from '../entities/Pawn'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 
 // ---------------------------------------------------------------------------
@@ -53,7 +49,7 @@ function buildGameState(board: Board): GameState {
   const sizeY = board.size.y
 
   // Build the flat board array from tiles (walls, mirrors, spaces)
-  const boardArr: string[] = new Array(sizeX * sizeY).fill(CELL.EMPTY)
+  const boardArr: string[] = new Array<string>(sizeX * sizeY).fill(CELL.EMPTY)
   const pawns: GameState['pawns'] = {}
 
   for (let y = 0; y < sizeY; y++) {
@@ -164,11 +160,14 @@ export class GameScreen implements BaseGameScene {
 
   private _engine: AsciiEngine
   private _state: GameState
+  private _logic: GameLogic
 
   constructor(sceneManager: SceneManager, board: Board) {
     this.sceneManager = sceneManager
-    this._engine = sceneManager.engine
     this.board = board
+
+    this._logic = createGame(GAME_RULE)
+    this._engine = sceneManager.engine
 
     this._state = buildGameState(board)
     // Sync chunk so tiles match logic state from the start
@@ -202,16 +201,15 @@ export class GameScreen implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _movePhase(): void {
-    const legalMoves = getLegalMoves(this._state)
-    const moveEntities: Entity[] = []
-
     const king = this._getActiveKing()
-    const kingPos = king.pos
+
+    const legalMoves = this._logic.getLegalMoves(this._state, king.pos.x, king.pos.y)
+    const moveEntities: Entity[] = []
 
     for (const move of legalMoves) {
       const rel = king
         .getMovementOptions()
-        .find((r) => kingPos.x + r.x === move.toX && kingPos.y + r.y === move.toY)
+        .find((r) => king.pos.x + r.x === move.toX && king.pos.y + r.y === move.toY)
       const glyph = rel?.glyph ?? '·'
       const entity = new Entity(glyph, new GridVector(move.toX, move.toY), 500_000)
       entity.addCss('arrow')
@@ -236,7 +234,13 @@ export class GameScreen implements BaseGameScene {
         const hit = moveEntities.find((e) => e.pos.x === x && e.pos.y === y)
         if (!hit) return
 
-        this._state = applyAction(this._state, { type: 'move', toX: x, toY: y }, GAME_RULE)
+        this._state = this._logic.applyAction(this._state, {
+          type: 'move',
+          fromX: king.pos.x,
+          fromY: king.pos.y,
+          toX: x,
+          toY: y,
+        })
 
         // Move the entity pawn visually
         king.pos.setXY(x, y)
@@ -281,10 +285,10 @@ export class GameScreen implements BaseGameScene {
         }
 
         if (button !== 0) return
-        if (!canPlaceMirror(this._state, x, y)) return
+        if (!this._logic.canPlaceMirror(this._state, x, y)) return
 
         const glyph = cursor.glyph as '/' | '\\'
-        this._state = applyAction(this._state, { type: 'mirror', x, y, glyph }, GAME_RULE)
+        this._state = this._logic.applyAction(this._state, { type: 'mirror', x, y, glyph })
 
         // Update chunk tile immediately
         const tile = this.board.tile(x, y)
@@ -306,7 +310,7 @@ export class GameScreen implements BaseGameScene {
 
   private _shootPhase(): void {
     const king = this._getActiveKing()
-    const legalShots = getLegalShots(king.pos.x, king.pos.y)
+    const legalShots = this._logic.getLegalShots(this._state, king.pos.x, king.pos.y)
     const shotEntities: Entity[] = []
 
     for (const shot of legalShots) {
@@ -357,8 +361,8 @@ export class GameScreen implements BaseGameScene {
     const dir = this._dxDyToDir(dx, dy)
     const x = shooter.pos.x
     const y = shooter.pos.y
-    const laserResult = computeLaser(this._state, x, y, dir, GAME_RULE)
-    this._state = applyAction(this._state, { type: 'shoot', x, y, dx, dy }, GAME_RULE)
+    const laserResult = this._logic.computeLaser(this._state, x, y, dir)
+    this._state = this._logic.applyAction(this._state, { type: 'shoot', x, y, dx, dy })
     for (const e of shotEntities) this._engine.world.extractEntity(e.uid)
     await this._animateLaser(laserResult, dir)
     syncStateToChunk(this._state, this.board)
@@ -517,7 +521,7 @@ export class GameScreen implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _checkAndShowVictory(): boolean {
-    const result = checkVictory(this._state)
+    const result = this._logic.checkVictory(this._state)
     if (!result) return false
 
     const message = new UITextBox([`Player ${result.winner} wins!`], 'centered')

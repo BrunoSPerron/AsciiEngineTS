@@ -47,11 +47,10 @@ export class UITextBox extends UILayoutElement {
   }
 
   private _updateContent() {
-    console.log(`w: ${this.tileMetrics.w}, h: ${this.tileMetrics.h}`)
-    let longestStringLen = Math.max(...this.content.map((str) => str.length))
+    const longestStringLen = Math.max(...this.content.map((str) => str.length))
 
-    const height = this.content.length * this.tileMetrics!.h
-    const width = (longestStringLen * this.tileMetrics!.w) / 2
+    const height = this.content.length * this.tileMetrics.h
+    const width = (longestStringLen * this.tileMetrics.w) / 2
 
     this._contentContainer!.innerHTML = this._content.join('<br>')
     this._contentContainer!.style.height = `${height}px`
@@ -61,11 +60,11 @@ export class UITextBox extends UILayoutElement {
   resized(): void {
     const longestStringLen = Math.max(...this.content.map((str) => str.length))
 
-    const top = (this.h - this.content.length) * this.tileMetrics!.h
-    const left = (this.w - longestStringLen) * this.tileMetrics!.w
+    const top = (this.h - this.content.length) * this.tileMetrics.h
+    const left = (this.w - longestStringLen) * this.tileMetrics.w
 
-    if (this._contentContainer == null) return
-    this._contentContainer!.style.top = `${top}px`
-    this._contentContainer!.style.left = `${left}px`
+    if (this._contentContainer === null) return
+    this._contentContainer.style.top = `${top}px`
+    this._contentContainer.style.left = `${left}px`
   }
 }

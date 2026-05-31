@@ -48,7 +48,7 @@ export type GameState = {
 // Actions
 // ---------------------------------------------------------------------------
 
-export type MoveAction = { type: 'move'; toX: number; toY: number }
+export type MoveAction = { type: 'move'; fromX: number; fromY: number; toX: number; toY: number }
 export type MirrorAction = { type: 'mirror'; x: number; y: number; glyph: '/' | '\\' }
 export type ShootAction = { type: 'shoot'; x: number; y: number; dx: number; dy: number }
 

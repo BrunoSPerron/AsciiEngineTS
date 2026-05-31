@@ -19,16 +19,17 @@ export class SceneManager {
   }
 
   NavigateTo(screen: string, data: NavigationData | null = null) {
-    if (data == null) data = {}
+    if (data === null) data = {}
     this.currentScreen.unload()
     switch (screen) {
       case 'BoardConfig':
-        new BoardConfig(this)
+        this.currentScreen = new BoardConfig(this)
         break
-      case 'Game':
+      case 'Game': {
         const board = data.board ?? new Board(this.engine.world.getChunkXY(0, 0), this.engine)
-        new GameScreen(this, board)
+        this.currentScreen = new GameScreen(this, board)
         break
+      }
       case 'MainMenu':
       default:
         this.currentScreen = new MainMenu(this)

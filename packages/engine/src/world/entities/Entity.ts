@@ -20,7 +20,7 @@ export class Entity {
     return this.engine.renderer.actorEls.get(this.uid) ?? null
   }
 
-  get extraCss(): Set<String> {
+  get extraCss(): Set<string> {
     return this._extraCss
   }
 

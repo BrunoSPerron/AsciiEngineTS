@@ -1,4 +1,5 @@
-import { UILayout, UISelectElement, type Chunk } from 'ascii-game-engine'
+import type { UILayout } from 'ascii-game-engine'
+import { UISelectElement, type Chunk } from 'ascii-game-engine'
 import type { SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 import { Board } from '../Board'
@@ -37,11 +38,11 @@ export class BoardConfig extends BaseGameScene {
   }
 
   private _createCheckerPattern() {
-    for (var i = 0; i < 31; i++) {
-      for (var j = 0; j < 31; j++) {
+    for (let i = 0; i < 31; i++) {
+      for (let j = 0; j < 31; j++) {
         const tile = this.chunk.get(i, j)
         tile.glyph = ' '
-        if (((i % 2) + j) % 2 == 0) {
+        if (((i % 2) + j) % 2 === 0) {
           tile.style = 'odd'
         }
       }
@@ -86,7 +87,7 @@ export class BoardConfig extends BaseGameScene {
     const boardData = this.boardMap.get(name)
 
     if (!boardData) {
-      console.warn(`Board "${name}" not found`)
+      //TODO print in DOM `Board "${name}" not found`
       return
     }
 
