@@ -12,13 +12,10 @@ export type Direction = 'up' | 'right' | 'down' | 'left'
 export type LaserWaypoint = { x: number; y: number }
 
 export type LaserResult = {
-  /** Origin, each deflection point, and the final hit cell in order */
   waypoints: LaserWaypoint[]
-  /** Board index of the pawn hit, or null */
   pawnHit: number | null
-  /** Board indices of non-fixed mirrors hit, they flip on applyLaserResult */
   mirrorsFlipped: number[]
-  /** Damage to deal, increases by 1 per mirror bounce */
+  wallHit: number | null
   damage: number
 }
 
@@ -75,6 +72,7 @@ export function computeLaser(
     waypoints: [],
     pawnHit: null,
     mirrorsFlipped: [],
+    wallHit: null,
     damage: 1,
   }
 
@@ -98,6 +96,7 @@ export function computeLaser(
     const ch = cellAt(state, x, y)
 
     if (ch === CELL.WALL) {
+      result.wallHit = idx(state, x, y)
       result.waypoints.push({ x, y })
       break
     }
@@ -128,6 +127,10 @@ export function computeLaser(
 export function applyLaserResult(state: GameState, result: LaserResult): void {
   for (const i of result.mirrorsFlipped) {
     state.board[i] = state.board[i] === CELL.MIRROR ? CELL.MIRROR_FLIP : CELL.MIRROR
+  }
+
+  if (result.wallHit !== null) {
+    state.board[result.wallHit] = CELL.EMPTY
   }
 
   if (result.pawnHit !== null) {

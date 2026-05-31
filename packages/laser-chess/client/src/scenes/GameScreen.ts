@@ -20,6 +20,7 @@ import {
   type Direction,
   type LaserResult,
   type GameRule,
+  DIR_DELTA,
 } from 'laser-chess-game-logic'
 import { Board } from '../Board'
 import type { SceneManager } from '../SceneManager'
@@ -379,65 +380,105 @@ export class GameScreen implements BaseGameScene {
 
   private async _animateLaser(result: LaserResult, startDir: Direction): Promise<void> {
     const animSeqs: LaserAnimSeqInfo[] = []
+    const size = this._state.size
+
+    const straightGlyph = (dir: Direction): string =>
+      dir === 'left' || dir === 'right'
+        ? maskToGlyph(MASK.LEFT | MASK.RIGHT)
+        : maskToGlyph(MASK.TOP | MASK.BOTTOM)
+
+    const cornerGlyph = (incoming: Direction, outgoing: Direction): string =>
+      maskToGlyph(invertDirectionMask(DIR_TO_MASK[incoming]) | DIR_TO_MASK[outgoing])
+
+    // Mirrors the legacy _addGlyph: appends or prepends to segment,
+    // shifts origin for UP/LEFT directions.
+    const addGlyph = (seg: LaserAnimSeqInfo, glyph: string, dir: Direction): void => {
+      const isVertical = dir === 'up' || dir === 'down'
+      const prepend = dir === 'up' || dir === 'left'
+      const sep = isVertical && seg.length > 0 ? '\n' : ''
+
+      if (dir === 'up') seg.y -= 1
+      if (dir === 'left') seg.x -= 1
+
+      const existing = seg.line.textContent ?? ''
+      seg.line.textContent = prepend ? glyph + sep + existing : existing + sep + glyph
+
+      seg.length += 1
+    }
+
+    // Creates a new segment anchored at (x, y) in the given direction.
+    // Note: x,y is the shooter or mirror position — the anchor, not the first glyph cell.
+    // _addGlyph will shift the origin as glyphs are added for UP/LEFT.
+    const newSegment = (x: number, y: number, dir: Direction): LaserAnimSeqInfo => {
+      const seg: LaserAnimSeqInfo = {
+        line: document.createElement('pre'),
+        x,
+        y,
+        direction: DIR_TO_MASK[dir],
+        length: 0,
+      }
+      animSeqs.push(seg)
+      return seg
+    }
 
     let currentDir = startDir
+    // First segment anchored at shooter position, matching legacy behavior
+    let currentSeg = newSegment(result.waypoints[0].x, result.waypoints[0].y, currentDir)
 
-    for (let i = 0; i < result.waypoints.length - 1; i++) {
-      const from = result.waypoints[i]
-      const to = result.waypoints[i + 1]
+    for (let wi = 0; wi < result.waypoints.length - 1; wi++) {
+      const from = result.waypoints[wi]
+      const to = result.waypoints[wi + 1]
+      const isLastSegment = wi === result.waypoints.length - 2
 
-      // Detect direction change at a deflection point (i > 0)
-      const newDir = this._waypointDir(from, to)
+      // Detect wrap: raw delta larger than half the board
+      const rawDx = to.x - from.x
+      const rawDy = to.y - from.y
+      const wraps = Math.abs(rawDx) > size / 2 || Math.abs(rawDy) > size / 2
 
-      // Build the glyph run for this segment
-      const isHorizontal = newDir === 'left' || newDir === 'right'
-      const segLength = isHorizontal ? Math.abs(to.x - from.x) : Math.abs(to.y - from.y)
-
-      if (segLength === 0) continue
-
-      // Build the line element content
-      const line = document.createElement('pre')
-
-      if (i === 0) {
-        // First segment — no join glyph needed at origin
-        const segGlyph = isHorizontal
-          ? maskToGlyph(MASK.LEFT | MASK.RIGHT)
-          : maskToGlyph(MASK.TOP | MASK.BOTTOM)
-        line.textContent = isHorizontal
-          ? segGlyph.repeat(segLength)
-          : (segGlyph + '\n').repeat(segLength).trimEnd()
+      // Step count from `from` to `to`, accounting for wrap
+      let steps: number
+      if (!wraps) {
+        steps = Math.abs(rawDx) + Math.abs(rawDy)
       } else {
-        // Deflection — first char is the corner junction glyph
-        const incomingMask = DIR_TO_MASK[currentDir]
-        const outgoingMask = DIR_TO_MASK[newDir]
-        const cornerGlyph = maskToGlyph(invertDirectionMask(incomingMask) | outgoingMask)
-
-        const segGlyph = isHorizontal
-          ? maskToGlyph(MASK.LEFT | MASK.RIGHT)
-          : maskToGlyph(MASK.TOP | MASK.BOTTOM)
-        const bodyLength = segLength - 1
-        const body = isHorizontal
-          ? segGlyph.repeat(bodyLength)
-          : bodyLength > 0
-            ? '\n' + (segGlyph + '\n').repeat(bodyLength).trimEnd()
-            : ''
-
-        line.textContent = isHorizontal ? cornerGlyph + body : cornerGlyph + body
+        if (currentDir === 'right') steps = size - 1 - from.x + to.x + 1
+        else if (currentDir === 'left') steps = from.x + (size - 1 - to.x)
+        else if (currentDir === 'down') steps = size - 1 - from.y + to.y + 1
+        else steps = from.y + (size - 1 - to.y) // up
       }
 
-      // Segment start position for the animator
-      const startX = newDir === 'right' ? from.x + 1 : newDir === 'left' ? to.x : from.x
-      const startY = newDir === 'down' ? from.y + 1 : newDir === 'up' ? to.y : from.y
+      const [ddx, ddy] = DIR_DELTA[currentDir]
+      let cx = from.x
+      let cy = from.y
 
-      animSeqs.push({
-        line,
-        x: startX,
-        y: startY,
-        direction: DIR_TO_MASK[newDir],
-        length: segLength,
-      })
+      for (let step = 0; step < steps; step++) {
+        cx = (((cx + ddx) % size) + size) % size
+        cy = (((cy + ddy) % size) + size) % size
 
-      currentDir = newDir
+        const isLastStep = step === steps - 1
+
+        // Detect wrap crossing mid-segment: start a new segment at the wrapped cell
+        const crossedX = ddx !== 0 && ((ddx > 0 && cx === 0) || (ddx < 0 && cx === size - 1))
+        const crossedY = ddy !== 0 && ((ddy > 0 && cy === 0) || (ddy < 0 && cy === size - 1))
+
+        if (crossedX || crossedY) {
+          // Start fresh segment at the wrapped position, same direction
+          currentSeg = newSegment(cx, cy, currentDir)
+        }
+
+        if (isLastStep && !isLastSegment) {
+          // This is the mirror cell:
+          // 1. Add the corner glyph to the INCOMING segment
+          const nextDir = this._waypointDir(to, result.waypoints[wi + 2])
+          addGlyph(currentSeg, cornerGlyph(currentDir, nextDir), currentDir)
+
+          // 2. Start new outgoing segment anchored at the mirror cell
+          currentDir = nextDir
+          currentSeg = newSegment(cx, cy, currentDir)
+        } else {
+          // Normal empty cell — straight glyph
+          addGlyph(currentSeg, straightGlyph(currentDir), currentDir)
+        }
+      }
     }
 
     if (animSeqs.length > 0) {
@@ -449,14 +490,12 @@ export class GameScreen implements BaseGameScene {
     }
   }
 
-  /** Infer travel direction from two adjacent waypoints. */
   private _waypointDir(from: { x: number; y: number }, to: { x: number; y: number }): Direction {
-    const dx = to.x - from.x
-    const dy = to.y - from.y
-    // Wrapping board: pick shortest delta
     const size = this._state.size
-    const wx = ((dx % size) + size) % size
-    const wy = ((dy % size) + size) % size
+    const rawDx = to.x - from.x
+    const rawDy = to.y - from.y
+    const wx = ((rawDx % size) + size) % size
+    const wy = ((rawDy % size) + size) % size
     const ndx = wx > size / 2 ? wx - size : wx
     const ndy = wy > size / 2 ? wy - size : wy
     if (ndx > 0) return 'right'
