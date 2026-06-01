@@ -1,4 +1,4 @@
-import type { GridVector } from 'ascii-game-engine';
+import type { GridVector } from 'ascii-game-engine'
 import { Entity } from 'ascii-game-engine'
 
 export const PAWN_TYPE = {
@@ -20,35 +20,6 @@ export type relativePosition = {
   y: number
   glyph: string
 }
-
-/**
-TODO No arrow set have monospaced diagonal arrows
-  fix idea:
-    .title {
-      transform: scaleX(calc(300 / 180));
-    }
-  Where:
-    300 = desired width (px)
-    180 = original width (px)
- */
-export const ArrowSet: Record<string, string> = {
-  number: '468279315',
-
-  // diagonal not monospace
-  basic: '←→↑↓↖↗↘↙x',
-
-  // Not monospaced
-  /*
-  full: '⬅➡⬆⬇⬉⬈⬊⬋X',
-  hollow: '⇦⇨⇧⇩⬁⬀⬂⬃X',
-  double: '⇐⇒⇑⇓⇖⇗⇘⇙X',
-  plusLine: '⭰⭲⭱⭳⭶⭷⭸⭹X',
-
-  // add back the thicksets
-  */
-} as const
-
-const defaultArrowSet = 'number'
 
 export class Pawn extends Entity {
   protected _type: number = PAWN_TYPE.KING
@@ -75,42 +46,5 @@ export class Pawn extends Entity {
 
   public damage(value: number) {
     this._health = Math.max(this._health - value, 0)
-  }
-
-  public getMovementOptions(arrowSet: string = defaultArrowSet): relativePosition[] {
-    switch (this._moveType) {
-      case MOVE_TYPE.KING: {
-        return this.getKingMoveOptions(arrowSet)
-      }
-      default:
-        return []
-    }
-  }
-
-  public getShootAngles(arrowSet: string = defaultArrowSet): relativePosition[] {
-    const _set = ArrowSet[arrowSet] ?? ArrowSet['basic']
-    return [
-      { x: 0, y: -1, glyph: _set[2] },
-      { x: -1, y: 0, glyph: _set[0] },
-      { x: 1, y: 0, glyph: _set[1] },
-      { x: 0, y: 1, glyph: _set[3] },
-    ]
-  }
-
-  private getKingMoveOptions(arrowSet: string): relativePosition[] {
-    const _set = ArrowSet[arrowSet] ?? ArrowSet['basic']
-    return [
-      { x: -1, y: -1, glyph: _set[4] },
-      { x: 0, y: -1, glyph: _set[2] },
-      { x: 1, y: -1, glyph: _set[5] },
-
-      { x: -1, y: 0, glyph: _set[0] },
-      { x: 0, y: 0, glyph: _set[8] },
-      { x: 1, y: 0, glyph: _set[1] },
-
-      { x: -1, y: 1, glyph: _set[7] },
-      { x: 0, y: 1, glyph: _set[3] },
-      { x: 1, y: 1, glyph: _set[6] },
-    ]
   }
 }

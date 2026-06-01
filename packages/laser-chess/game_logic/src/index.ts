@@ -1,8 +1,16 @@
-import { applyAction, canPlaceMirror, checkVictory, getLegalMoves, getLegalShots } from './actions'
-import type { Action, GameState } from './GameState'
+import {
+  applyAction,
+  canPlaceMirror,
+  checkVictory,
+  getLegalMoves,
+  getLegalShots,
+  type VictoryResult,
+} from './actions'
+import type { Action, GameState, MoveAction, ShootAction } from './GameState'
 import type { GameRule } from './GameRules'
-import { computeLaser, type Direction } from './laser'
+import { computeLaser, type Direction, type LaserResult } from './laser'
 
+export type { VictoryResult } from './actions'
 export type { GameRule } from './GameRules'
 export type { Action, MoveAction, MirrorAction, ShootAction, GameState } from './GameState'
 export { CELL } from './GameState'
@@ -14,15 +22,20 @@ export function createGame(rule: GameRule) {
 
     canPlaceMirror: (state: GameState, x: number, y: number) => canPlaceMirror(rule, state, x, y),
 
-    checkVictory: (state: GameState) => checkVictory(rule, state),
+    checkVictory: (state: GameState): VictoryResult => checkVictory(rule, state),
 
-    computeLaser: (state: GameState, originX: number, originY: number, direction: Direction) =>
-      computeLaser(rule, state, originX, originY, direction),
+    computeLaser: (
+      state: GameState,
+      originX: number,
+      originY: number,
+      direction: Direction,
+    ): LaserResult => computeLaser(rule, state, originX, originY, direction),
 
-    getLegalMoves: (state: GameState, posX: number, posY: number) =>
+    getLegalMoves: (state: GameState, posX: number, posY: number): MoveAction[] =>
       getLegalMoves(rule, state, posX, posY),
 
-    getLegalShots: (state: GameState, x: number, y: number) => getLegalShots(rule, state, x, y),
+    getLegalShots: (state: GameState, x: number, y: number): ShootAction[] =>
+      getLegalShots(rule, state, x, y),
   }
 }
 

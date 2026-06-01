@@ -24,6 +24,7 @@ import type { BaseGameScene } from './BaseGameScene'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
+import { ARROW_SET } from '../arrowSets'
 
 // ---------------------------------------------------------------------------
 // Helpers — keep game_logic Direction in sync with MASK bits for animations
@@ -34,6 +35,7 @@ const DIR_TO_MASK: Record<Direction, number> = {
   right: MASK.RIGHT,
   down: MASK.BOTTOM,
   left: MASK.LEFT,
+  none: 0,
 }
 
 /**
@@ -109,39 +111,34 @@ function syncStateToChunk(state: GameState, board: Board): void {
         case CELL.WALL:
           tile.glyph = '#'
           tile.solid = true
-          tile.style = undefined
           break
         case CELL.MIRROR:
           tile.glyph = '/'
           tile.solid = true
-          tile.style = undefined
           break
         case CELL.MIRROR_FLIP:
           tile.glyph = '\\'
           tile.solid = true
-          tile.style = undefined
           break
         case CELL.FIXED:
           tile.glyph = '/'
           tile.solid = true
-          tile.style = 'fixed'
+          tile.style += ' fixed'
           break
         case CELL.FIXED_FLIP:
           tile.glyph = '\\'
           tile.solid = true
-          tile.style = 'fixed'
+          tile.style += ' fixed'
           break
         case CELL.PAWN_1:
         case CELL.PAWN_2:
           // Pawns are rendered as entities;
           tile.glyph = ' '
           tile.solid = false
-          tile.style = undefined
           break
         default:
           tile.glyph = ' '
           tile.solid = false
-          tile.style = undefined
       }
     }
   }
@@ -206,10 +203,10 @@ export class GameScreen implements BaseGameScene {
     const moveEntities: Entity[] = []
 
     for (const move of legalMoves) {
-      const rel = king
-        .getMovementOptions()
-        .find((r) => king.pos.x + r.x === move.toX && king.pos.y + r.y === move.toY)
-      const glyph = rel?.glyph ?? '·'
+      const dirX = move.toX - move.fromX
+      const dirY = move.toY - move.fromY
+      let glyph = this._getArrowGlyph(dirX, dirY, ARROW_SET.NUMBER)
+
       const entity = new Entity(glyph, new GridVector(move.toX, move.toY), 500_000)
       entity.addCss('arrow')
       this._engine.world.spawnEntity(entity)
@@ -311,8 +308,8 @@ export class GameScreen implements BaseGameScene {
     const shotEntities: Entity[] = []
 
     for (const shot of legalShots) {
-      const rel = king.getShootAngles().find((r) => r.x === shot.dx && r.y === shot.dy)
-      const glyph = rel?.glyph ?? '·'
+      let glyph = this._getArrowGlyph(shot.dx, shot.dy, ARROW_SET.NUMBER)
+
       const entity = new Entity(
         glyph,
         new GridVector(king.pos.x + shot.dx, king.pos.y + shot.dy),
@@ -375,8 +372,6 @@ export class GameScreen implements BaseGameScene {
 
   private async _animateLaser(result: LaserResult, startDir: Direction): Promise<void> {
     const animSeqs: LaserAnimSeqInfo[] = []
-    const sizeX = this._state.sizeX
-    const sizeY = this._state.sizeY
 
     const straightGlyph = (dir: Direction): string =>
       dir === 'left' || dir === 'right'
@@ -416,7 +411,7 @@ export class GameScreen implements BaseGameScene {
     }
 
     let currentDir = startDir
-    // First segment anchored at shooter position, matching legacy behavior
+    // First segment anchored at shooter position
     let currentSeg = newSegment(result.waypoints[0].x, result.waypoints[0].y, currentDir)
 
     for (let wi = 0; wi < result.waypoints.length - 1; wi++) {
@@ -424,17 +419,32 @@ export class GameScreen implements BaseGameScene {
       const to = result.waypoints[wi + 1]
       const isLastSegment = wi === result.waypoints.length - 2
 
-      if (to.kind === 'wrap') {
-        currentSeg = newSegment(to.x, to.y, currentDir)
-        continue
+      let willWrapHorizontal =
+        (to.outDir !== 'none' && from.x < to.x && from.outDir == 'left') ||
+        (from.x > to.x && from.outDir == 'right')
+      let willWrapVertical =
+        (to.outDir !== 'none' && from.y < to.y && from.outDir == 'up') ||
+        (from.y > to.y && from.outDir == 'down')
+      if (from.x === to.x && from.y === to.y) {
+        // full loop
+        if (from.outDir === 'left' || from.outDir === 'right') willWrapHorizontal = true
+        else if (from.outDir === 'up' || from.outDir === 'down') willWrapVertical = true
       }
 
-      const steps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
+      let steps
+      if (willWrapHorizontal) {
+        steps = this._state.sizeX - Math.abs(to.x - from.x)
+      } else if (willWrapVertical) {
+        steps = this._state.sizeY - Math.abs(to.y - from.y)
+      } else {
+        steps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
+      }
 
       const [ddx, ddy] = DIR_DELTA[currentDir]
       let cx = from.x
       let cy = from.y
 
+      let segmented = false
       for (let step = 0; step < steps; step++) {
         cx += ddx
         cy += ddy
@@ -442,9 +452,21 @@ export class GameScreen implements BaseGameScene {
         const isLastStep = step === steps - 1
 
         // Detect wrap crossing mid-segment
-        const crossedX = ddx !== 0 && ((ddx > 0 && cx === 0) || (ddx < 0 && cx === sizeX - 1))
-        const crossedY = ddy !== 0 && ((ddy > 0 && cy === 0) || (ddy < 0 && cy === sizeY - 1))
-        if (crossedX || crossedY) currentSeg = newSegment(cx, cy, currentDir)
+        if (!segmented) {
+          if (cx < 0) {
+            currentSeg = newSegment(this._state.sizeX, cy, currentDir)
+            segmented = true
+          } else if (cx > this._state.sizeX) {
+            currentSeg = newSegment(0, cy, currentDir)
+            segmented = true
+          } else if (cy < 0) {
+            currentSeg = newSegment(cx, this._state.sizeY, currentDir)
+            segmented = true
+          } else if (cy > this._state.sizeY) {
+            currentSeg = newSegment(cx, 0, currentDir)
+            segmented = true
+          }
+        }
 
         if (isLastStep && !isLastSegment) {
           // This is the mirror cell:
@@ -548,5 +570,23 @@ export class GameScreen implements BaseGameScene {
     const units =
       this._state.currentPlayer === 1 ? this.board.playerOneUnits : this.board.playerTwoUnits
     return units[0]
+  }
+
+  private _getArrowGlyph(dirX: number, dirY: number, arrowSet: string) {
+    let glyph = ' '
+    if (dirY === -1) {
+      if (dirX === -1) glyph = arrowSet[4]
+      else if (dirX === 0) glyph = arrowSet[2]
+      else if (dirX === 1) glyph = arrowSet[5]
+    } else if (dirY === 0) {
+      if (dirX === -1) glyph = arrowSet[0]
+      else if (dirX === 0) glyph = arrowSet[8]
+      else if (dirX === 1) glyph = arrowSet[1]
+    } else if (dirY === 1) {
+      if (dirX === -1) glyph = arrowSet[7]
+      else if (dirX === 0) glyph = arrowSet[3]
+      else if (dirX === 1) glyph = arrowSet[6]
+    }
+    return glyph
   }
 }

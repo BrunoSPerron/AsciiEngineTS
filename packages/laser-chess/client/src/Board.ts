@@ -1,5 +1,5 @@
-import type { AsciiEngine} from 'ascii-game-engine';
-import { CHUNK_SIZE, GridVector, type Chunk, type Tile } from 'ascii-game-engine'
+import type { AsciiEngine } from 'ascii-game-engine'
+import { GridVector, type Chunk, type Tile } from 'ascii-game-engine'
 import { MOVE_TYPE, Pawn, PAWN_TYPE } from './entities/Pawn'
 
 export class Board {
@@ -18,7 +18,6 @@ export class Board {
     this.playerOneUnits = []
     this.playerTwoUnits = []
     this._prepareForGame()
-    this._setBorderLoopShare()
   }
 
   get size(): GridVector {
@@ -87,24 +86,6 @@ export class Board {
     this.engine.renderer.invalidateChunks()
   }
 
-  private _setBorderLoopShare() {
-    for (let x = 0; x < this.size.x; x++) {
-      this._chunk.tiles[(this.size.y - 1) * CHUNK_SIZE + x] = this._chunk.get(x, 0)
-    }
-    for (let y = 0; y < this.size.y; y++) {
-      this._chunk.tiles[y * CHUNK_SIZE + this.size.x - 1] = this._chunk.get(0, y)
-    }
-  }
-
-  private _uncoupleBorderLoop() {
-    for (let x = 0; x < this.size.x; x++) {
-      this._chunk.tiles[(this.size.y - 1) * CHUNK_SIZE + x] = { glyph: ' ', solid: false }
-    }
-    for (let y = 0; y < this.size.y; y++) {
-      this._chunk.tiles[y * CHUNK_SIZE + this.size.x - 1] = { glyph: ' ', solid: false }
-    }
-  }
-
   clear() {
     for (const e of this.playerOneUnits) this.engine.world.extractEntity(e.uid)
     for (const e of this.playerTwoUnits) this.engine.world.extractEntity(e.uid)
@@ -119,7 +100,6 @@ export class Board {
         tile.style = void 0
       }
     }
-    this._uncoupleBorderLoop()
     this.refresh()
   }
 }

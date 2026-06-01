@@ -7,12 +7,12 @@ import { cellAt, wrapCoord, idx } from './board'
 // Types
 // ---------------------------------------------------------------------------
 
-export type Direction = 'up' | 'right' | 'down' | 'left'
+export type Direction = 'up' | 'right' | 'down' | 'left' | 'none'
 
 export type LaserWaypoint = {
   x: number
   y: number
-  kind: 'origin' | 'wrap' | 'mirror' | 'hit'
+  outDir: Direction
 }
 
 export type LaserResult = {
@@ -32,6 +32,7 @@ export const DIR_DELTA: Record<Direction, [number, number]> = {
   right: [1, 0],
   down: [0, 1],
   left: [-1, 0],
+  none: [0, 0],
 }
 
 // ---------------------------------------------------------------------------
@@ -43,12 +44,14 @@ const DEFLECT_SLASH: Record<Direction, Direction> = {
   left: 'down',
   up: 'right',
   down: 'left',
+  none: 'none',
 }
 const DEFLECT_BACKSLASH: Record<Direction, Direction> = {
   right: 'down',
   left: 'up',
   up: 'left',
   down: 'right',
+  none: 'none',
 }
 
 export function deflect(_rule: GameRule, dir: Direction, ch: string): Direction {
@@ -85,7 +88,7 @@ export function computeLaser(
   let x = originX
   let y = originY
 
-  result.waypoints.push({ x, y, kind: 'origin' })
+  result.waypoints.push({ x, y, outDir: dir })
 
   const maxSteps = state.sizeX * state.sizeY
   let steps = 0
@@ -94,22 +97,20 @@ export function computeLaser(
     const [dx, dy] = DIR_DELTA[dir]
     x += dx
     y += dy
-    const [wx, wy] = wrapCoord(state, x + dx, y + dy)
-    const wrapped = wx !== x + dx || wy !== y + dy
+    const [wx, wy] = wrapCoord(state, x, y)
     x = wx
     y = wy
-    if (wrapped) result.waypoints.push({ x, y, kind: 'wrap' })
     const ch = cellAt(state, x, y)
 
     if (ch === CELL.WALL) {
       result.wallHit = idx(state, x, y)
-      result.waypoints.push({ x, y, kind: 'hit' })
+      result.waypoints.push({ x, y, outDir: 'none' })
       break
     }
 
     if (ch === CELL.PAWN_1 || ch === CELL.PAWN_2) {
       result.pawnHit = idx(state, x, y)
-      result.waypoints.push({ x, y, kind: 'hit' })
+      result.waypoints.push({ x, y, outDir: 'none' })
       break
     }
 
@@ -119,7 +120,7 @@ export function computeLaser(
 
       result.damage += rule.bounceDamage
       dir = deflect(rule, dir, ch)
-      result.waypoints.push({ x, y, kind: 'mirror' })
+      result.waypoints.push({ x, y, outDir: dir })
     }
   }
 
