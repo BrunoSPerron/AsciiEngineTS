@@ -1,4 +1,4 @@
-import type { UILayout} from 'ascii-game-engine';
+import type { UILayout } from 'ascii-game-engine'
 import { UISelectElement, UITextBox } from 'ascii-game-engine'
 import type { SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
@@ -22,7 +22,7 @@ export class MainMenu extends BaseGameScene {
 
   openLabelElement() {
     if (this.labelElement !== null) return
-    this.labelElement = new UITextBox(['BOB', 'IS', 'GREAT'])
+    this.labelElement = new UITextBox(['BOB', 'IS', 'GREAT'], 'centered')
     this.ui.addElement(this.labelElement, {
       y: -2,
       h: 7,
