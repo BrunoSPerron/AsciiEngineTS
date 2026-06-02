@@ -7,7 +7,7 @@
     "types": ["vite/client", "node"],
     "paths": {
       "ascii-game-engine": ["../../engine/src/index.ts"],
-      "laser-chess-game-logic": ["../game_logic/src/index.ts"]
+      "@laser-chess/shared": ["../shared/src/index.ts"]
     },
     "skipLibCheck": true,
     "moduleResolution": "bundler",

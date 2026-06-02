@@ -4,15 +4,21 @@ import { MainMenu } from './scenes/MainMenu'
 import { BoardConfig } from './scenes/BoardConfig'
 import { Board } from './Board'
 import { GameScreen } from './scenes/GameScreen'
+import type { ServerConnection } from './net/ServerConnection'
+import type { PlayerSummary, RoomSummary } from '../../server/src/protocol'
 
 export type NavigationData = {
   board?: Board
+  conn?: ServerConnection
+  room?: RoomSummary
+  players?: PlayerSummary[]
 }
 
 export enum Scene {
   Game = 1,
   BoardConfig,
   MainMenu,
+  Room,
 }
 
 export class SceneManager {
@@ -36,6 +42,10 @@ export class SceneManager {
         this.currentScreen = new GameScreen(this, board)
         break
       }
+      case Scene.Room:
+        //TODO this.currentScreen =
+        console.log("I'm in a room")
+        break
       case Scene.MainMenu:
       default:
         this.currentScreen = new MainMenu(this)

@@ -1,7 +1,8 @@
 import type { ServerWebSocket } from 'bun'
-import type { ClientMessage, RoomBroadcast, ServerMessage } from './protocol'
+import type { RoomBroadcast } from './protocol'
 import type { Room } from './RoomManager'
 import { RoomManager } from './RoomManager'
+import type { ClientMessage, ServerMessage } from '@laser-chess/shared'
 
 // ---------------------------------------------------------------------------
 // WebSocketData — attached to each socket by Bun

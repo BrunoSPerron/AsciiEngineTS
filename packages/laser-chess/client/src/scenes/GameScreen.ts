@@ -9,8 +9,15 @@ import {
   UISelectElement,
 } from 'ascii-game-engine'
 
-import type { GameRule, Direction, GameState, GameLogic, LaserResult } from 'laser-chess-game-logic'
-import { createGame, DIR_DELTA, CELL } from 'laser-chess-game-logic'
+import type {
+  GameRule,
+  Direction,
+  GameState,
+  GameLogic,
+  LaserResult,
+  LaserWaypoint,
+} from '@laser-chess/shared'
+import { createGame, DIR_DELTA, CELL } from '@laser-chess/shared'
 
 import type { BaseGameScene } from './BaseGameScene'
 import { ARROW_SET } from '../arrowSets'
@@ -19,10 +26,9 @@ import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
-import type { LaserWaypoint } from '../../../game_logic/src/laser'
 
 // ---------------------------------------------------------------------------
-// Helpers — keep game_logic Direction in sync with MASK bits for animations
+// Helpers — keep shared Direction in sync with MASK bits for animations
 // ---------------------------------------------------------------------------
 
 const DIR_TO_MASK: Record<Direction, number> = {
@@ -46,7 +52,7 @@ function buildGameState(board: Board): GameState {
   const sizeY = board.size.y
 
   // Build the flat board array from tiles (walls, mirrors, spaces)
-  const boardArr: string[] = new Array<string>(sizeX * sizeY).fill(CELL.EMPTY)
+  const boardArr: string[] = new Array<string>(sizeX * sizeY).fill(' ')
   const pawns: GameState['pawns'] = {}
 
   for (let y = 0; y < sizeY; y++) {
@@ -361,7 +367,7 @@ export class GameScreen implements BaseGameScene {
   }
 
   // ---------------------------------------------------------------------------------
-  // Laser animation - convert LaserResult from the game_logic into animation segments
+  // Laser animation - convert LaserResult from the shared into animation segments
   // ---------------------------------------------------------------------------------
 
   private _getStepsBetween(from: LaserWaypoint, to: LaserWaypoint) {

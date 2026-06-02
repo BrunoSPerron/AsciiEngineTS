@@ -13,8 +13,16 @@ import { computeLaser, type Direction, type LaserResult } from './laser'
 export type { VictoryResult } from './actions'
 export type { GameRule } from './GameRules'
 export type { Action, MoveAction, MirrorAction, ShootAction, GameState } from './GameState'
-export { CELL } from './GameState'
-export { type Direction, type LaserResult, DIR_DELTA } from './laser'
+export { CELL, type CellChar } from './GameState'
+export { type Direction, type LaserResult, type LaserWaypoint, DIR_DELTA } from './laser'
+
+export type {
+  ClientMessage,
+  RoomBroadcast,
+  RoomSummary,
+  PlayerSummary,
+  ServerMessage,
+} from './protocol'
 
 export function createGame(rule: GameRule) {
   return {

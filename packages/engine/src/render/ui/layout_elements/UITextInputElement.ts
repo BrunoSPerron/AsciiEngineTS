@@ -22,8 +22,6 @@ export class UITextInputElement extends UIInputElement<string> {
 
   private _inputEl: HTMLInputElement | null = null
   private _messageEls: HTMLDivElement[] = []
-  private _labelEl: HTMLSpanElement | null = null
-  private _fieldWrapEl: HTMLDivElement | null = null
 
   constructor(label: string, message: string[] = [], options: UITextInputOptions = {}) {
     super(options)
@@ -39,8 +37,6 @@ export class UITextInputElement extends UIInputElement<string> {
     this.el.innerHTML = ''
     this._inputEl = null
     this._messageEls = []
-    this._labelEl = null
-    this._fieldWrapEl = null
 
     const tm = this.tileMetrics
     const h = this.h
@@ -79,7 +75,6 @@ export class UITextInputElement extends UIInputElement<string> {
       labelEl.style.lineHeight = `${tm.h}px`
       labelEl.textContent = `${this._label}: `
       rowEl.appendChild(labelEl)
-      this._labelEl = labelEl
     }
 
     // Field wrapper (retro darker background)
@@ -87,7 +82,6 @@ export class UITextInputElement extends UIInputElement<string> {
     fieldWrap.className = 'ui-input-field'
     fieldWrap.style.height = `${tm.h}px`
     rowEl.appendChild(fieldWrap)
-    this._fieldWrapEl = fieldWrap
 
     // Native input
     const inputEl = document.createElement('input')

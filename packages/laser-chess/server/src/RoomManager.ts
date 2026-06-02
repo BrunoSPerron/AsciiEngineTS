@@ -1,4 +1,5 @@
-import { MAX_PLAYERS_PER_ROOM, type PlayerSummary, type RoomSummary } from './protocol'
+import type { PlayerSummary, RoomSummary } from '@laser-chess/shared'
+import { MAX_PLAYERS_PER_ROOM } from './protocol'
 
 // ---------------------------------------------------------------------------
 // Internal types

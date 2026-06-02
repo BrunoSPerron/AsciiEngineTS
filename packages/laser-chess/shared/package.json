@@ -1,5 +1,5 @@
 {
-  "name": "@laser-chess/logic",
+  "name": "@laser-chess/shared",
   "version": "0.1.0",
   "type": "module",
   "private": true,

@@ -75,11 +75,11 @@ export default [
   },
 
   {
-    files: ['packages/laser-chess/game_logic/**/*.ts'],
+    files: ['packages/laser-chess/shared/**/*.ts'],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: './packages/laser-chess/game_logic/tsconfig.json',
+        project: './packages/laser-chess/shared/tsconfig.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },

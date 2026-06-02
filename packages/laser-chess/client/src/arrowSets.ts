@@ -2,11 +2,11 @@
 TODO No arrow set have monospaced diagonal arrows
   fix idea:
     .title {
-      transform: scaleX(calc(300 / 180));
+      transform: scaleX(calc(N / M));
     }
   Where:
-    300 = desired width (px)
-    180 = original width (px)
+    N = desired width (px)
+    M = original width (px)
  */
 export const ARROW_SET: Record<string, string> = {
   NUMBER: '468279315',
