@@ -1,0 +1,16 @@
+.ascii-game-engine {
+  --color-bg: #18191b;
+  --color-text: #a5abb0;
+}
+
+.ascii-game-engine .layer .tile-odd {
+  background-color: #232528;
+}
+
+.ascii-game-engine .actor.player-one {
+  color: #7f9db8;
+}
+
+.ascii-game-engine .actor.player-two {
+  color: #b77458;
+}
