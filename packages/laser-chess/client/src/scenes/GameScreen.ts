@@ -492,6 +492,7 @@ export class GameScreen implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _syncPawnHealth(): void {
+    // TODO
     // The legacy approach just checked health for victory — pawn entities remain
     // in the world. The hp values live in this._state.pawns which applyAction
     // already updated. Nothing extra needed here unless we display HP bars.

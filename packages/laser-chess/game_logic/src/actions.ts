@@ -40,6 +40,7 @@ export function getLegalMoves(
       moves.push({ type: 'move', fromX: x, fromY: y, toX: tx, toY: ty })
     }
   }
+  moves.push({ type: 'move', fromX: x, fromY: y, toX: x, toY: y })
   return moves
 }
 
