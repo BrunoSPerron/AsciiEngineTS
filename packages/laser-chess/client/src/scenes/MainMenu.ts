@@ -22,11 +22,11 @@ export class MainMenu extends BaseGameScene {
 
   openLabelElement() {
     if (this.labelElement !== null) return
-    this.labelElement = new UITextBox(['BOB', 'IS', 'GREAT'], 'centered')
+    this.labelElement = new UITextBox(['Laser Chess'], 'centered')
     this.ui.addElement(this.labelElement, {
       y: -2,
-      h: 7,
-      w: 30,
+      h: 5,
+      w: 22,
       pivotX: 50,
       pivotY: 100,
       anchorX: 50,
