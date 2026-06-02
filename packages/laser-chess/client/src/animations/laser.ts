@@ -49,11 +49,11 @@ export function placeLaserLines(
     const el = info.line
     el.classList.add('laser-line')
 
-    // TODO I don't know why the right element need that offset. Find that out
-    const offset = info.direction === MASK.RIGHT ? 1 : 0
+    const offsetX = info.direction === MASK.RIGHT ? 1 : 0
+    const offsetY = info.direction === MASK.BOTTOM ? 1 : 0
 
-    el.style.left = `${(info.x + offset) * tile.w}px`
-    el.style.top = `${info.y * tile.h}px`
+    el.style.left = `${(info.x + offsetX) * tile.w}px`
+    el.style.top = `${(info.y + offsetY) * tile.h}px`
 
     if (info.direction === MASK.LEFT || info.direction === MASK.RIGHT) {
       el.style.width = `${info.length * tile.w}px`

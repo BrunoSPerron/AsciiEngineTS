@@ -56,10 +56,10 @@ export function getLegalShots(
   y: number,
 ): ShootAction[] {
   return [
-    { type: 'shoot', x, y, dx: 0, dy: -1 },
-    { type: 'shoot', x, y, dx: 1, dy: 0 },
-    { type: 'shoot', x, y, dx: 0, dy: 1 },
-    { type: 'shoot', x, y, dx: -1, dy: 0 },
+    { type: 'shoot', x, y, dx: 0, dy: -1, result: null },
+    { type: 'shoot', x, y, dx: 1, dy: 0, result: null },
+    { type: 'shoot', x, y, dx: 0, dy: 1, result: null },
+    { type: 'shoot', x, y, dx: -1, dy: 0, result: null },
   ]
 }
 
@@ -138,12 +138,9 @@ function applyMirror(rule: GameRule, state: GameState, action: MirrorAction): Ga
   return state
 }
 
-function applyShoot(rule: GameRule, state: GameState, action: ShootAction): GameState {
-  if (state.phase !== 'shoot') throw new Error('Not in shoot phase')
-  if (action.dx !== 0 && action.dy !== 0) throw new Error('Diagonal shooting not supported')
-
+export function applyShoot(rule: GameRule, state: GameState, action: ShootAction): GameState {
   const dir = shootDir(action.dx, action.dy)
-  const result = computeLaser(rule, state, action.x, action.y, dir)
+  const result = action.result || computeLaser(rule, state, action.x, action.y, dir)
   applyLaserResult(rule, state, result)
 
   // Don't advance the turn if the game is over, let the caller handle it

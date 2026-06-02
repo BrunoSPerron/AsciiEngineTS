@@ -8,23 +8,18 @@ import {
   UITextBox,
   UISelectElement,
 } from 'ascii-game-engine'
-import {
-  createGame,
-  type GameRule,
-  DIR_DELTA,
-  type Direction,
-  type GameState,
-  CELL,
-  type GameLogic,
-  type LaserResult,
-} from 'laser-chess-game-logic'
+
+import type { GameRule, Direction, GameState, GameLogic, LaserResult } from 'laser-chess-game-logic'
+import { createGame, DIR_DELTA, CELL } from 'laser-chess-game-logic'
+
+import type { BaseGameScene } from './BaseGameScene'
+import { ARROW_SET } from '../arrowSets'
 import type { Board } from '../Board'
 import type { SceneManager } from '../SceneManager'
-import type { BaseGameScene } from './BaseGameScene'
+import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
-import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
-import { ARROW_SET } from '../arrowSets'
+import type { LaserWaypoint } from '../../../game_logic/src/laser'
 
 // ---------------------------------------------------------------------------
 // Helpers — keep game_logic Direction in sync with MASK bits for animations
@@ -351,14 +346,13 @@ export class GameScreen implements BaseGameScene {
     dy: number,
     shotEntities: Entity[],
   ): Promise<void> {
-    // Compute laser path before mutating state so we can animate it
     const dir = this._dxDyToDir(dx, dy)
     const x = shooter.pos.x
     const y = shooter.pos.y
-    const laserResult = this._logic.computeLaser(this._state, x, y, dir)
-    this._state = this._logic.applyAction(this._state, { type: 'shoot', x, y, dx, dy })
+    const result = this._logic.computeLaser(this._state, x, y, dir)
+    this._state = this._logic.applyAction(this._state, { type: 'shoot', x, y, dx, dy, result })
     for (const e of shotEntities) this._engine.world.extractEntity(e.uid)
-    await this._animateLaser(laserResult, dir)
+    await this._animateLaser(result)
     syncStateToChunk(this._state, this.board)
     this._syncPawnHealth()
     if (!this._checkAndShowVictory()) {
@@ -370,7 +364,33 @@ export class GameScreen implements BaseGameScene {
   // Laser animation - convert LaserResult from the game_logic into animation segments
   // ---------------------------------------------------------------------------------
 
-  private async _animateLaser(result: LaserResult, startDir: Direction): Promise<void> {
+  private _getStepsBetween(from: LaserWaypoint, to: LaserWaypoint) {
+    let willWrapHorizontal =
+      (to.outDir !== 'none' && from.x < to.x && from.outDir === 'left') ||
+      (from.x > to.x && from.outDir === 'right')
+    let willWrapVertical =
+      (to.outDir !== 'none' && from.y < to.y && from.outDir === 'up') ||
+      (from.y > to.y && from.outDir === 'down')
+
+    // Edge case: full loop (shot itself)
+    if (from.x === to.x && from.y === to.y) {
+      if (from.outDir === 'left' || from.outDir === 'right') willWrapHorizontal = true
+      else if (from.outDir === 'up' || from.outDir === 'down') willWrapVertical = true
+    }
+
+    let steps
+    if (willWrapHorizontal) {
+      steps = this._state.sizeX - Math.abs(to.x - from.x)
+    } else if (willWrapVertical) {
+      steps = this._state.sizeY - Math.abs(to.y - from.y)
+    } else {
+      steps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
+    }
+    return steps
+  }
+
+  private async _animateLaser(result: LaserResult): Promise<void> {
+    if (result.waypoints.length < 2) throw Error('Tried to animate laser with no waypoints')
     const animSeqs: LaserAnimSeqInfo[] = []
 
     const straightGlyph = (dir: Direction): string =>
@@ -395,9 +415,6 @@ export class GameScreen implements BaseGameScene {
       seg.length += 1
     }
 
-    // Creates a new segment anchored at (x, y) in the given direction.
-    // Note: x,y is the shooter or mirror position, the anchor, not the first glyph cell.
-    // _addGlyph shift the origin as glyphs are added for UP/LEFT.
     const newSegment = (x: number, y: number, dir: Direction): LaserAnimSeqInfo => {
       const seg: LaserAnimSeqInfo = {
         line: document.createElement('pre'),
@@ -410,8 +427,7 @@ export class GameScreen implements BaseGameScene {
       return seg
     }
 
-    let currentDir = startDir
-    // First segment anchored at shooter position
+    let currentDir = result.waypoints[0].outDir
     let currentSeg = newSegment(result.waypoints[0].x, result.waypoints[0].y, currentDir)
 
     for (let wi = 0; wi < result.waypoints.length - 1; wi++) {
@@ -419,26 +435,7 @@ export class GameScreen implements BaseGameScene {
       const to = result.waypoints[wi + 1]
       const isLastSegment = wi === result.waypoints.length - 2
 
-      let willWrapHorizontal =
-        (to.outDir !== 'none' && from.x < to.x && from.outDir === 'left') ||
-        (from.x > to.x && from.outDir === 'right')
-      let willWrapVertical =
-        (to.outDir !== 'none' && from.y < to.y && from.outDir === 'up') ||
-        (from.y > to.y && from.outDir === 'down')
-      if (from.x === to.x && from.y === to.y) {
-        // full loop
-        if (from.outDir === 'left' || from.outDir === 'right') willWrapHorizontal = true
-        else if (from.outDir === 'up' || from.outDir === 'down') willWrapVertical = true
-      }
-
-      let steps
-      if (willWrapHorizontal) {
-        steps = this._state.sizeX - Math.abs(to.x - from.x)
-      } else if (willWrapVertical) {
-        steps = this._state.sizeY - Math.abs(to.y - from.y)
-      } else {
-        steps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y)
-      }
+      const steps = this._getStepsBetween(from, to)
 
       const [ddx, ddy] = DIR_DELTA[currentDir]
       let cx = from.x
@@ -454,16 +451,20 @@ export class GameScreen implements BaseGameScene {
         // Detect wrap crossing mid-segment
         if (!segmented) {
           if (cx < 0) {
-            currentSeg = newSegment(this._state.sizeX, cy, currentDir)
+            cx = this._state.sizeX
+            currentSeg = newSegment(cx, cy, currentDir)
             segmented = true
-          } else if (cx > this._state.sizeX) {
-            currentSeg = newSegment(0, cy, currentDir)
+          } else if (cx > this._state.sizeX - 1) {
+            cx = -1
+            currentSeg = newSegment(cx, cy, currentDir)
             segmented = true
           } else if (cy < 0) {
-            currentSeg = newSegment(cx, this._state.sizeY, currentDir)
+            cy = this._state.sizeY
+            currentSeg = newSegment(cx, cy, currentDir)
             segmented = true
-          } else if (cy > this._state.sizeY) {
-            currentSeg = newSegment(cx, 0, currentDir)
+          } else if (cy > this._state.sizeY - 1) {
+            cy = -1
+            currentSeg = newSegment(cx, cy, currentDir)
             segmented = true
           }
         }
@@ -471,11 +472,10 @@ export class GameScreen implements BaseGameScene {
         if (isLastStep && !isLastSegment) {
           // This is the mirror cell:
           // 1. Add the corner glyph to the INCOMING segment
-          const nextDir = this._waypointDir(to, result.waypoints[wi + 2])
-          addGlyph(currentSeg, cornerGlyph(currentDir, nextDir), currentDir)
+          addGlyph(currentSeg, cornerGlyph(currentDir, to.outDir), currentDir)
 
           // 2. Start new outgoing segment anchored at the mirror cell
-          currentDir = nextDir
+          currentDir = to.outDir
           currentSeg = newSegment(cx, cy, currentDir)
         } else {
           addGlyph(currentSeg, straightGlyph(currentDir), currentDir)
@@ -490,21 +490,6 @@ export class GameScreen implements BaseGameScene {
         this._engine.renderer.tileMetrics,
       )
     }
-  }
-
-  private _waypointDir(from: { x: number; y: number }, to: { x: number; y: number }): Direction {
-    const sizeX = this._state.sizeX
-    const sizeY = this._state.sizeY
-    const rawDx = to.x - from.x
-    const rawDy = to.y - from.y
-    const wx = ((rawDx % sizeX) + sizeX) % sizeX
-    const wy = ((rawDy % sizeY) + sizeY) % sizeY
-    const ndx = wx > sizeX / 2 ? wx - sizeX : wx
-    const ndy = wy > sizeY / 2 ? wy - sizeY : wy
-    if (ndx > 0) return 'right'
-    if (ndx < 0) return 'left'
-    if (ndy > 0) return 'down'
-    return 'up'
   }
 
   private _dxDyToDir(dx: number, dy: number): Direction {

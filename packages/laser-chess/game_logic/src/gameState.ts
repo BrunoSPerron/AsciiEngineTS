@@ -2,6 +2,8 @@
 // Cell constants
 // ---------------------------------------------------------------------------
 
+import type { LaserResult } from './laser'
+
 export const CELL = {
   EMPTY: ' ',
   WALL: '#',
@@ -50,6 +52,13 @@ export type GameState = {
 
 export type MoveAction = { type: 'move'; fromX: number; fromY: number; toX: number; toY: number }
 export type MirrorAction = { type: 'mirror'; x: number; y: number; glyph: '/' | '\\' }
-export type ShootAction = { type: 'shoot'; x: number; y: number; dx: number; dy: number }
+export type ShootAction = {
+  type: 'shoot'
+  x: number
+  y: number
+  dx: number
+  dy: number
+  result: LaserResult | null
+}
 
 export type Action = MoveAction | MirrorAction | ShootAction
