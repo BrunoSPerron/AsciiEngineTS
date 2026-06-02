@@ -372,7 +372,7 @@ export class GameScreen implements BaseGameScene {
       (to.outDir !== 'none' && from.y < to.y && from.outDir === 'up') ||
       (from.y > to.y && from.outDir === 'down')
 
-    // Edge case: full loop (shot itself)
+    // Edge case: full loop (position shot itself)
     if (from.x === to.x && from.y === to.y) {
       if (from.outDir === 'left' || from.outDir === 'right') willWrapHorizontal = true
       else if (from.outDir === 'up' || from.outDir === 'down') willWrapVertical = true

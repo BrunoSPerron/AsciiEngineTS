@@ -138,7 +138,27 @@ export function applyLaserResult(_rule: GameRule, state: GameState, result: Lase
   }
 
   if (result.wallHit !== null) {
-    state.board[result.wallHit] = CELL.EMPTY
+    const idx = result.wallHit
+    state.board[idx] = CELL.EMPTY
+    const maxX = state.sizeX
+    const maxY = state.sizeY
+    const posX = idx % maxX
+    const posY = Math.floor(idx / maxX)
+
+    if (posX === 0) state.board[idx + maxX - 1] = CELL.EMPTY
+    else if (posX >= maxX - 1) state.board[idx - maxX + 1] = CELL.EMPTY
+
+    //state board use y * sizeX + x as the index
+    if (posY === 0) state.board[idx + (maxY - 1) * maxX] = CELL.EMPTY
+    else if (posY >= maxY - 1) state.board[idx - (maxY - 1) * maxX] = CELL.EMPTY
+
+    // Edge case: cleanup the last corner
+    if ((posX === 0 || posX >= maxX - 1) && (posY === 0 || posY >= maxY - 1)) {
+      const oppX = maxX - 1 - posX
+      const oppY = maxY - 1 - posY
+      const oppIdx = oppY * maxX + oppX
+      state.board[oppIdx] = CELL.EMPTY
+    }
   }
 
   if (result.pawnHit !== null) {
