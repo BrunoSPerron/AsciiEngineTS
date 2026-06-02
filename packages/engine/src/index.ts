@@ -18,10 +18,15 @@ export { UILayout } from './render/ui/UILayout'
 
 export { UIContainerBase } from './render/ui/layout_elements/UIContainerBase'
 export { UIContainerVertical } from './render/ui/layout_elements/UIContainerVertical'
+export { UIInputElement, type UIInputOptions } from './render/ui/layout_elements/UIInputElement'
 export { UILayoutElement } from './render/ui/layout_elements/UILayoutElement'
 export { UISelectBase } from './render/ui/layout_elements/UISelectBase'
 export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
 export { UITextBox } from './render/ui/layout_elements/UITextBox'
+export {
+  UITextInputElement,
+  type UITextInputOptions,
+} from './render/ui/layout_elements/UITextInputElement'
 
 export { WorldUILayer } from './render/ui/WorldUILayer'
 
