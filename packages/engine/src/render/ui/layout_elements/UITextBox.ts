@@ -6,8 +6,6 @@ export class UITextBox extends UILayoutElement {
   private _content: string[]
   mode: MODE
 
-  private _contentContainer: HTMLDivElement | null = null
-
   constructor(content: string[], mode: MODE = 'simple') {
     super()
     this._content = content
@@ -20,40 +18,23 @@ export class UITextBox extends UILayoutElement {
 
   set content(value: string | string[]) {
     this._content = typeof value === 'string' ? [value] : value
-    this._updateContent()
+    this._render()
   }
 
   loaded(): void {
-    this._contentContainer = document.createElement('div')
-    this._contentContainer.style.position = 'absolute'
-    this.el.append(this._contentContainer)
-    this._updateContent()
-  }
-
-  private _updateContent() {
-    const longestStringLen = Math.max(...this.content.map((str) => str.length))
-
-    const height = this.content.length * this.tileMetrics.h
-    const width = longestStringLen * this.tileMetrics.w
-
-    this._contentContainer!.innerHTML = this._content.join('<br>')
-    this._contentContainer!.style.height = `${height}px`
-    this._contentContainer!.style.width = `${width}px`
+    this._render()
   }
 
   resized(): void {
-    if (this._contentContainer === null) return
+    this._render()
+  }
 
-    const longestStringLen = Math.max(...this.content.map((str) => str.length))
-
-    if (this.mode === 'centered') {
-      const top = ((this.h - this.content.length) / 2) * this.tileMetrics.h
-      const left = ((this.w - longestStringLen) / 2) * this.tileMetrics.w
-      this._contentContainer.style.top = `${top}px`
-      this._contentContainer.style.left = `${left}px`
-    } else {
-      this._contentContainer.style.top = '0'
-      this._contentContainer.style.left = '0'
-    }
+  private _render(): void {
+    this.el.innerHTML = this._content.join('<br>')
+    this.el.style.display = 'flex'
+    this.el.style.flexDirection = 'column'
+    this.el.style.justifyContent = this.mode === 'centered' ? 'center' : 'flex-start'
+    this.el.style.alignItems = this.mode === 'centered' ? 'center' : 'flex-start'
+    this.el.style.textAlign = this.mode === 'centered' ? 'center' : ''
   }
 }
