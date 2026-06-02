@@ -1,6 +1,6 @@
 import type { UILayout } from 'ascii-game-engine'
 import { UISelectElement, type Chunk } from 'ascii-game-engine'
-import type { SceneManager } from '../SceneManager'
+import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 import { Board } from '../Board'
 
@@ -79,7 +79,7 @@ export class BoardConfig extends BaseGameScene {
 
     boardSelectElement.onSelect(() => {
       const board = new Board(this.chunk, this.sceneManager.engine)
-      this.sceneManager.NavigateTo('Game', { board: board })
+      this.sceneManager.NavigateTo(Scene.Game, { board: board })
     })
   }
 

@@ -1,6 +1,6 @@
 import type { UILayout } from 'ascii-game-engine'
 import { UISelectElement, UITextBox } from 'ascii-game-engine'
-import type { SceneManager } from '../SceneManager'
+import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 
 export class MainMenu extends BaseGameScene {
@@ -59,7 +59,7 @@ export class MainMenu extends BaseGameScene {
       switch (options[selectId]) {
         case 'New Game':
           this.ui.removeElement(selectEl.id)
-          this.sceneManager.NavigateTo('BoardConfig')
+          this.sceneManager.NavigateTo(Scene.BoardConfig)
           break
         case 'Palette':
           this.openPaletteMenu()

@@ -9,6 +9,12 @@ export type NavigationData = {
   board?: Board
 }
 
+export enum Scene {
+  Game = 1,
+  BoardConfig,
+  MainMenu,
+}
+
 export class SceneManager {
   engine: AsciiEngine
   currentScreen: BaseGameScene
@@ -18,19 +24,19 @@ export class SceneManager {
     this.currentScreen = new MainMenu(this)
   }
 
-  NavigateTo(screen: string, data: NavigationData | null = null) {
+  NavigateTo(screen: Scene, data: NavigationData | null = null) {
     if (data === null) data = {}
     this.currentScreen.unload()
     switch (screen) {
-      case 'BoardConfig':
+      case Scene.BoardConfig:
         this.currentScreen = new BoardConfig(this)
         break
-      case 'Game': {
+      case Scene.Game: {
         const board = data.board ?? new Board(this.engine.world.getChunkXY(0, 0), this.engine)
         this.currentScreen = new GameScreen(this, board)
         break
       }
-      case 'MainMenu':
+      case Scene.MainMenu:
       default:
         this.currentScreen = new MainMenu(this)
         break

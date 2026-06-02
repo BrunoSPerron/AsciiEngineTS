@@ -4,8 +4,10 @@
     "target": "es2023",
     "module": "esnext",
     "lib": ["ES2023", "DOM"],
-    "types": ["vite/client", "node"],
-    "paths": {},
+    "types": ["vite/client", "node", "bun"],
+    "paths": {
+      "laser-chess-game-logic": ["../game_logic/src/index.ts"]
+    },
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -16,5 +18,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src", "index.ts"]
 }

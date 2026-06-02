@@ -9,7 +9,7 @@ import type { Direction } from './laser'
 // Movement options (king = 8-directional)
 // ---------------------------------------------------------------------------
 
-const KING_DELTAS = [
+const KING_DELTAS: Array<Array<number>> = [
   [-1, -1],
   [0, -1],
   [1, -1],
@@ -31,8 +31,17 @@ export function getLegalMoves(
   const px = pawnIdx % state.sizeX
   const py = Math.floor(pawnIdx / state.sizeX)
 
+  const pawn = state.pawns[idx(state, x, y)]
+
+  let deltas: Array<Array<number>> = []
+  switch (pawn.moveType) {
+    case 'king':
+      deltas = KING_DELTAS
+      break
+  }
+
   const moves: MoveAction[] = []
-  for (const [dx, dy] of KING_DELTAS) {
+  for (const [dx, dy] of deltas) {
     const tx = px + dx
     const ty = py + dy
     if (tx < 0 || ty < 0 || tx >= state.sizeX || ty >= state.sizeY) continue

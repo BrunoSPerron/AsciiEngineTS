@@ -1,6 +1,8 @@
-export type GameRule = {
-  bounceDamage: 1
+import type { MoveType } from './GameState'
 
-  kingHP: 5
-  kingMoveType: 'king'
+export type GameRule = {
+  bounceDamage: number
+
+  kingHP: number
+  kingMoveType: MoveType
 }

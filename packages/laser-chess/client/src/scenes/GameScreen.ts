@@ -15,7 +15,7 @@ import { createGame, DIR_DELTA, CELL } from 'laser-chess-game-logic'
 import type { BaseGameScene } from './BaseGameScene'
 import { ARROW_SET } from '../arrowSets'
 import type { Board } from '../Board'
-import type { SceneManager } from '../SceneManager'
+import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
@@ -530,7 +530,7 @@ export class GameScreen implements BaseGameScene {
     confirm.onSelect(() => {
       this._engine.renderer.ui.removeElement(message.id)
       this.board.clear()
-      this.sceneManager.NavigateTo('MainMenu')
+      this.sceneManager.NavigateTo(Scene.MainMenu)
     })
 
     return true

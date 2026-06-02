@@ -1,0 +1,14 @@
+{
+  "name": "@laser-chess/logic",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "development": "./src/index.ts",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./src/index.ts"
+}
