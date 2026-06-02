@@ -9,7 +9,6 @@ export default [
       'dist/**',
       'build/**',
       'coverage/**',
-      '**/legacy/**',
       'node_modules/**',
       '**/vite.config.ts',
     ],
