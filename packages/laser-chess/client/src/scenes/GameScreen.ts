@@ -427,9 +427,6 @@ export class GameScreen implements BaseGameScene {
       return seg
     }
 
-    let currentDir = result.waypoints[0].outDir
-    let currentSeg = newSegment(result.waypoints[0].x, result.waypoints[0].y, currentDir)
-
     for (let wi = 0; wi < result.waypoints.length - 1; wi++) {
       const from = result.waypoints[wi]
       const to = result.waypoints[wi + 1]
@@ -437,46 +434,37 @@ export class GameScreen implements BaseGameScene {
 
       const steps = this._getStepsBetween(from, to)
 
-      const [ddx, ddy] = DIR_DELTA[currentDir]
+      const currentDir = from.outDir
       let cx = from.x
       let cy = from.y
+      let currentSeg = newSegment(cx, cy, currentDir)
 
-      let segmented = false
+      const [ddx, ddy] = DIR_DELTA[currentDir]
+
       for (let step = 0; step < steps; step++) {
         cx += ddx
         cy += ddy
 
         const isLastStep = step === steps - 1
 
-        // Detect wrap crossing mid-segment
-        if (!segmented) {
-          if (cx < 0) {
-            cx = this._state.sizeX
-            currentSeg = newSegment(cx, cy, currentDir)
-            segmented = true
-          } else if (cx > this._state.sizeX - 1) {
-            cx = -1
-            currentSeg = newSegment(cx, cy, currentDir)
-            segmented = true
-          } else if (cy < 0) {
-            cy = this._state.sizeY
-            currentSeg = newSegment(cx, cy, currentDir)
-            segmented = true
-          } else if (cy > this._state.sizeY - 1) {
-            cy = -1
-            currentSeg = newSegment(cx, cy, currentDir)
-            segmented = true
-          }
+        // mid-segment wrap
+        if (cx < 0) {
+          cx = this._state.sizeX
+          currentSeg = newSegment(cx, cy, currentDir)
+        } else if (cx > this._state.sizeX - 1) {
+          cx = -1
+          currentSeg = newSegment(cx, cy, currentDir)
+        } else if (cy < 0) {
+          cy = this._state.sizeY
+          currentSeg = newSegment(cx, cy, currentDir)
+        } else if (cy > this._state.sizeY - 1) {
+          cy = -1
+          currentSeg = newSegment(cx, cy, currentDir)
         }
 
         if (isLastStep && !isLastSegment) {
           // This is the mirror cell:
-          // 1. Add the corner glyph to the INCOMING segment
           addGlyph(currentSeg, cornerGlyph(currentDir, to.outDir), currentDir)
-
-          // 2. Start new outgoing segment anchored at the mirror cell
-          currentDir = to.outDir
-          currentSeg = newSegment(cx, cy, currentDir)
         } else {
           addGlyph(currentSeg, straightGlyph(currentDir), currentDir)
         }
