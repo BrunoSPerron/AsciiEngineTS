@@ -205,7 +205,7 @@ export class GameScreen implements BaseGameScene {
     for (const move of legalMoves) {
       const dirX = move.toX - move.fromX
       const dirY = move.toY - move.fromY
-      let glyph = this._getArrowGlyph(dirX, dirY, ARROW_SET.NUMBER)
+      const glyph = this._getArrowGlyph(dirX, dirY, ARROW_SET.NUMBER)
 
       const entity = new Entity(glyph, new GridVector(move.toX, move.toY), 500_000)
       entity.addCss('arrow')
@@ -308,7 +308,7 @@ export class GameScreen implements BaseGameScene {
     const shotEntities: Entity[] = []
 
     for (const shot of legalShots) {
-      let glyph = this._getArrowGlyph(shot.dx, shot.dy, ARROW_SET.NUMBER)
+      const glyph = this._getArrowGlyph(shot.dx, shot.dy, ARROW_SET.NUMBER)
 
       const entity = new Entity(
         glyph,
@@ -420,11 +420,11 @@ export class GameScreen implements BaseGameScene {
       const isLastSegment = wi === result.waypoints.length - 2
 
       let willWrapHorizontal =
-        (to.outDir !== 'none' && from.x < to.x && from.outDir == 'left') ||
-        (from.x > to.x && from.outDir == 'right')
+        (to.outDir !== 'none' && from.x < to.x && from.outDir === 'left') ||
+        (from.x > to.x && from.outDir === 'right')
       let willWrapVertical =
-        (to.outDir !== 'none' && from.y < to.y && from.outDir == 'up') ||
-        (from.y > to.y && from.outDir == 'down')
+        (to.outDir !== 'none' && from.y < to.y && from.outDir === 'up') ||
+        (from.y > to.y && from.outDir === 'down')
       if (from.x === to.x && from.y === to.y) {
         // full loop
         if (from.outDir === 'left' || from.outDir === 'right') willWrapHorizontal = true

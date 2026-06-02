@@ -1,6 +1,23 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 
+const sharedRules = {
+  '@typescript-eslint/no-floating-promises': 'error',
+  '@typescript-eslint/no-misused-promises': 'error',
+  '@typescript-eslint/consistent-type-imports': 'error',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    {
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+    },
+  ],
+  eqeqeq: ['error', 'always'],
+  curly: ['error', 'multi-line'],
+  'brace-style': ['error', '1tbs'],
+  'no-undef': 'off',
+}
+
 export default [
   {
     ignores: [
@@ -28,21 +45,8 @@ export default [
       },
     },
     rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      eqeqeq: ['error', 'always'],
-      curly: ['error', 'multi-line'],
-      'brace-style': ['error', '1tbs'],
+      ...sharedRules,
       'no-console': 'warn',
-      'no-undef': 'off',
     },
   },
 
@@ -55,23 +59,7 @@ export default [
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      eqeqeq: ['error', 'always'],
-      curly: ['error', 'multi-line'],
-      'brace-style': ['error', '1tbs'],
-      'no-console': 'warn',
-      'no-undef': 'off',
-    },
+    rules: sharedRules,
   },
 
   {
@@ -83,23 +71,7 @@ export default [
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      eqeqeq: ['error', 'always'],
-      curly: ['error', 'multi-line'],
-      'brace-style': ['error', '1tbs'],
-      'no-console': 'warn',
-      'no-undef': 'off',
-    },
+    rules: sharedRules,
   },
 
   {
@@ -111,23 +83,7 @@ export default [
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      eqeqeq: ['error', 'always'],
-      curly: ['error', 'multi-line'],
-      'brace-style': ['error', '1tbs'],
-      'no-console': 'warn',
-      'no-undef': 'off',
-    },
+    rules: sharedRules,
   },
 
   {
@@ -139,23 +95,7 @@ export default [
         tsconfigRootDir: import.meta.dirname,
       },
     },
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      eqeqeq: ['error', 'always'],
-      curly: ['error', 'multi-line'],
-      'brace-style': ['error', '1tbs'],
-      'no-console': 'warn',
-      'no-undef': 'off',
-    },
+    rules: sharedRules,
   },
 
   {
