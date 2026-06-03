@@ -1,6 +1,6 @@
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
-import type { UILayoutElement } from './layout_elements/UILayoutElement'
+import type { UINode } from './layout_elements/UINode'
 import type { Segment } from './segment'
 
 // ---------------------------------------------------------------------------
@@ -12,7 +12,7 @@ type BorderSegments = {
   bottom: Segment
   left: Segment
   right: Segment
-  bg: UILayoutElement
+  bg: UINode
   bw: number
   bh: number
   pivotRow: number
@@ -68,7 +68,7 @@ export class BorderAnimator {
    * registerOpenCompletion with the combined promise (animation + post-work)
    * so that runClose can await the full sequence before starting close.
    */
-  runOpen(element: UILayoutElement, segments: Segment[]): Promise<void> {
+  runOpen(element: UINode, segments: Segment[]): Promise<void> {
     return this._runOpenAnimation(element, segments)
   }
 
@@ -81,7 +81,7 @@ export class BorderAnimator {
     this._openingAnimations.set(id, promise)
   }
 
-  async runClose(element: UILayoutElement, id: number, segments: Segment[]): Promise<void> {
+  async runClose(element: UINode, id: number, segments: Segment[]): Promise<void> {
     const opening = this._openingAnimations.get(id)
     if (opening) await opening
     if (segments.length < 4) return
@@ -93,14 +93,14 @@ export class BorderAnimator {
   // Private orchestration
   // ---------------------------------------------------------------------------
 
-  private async _runOpenAnimation(element: UILayoutElement, segments: Segment[]): Promise<void> {
+  private async _runOpenAnimation(element: UINode, segments: Segment[]): Promise<void> {
     if (segments.length < 4) return
 
     const borderSegs = this._makeBorderSegs(element, segments)
     await this._animateOpen(borderSegs)
   }
 
-  private _makeBorderSegs(element: UILayoutElement, segments: Segment[]): BorderSegments {
+  private _makeBorderSegs(element: UINode, segments: Segment[]): BorderSegments {
     const [top, bottom, left, right] = segments
     const bw = element.w + 2
     const bh = element.h + 2
@@ -122,7 +122,7 @@ export class BorderAnimator {
     }
   }
 
-  private _pivotRow(element: UILayoutElement, bh: number): number {
+  private _pivotRow(element: UINode, bh: number): number {
     const pivotY = element.pivotY ?? 0
     return Math.round(Math.max(0, Math.min(1, pivotY / 100)) * (bh - 1))
   }

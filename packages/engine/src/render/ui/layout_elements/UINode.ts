@@ -26,7 +26,7 @@ export type UISpatialConfig = {
  * A region managed by UILayout.
  *
  * UILayout owns this element's border and positions the container.
- * UILayoutElement is only responsible for rendering content inside its interior.
+ * UINode is only responsible for rendering content inside its interior.
  *
  * Coordinates are viewport-local tile grid coordinates.
  *
@@ -52,7 +52,7 @@ export type UISpatialConfig = {
  *   - destroy()   — called by UILayout after unloaded for final DOM teardown.
  *                   Call super.destroy() to remove this.el.
  */
-export class UILayoutElement {
+export class UINode {
   private _id?: number
   readonly el: HTMLDivElement
 

@@ -1,8 +1,8 @@
-import { UILayoutElement } from './UILayoutElement'
+import { UINode } from './UINode'
 
 export type MODE = 'simple' | 'centered'
 
-export class UITextBox extends UILayoutElement {
+export class UITextBox extends UINode {
   private _content: string[]
   mode: MODE
 

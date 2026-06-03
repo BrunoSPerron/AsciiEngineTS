@@ -1,4 +1,4 @@
-import { UIInputElement, type UIInputOptions } from './UIInputElement'
+import { UIInputBase, type UIInputOptions } from './UIInputBase'
 
 export type UITextInputOptions = UIInputOptions
 
@@ -16,7 +16,7 @@ export type UITextInputOptions = UIInputOptions
  *
  * Resolves result with the entered string, or null on cancel (Escape).
  */
-export class UITextInputElement extends UIInputElement<string> {
+export class UITextInputElement extends UIInputBase<string> {
   private _label: string
   private _message: string[]
 

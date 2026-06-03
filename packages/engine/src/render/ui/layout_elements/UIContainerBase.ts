@@ -1,6 +1,6 @@
 import type { AsciiEngine } from '../../../core/Engine'
 import type { TileMetricsData } from '../../tileMetrics'
-import { UILayoutElement, type UISpatialConfig } from './UILayoutElement'
+import { UINode, type UISpatialConfig } from './UINode'
 
 export type InnerLineData = {
   x: number
@@ -10,12 +10,12 @@ export type InnerLineData = {
 }
 
 type UnMountedChildEntry = {
-  element: UILayoutElement
+  element: UINode
   config: UISpatialConfig
 }
 
 /**
- * Abstract base for UILayoutElements that manage their own list of child elements.
+ * Abstract base for UINodes that manage their own list of child elements.
  *
  * Children are positioned within the container's interior coordinate space.
  * Inner divider lines participate in UILayout's reconciliation system via
@@ -28,10 +28,10 @@ type UnMountedChildEntry = {
  * Child el nodes are appended into this.el, so they animate and are destroyed
  * with the container automatically.
  */
-export abstract class UIContainerBase extends UILayoutElement {
+export abstract class UIContainerBase extends UINode {
   private _unmountedChildren: UnMountedChildEntry[] = []
 
-  protected _children: UILayoutElement[] = []
+  protected _children: UINode[] = []
 
   private _mounted = false
 
@@ -39,7 +39,7 @@ export abstract class UIContainerBase extends UILayoutElement {
   // Child management
   // ---------------------------------------------------------------------------
 
-  addChild(element: UILayoutElement, config: UISpatialConfig): void {
+  addChild(element: UINode, config: UISpatialConfig): void {
     if (this._mounted) {
       this._mountChild(element, config)
       this._layoutChildren()
@@ -78,7 +78,7 @@ export abstract class UIContainerBase extends UILayoutElement {
   abstract getInnerLineData(): InnerLineData[]
 
   // ---------------------------------------------------------------------------
-  // UILayoutElement lifecycle
+  // UINode lifecycle
   // ---------------------------------------------------------------------------
 
   loaded(): void {
@@ -124,7 +124,7 @@ export abstract class UIContainerBase extends UILayoutElement {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private _mountChild(element: UILayoutElement, config: UISpatialConfig): void {
+  private _mountChild(element: UINode, config: UISpatialConfig): void {
     // Assign a stable id derived from the container id so children have unique ids
     // that won't collide with UILayout's own id sequence.
     // We use a simple counter embedded in the element entry index.

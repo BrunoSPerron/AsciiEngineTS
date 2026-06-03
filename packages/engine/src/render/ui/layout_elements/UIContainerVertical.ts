@@ -1,7 +1,7 @@
 import { UIContainerBase, type InnerLineData } from './UIContainerBase'
 
 /**
- * A container that stacks UILayoutElements children top-to-bottom.
+ * A container that stacks UINodes children top-to-bottom.
  */
 export class UIContainerVertical extends UIContainerBase {
   constructor() {

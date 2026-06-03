@@ -1,4 +1,4 @@
-import { UILayoutElement } from './UILayoutElement'
+import { UINode } from './UINode'
 
 export type UIInputOptions = {
   closeOnSubmit?: boolean
@@ -17,7 +17,7 @@ export type UIInputOptions = {
  *  - `_rebuildContent()` — re-render on resize
  *  - `_focusInput()` — programmatically focus the native input
  */
-export abstract class UIInputElement<T extends string | number | boolean> extends UILayoutElement {
+export abstract class UIInputBase<T extends string | number | boolean> extends UINode {
   readonly result: Promise<T | null>
 
   closeOnSubmit: boolean

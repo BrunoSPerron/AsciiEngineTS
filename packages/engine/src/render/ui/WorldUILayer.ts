@@ -2,18 +2,18 @@ import type { AsciiEngine } from '../../core/Engine'
 import type { Camera } from '../Camera'
 import type { Entity } from '../../world/entities/Entity'
 import type { TileMetricsData } from '../tileMetrics'
-import type { UILayoutElement} from './layout_elements/UILayoutElement';
-import { type UISpatialConfig } from './layout_elements/UILayoutElement'
+import type { UINode } from './layout_elements/UINode'
+import { type UISpatialConfig } from './layout_elements/UINode'
 
 export type PositionProvider = (now: number) => [number, number]
 
 type WorldUIEntry = {
-  element: UILayoutElement
+  element: UINode
   provider: PositionProvider
 }
 
 /**
- * Manages UILayoutElements anchored to world-space positions or moving entities.
+ * Manages UINodes anchored to world-space positions or moving entities.
  *
  * Elements are positioned every camera frame using a PositionProvider — a
  * function that returns the current [worldX, worldY]. For entity anchors the
@@ -77,14 +77,10 @@ export class WorldUILayer {
   // ---------------------------------------------------------------------------
 
   /**
-   * Add a UILayoutElement anchored to a world-space position provider.
+   * Add a UINode anchored to a world-space position provider.
    * Returns a dispose function that removes the element.
    */
-  add(
-    element: UILayoutElement,
-    spatialConfig: UISpatialConfig,
-    provider: PositionProvider,
-  ): () => void {
+  add(element: UINode, spatialConfig: UISpatialConfig, provider: PositionProvider): () => void {
     const id = this._nextId++
     element._mount(id, spatialConfig, this._tileMetrics, this._engine)
     this.el.appendChild(element.el)
@@ -104,13 +100,13 @@ export class WorldUILayer {
   }
 
   /**
-   * Add a UILayoutElement anchored to an entity's interpolated visual position.
+   * Add a UINode anchored to an entity's interpolated visual position.
    *
    * offsetX / offsetY are tile offsets applied on top of the entity position.
    * Example: offsetY -1 places a speech bubble one tile above the entity head.
    */
   addToEntity(
-    element: UILayoutElement,
+    element: UINode,
     spatialConfig: UISpatialConfig,
     entity: Entity,
     offsetX: number = 0,
@@ -142,7 +138,7 @@ export class WorldUILayer {
     }
   }
 
-  private _positionEl(element: UILayoutElement, provider: PositionProvider, now: number): void {
+  private _positionEl(element: UINode, provider: PositionProvider, now: number): void {
     const [wx, wy] = provider(now)
     const { w, h } = this._tileMetrics
     const cam = this._camera.pos

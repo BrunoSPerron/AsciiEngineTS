@@ -1,9 +1,9 @@
-import { UILayoutElement } from './UILayoutElement'
+import { UINode } from './UINode'
 
 type ChangeHandler = (index: number) => void
 type SelectHandler = (index: number) => void
 
-export abstract class UISelectBase extends UILayoutElement {
+export abstract class UISelectBase extends UINode {
   abstract currentIndex: number
   closeOnSelect: boolean = true
   suppressOnClose: Set<string> = new Set(['confirm', 'cancel', 'pause'])

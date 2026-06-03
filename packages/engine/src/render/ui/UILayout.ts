@@ -2,7 +2,7 @@ import type { AsciiEngine } from '../../core/Engine'
 import type { Camera } from '../Camera'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
-import type { UILayoutElement, UISpatialConfig } from './layout_elements/UILayoutElement'
+import type { UINode, UISpatialConfig } from './layout_elements/UINode'
 import type { UIContainerBase } from './layout_elements/UIContainerBase'
 import type { UISelectBase } from './layout_elements/UISelectBase'
 import { UISelectElement } from './layout_elements/UISelectElement'
@@ -66,7 +66,7 @@ export class UILayout {
     left: Segment
   } | null = null
 
-  private _elements = new Map<number, UILayoutElement>()
+  private _elements = new Map<number, UINode>()
   // Per-element border segments, use element.id as key
   private _elementSegments = new Map<number, Segment[]>()
 
@@ -151,7 +151,7 @@ export class UILayout {
     this.drawFrame()
   }
 
-  addElement(element: UILayoutElement, spatialConfig: UISpatialConfig, animate = true): number {
+  addElement(element: UINode, spatialConfig: UISpatialConfig, animate = true): number {
     element._mount(this._nextId++, spatialConfig, this.tileMetrics, this._engine)
     this.root.appendChild(element.el)
 
@@ -318,7 +318,7 @@ export class UILayout {
   // Reflow helpers
   // ---------------------------------------------------------------------------
 
-  private _reflowElement(element: UILayoutElement): void {
+  private _reflowElement(element: UINode): void {
     const { x, y, cols, rows } = this._contentRect
     element.reflow(cols, rows, x, y)
   }
@@ -334,7 +334,7 @@ export class UILayout {
   // Animation orchestration
   // ---------------------------------------------------------------------------
 
-  private async _runCloseAnimation(element: UILayoutElement, id: number): Promise<void> {
+  private async _runCloseAnimation(element: UINode, id: number): Promise<void> {
     const segs = this._elementSegments.get(id)
     if (!segs || segs.length < 4) {
       element.destroy()
@@ -384,7 +384,7 @@ export class UILayout {
   // Element segment construction
   // ---------------------------------------------------------------------------
 
-  private _buildElementSegments(element: UILayoutElement): void {
+  private _buildElementSegments(element: UINode): void {
     const bx = element.x - 1
     const by = element.y - 1
     const bw = element.w + 2
@@ -399,7 +399,7 @@ export class UILayout {
     this._buildInnerLineSegments(element)
   }
 
-  private _buildInnerLineSegments(element: UILayoutElement): void {
+  private _buildInnerLineSegments(element: UINode): void {
     const container = element as unknown as UIContainerBase
     if (typeof container.getInnerLineData !== 'function') return
 
@@ -489,7 +489,7 @@ export class UILayout {
     vx: number,
     vy: number,
     line: { x: number; y: number; length: number; vertical: boolean },
-    element: UILayoutElement,
+    element: UINode,
   ): Segment {
     const { w, h } = this.tileMetrics
     const el = document.createElement('pre')
@@ -603,7 +603,7 @@ export class UILayout {
     }
   }
 
-  private _reconcileBorderNeighbors(element: UILayoutElement): void {
+  private _reconcileBorderNeighbors(element: UINode): void {
     const affected = new Set<string>()
 
     for (const [cx, cy] of element.borderCoords()) {
