@@ -1,4 +1,4 @@
-`UILayout` manages the viewport frame and all line-based UI layout. It owns the outer border drawn around the game window, positions [[UILayoutElement#UILayoutElement|UILayoutElements]] within it, and automatically reconciles border intersections into the correct box-drawing glyphs when elements share edges.
+`UILayout` manages the viewport frame and all line-based UI layout. It owns the outer border drawn around the game window, positions [[UINode#UINode|UINodes]] within it, and automatically reconciles border intersections into the correct box-drawing glyphs when elements share edges.
 
 Available at `engine.renderer.ui` after engine initialization.
 
@@ -126,6 +126,6 @@ The frame always sits at the lowest priority (`-Infinity`), so any element borde
 
 ## Related
 
-- [[UILayoutElement]] — `UILayoutElement` and its content API
+- [[UINode]] — `UINode` and its content API
 - [[ThemeManager]] — CSS variables used to style the frame and element borders
 - [[engine/Engine|Engine]] — `engine.renderer.ui` access point

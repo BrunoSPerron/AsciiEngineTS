@@ -1,4 +1,4 @@
-`UISelectElement` is a ready-made [[UILayoutElement]] that renders a keyboard- and pointer-navigable list of options. It supports three display modes depending on the element size and item count, and notifies listeners when the selection changes or is confirmed.
+`UISelectElement` is a ready-made [[UINode]] that renders a keyboard- and pointer-navigable list of options. It supports three display modes depending on the element size and item count, and notifies listeners when the selection changes or is confirmed.
 
 ---
 
@@ -139,7 +139,7 @@ If `closeOnSelect` is `true` (default), the element removes itself before the li
 
 ## Related
 
-- [[UILayoutElement]] — base class, lifecycle hooks, and spatial config reference
+- [[UINode]] — base class, lifecycle hooks, and spatial config reference
 - [[UISelectBase|IUSelectInterface]] — the interface `UISelectElement` implements
 - [[UiLayout]] — `addElement`, `removeElement`, and layout management
 - [[input/ContextManager|ContextManager]] — how input contexts work

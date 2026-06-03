@@ -126,4 +126,4 @@ When the cursor leaves the game container entirely, world hover-end events fire 
 - [[input/ContextManager|Context Manager]] — context stack that scopes event delivery
 - [[input/ActionManager|Action Manager]] — keyboard counterpart, same context model
 - [[engine/Engine|Engine]] — `pointerManager` is available after `init()` resolves
-- [[render/UILayoutElement|UILayoutElement]] — uses `registerUIElement` for interactive content
+- [[render/UINode|UINode]] — uses `registerUIElement` for interactive content

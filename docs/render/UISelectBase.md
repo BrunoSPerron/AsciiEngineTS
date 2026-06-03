@@ -1,13 +1,13 @@
 `UISelectBase` is the abstract base class shared by [[UISelectElement]] and any custom select implementation. Code that consumes a select element such as `addPaletteElement` or your own menu helpers should depend on this class rather than `UISelectElement` directly, so alternate implementations can be substituted.
 
-Lifecycle concerns (`loaded`, `resized`, `unloaded`, `el`, `id`, and so on) from the parent [[UILayoutElement]] class are inherited
+Lifecycle concerns (`loaded`, `resized`, `unloaded`, `el`, `id`, and so on) from the parent [[UINode]] class are inherited
 
 ---
 
 ### Class
 
 ```ts
-abstract class UISelectBase extends UILayoutElement {
+abstract class UISelectBase extends UINode {
   abstract currentIndex: number
   closeOnSelect: boolean
   suppressOnClose: Set<string>
@@ -98,7 +98,7 @@ select.onSelect((index) => {
 
 ### Custom implementations
 
-Subclass `UISelectBase` to create a drop-in replacement for `UISelectElement`. Implement `currentIndex` and the `UILayoutElement` lifecycle hooks.
+Subclass `UISelectBase` to create a drop-in replacement for `UISelectElement`. Implement `currentIndex` and the `UINode` lifecycle hooks.
 
 ```ts
 import { UISelectBase } from 'ascii-game-engine'
@@ -131,5 +131,5 @@ class MyCustomSelect extends UISelectBase {
 ### Related
 
 - [[UISelectElement]] — the built-in implementation
-- [[UILayoutElement]] — base class for all layout elements
+- [[UINode]] — base class for all layout elements
 - [[UiLayout]] — `addElement` and `addPaletteElement`

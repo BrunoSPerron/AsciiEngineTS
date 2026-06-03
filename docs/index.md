@@ -36,11 +36,11 @@ An ASCII game engine in TypeScript.
 
 ## Rendering
 
-| Page                                        | Description                                                         |
-| ------------------------------------------- | ------------------------------------------------------------------- |
-| [[render/Theming\|Theming]]                 | CSS variables, built-in themes, tile styles, runtime switching      |
-| [[render/UiLayout\|UILayout]]               | Viewport frame, layout elements, positioning, border reconciliation |
-| [[render/UILayoutElement\|UILayoutElement]] | Content container API, subclassing, resize hook                     |
+| Page                          | Description                                                         |
+| ----------------------------- | ------------------------------------------------------------------- |
+| [[render/Theming\|Theming]]   | CSS variables, built-in themes, tile styles, runtime switching      |
+| [[render/UiLayout\|UILayout]] | Viewport frame, layout elements, positioning, border reconciliation |
+| [[render/UINode\|UINode]]     | Content container API, subclassing, resize hook                     |
 
 ---
 
