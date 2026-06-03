@@ -4,7 +4,7 @@ import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 import { ServerConnection } from '../net/ServerConnection'
 
-const SERVER_URL = 'ws://localhost:3000'
+const SERVER_URL = 'wss://laser-chess.fly.dev'
 
 export class MainMenu extends BaseGameScene {
   ui: UILayout
