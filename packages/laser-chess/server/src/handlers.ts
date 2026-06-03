@@ -312,7 +312,7 @@ function handleGameAction(
   match.state = nextState
 
   const room = rooms.getRoom(player.roomId)!
-  broadcast(room, { type: 'actionApplied', action, state: nextState })
+  broadcast(room, { type: 'actionApplied', playerNum, action, state: nextState })
 
   const victory = match.logic.checkVictory(nextState)
   if (victory) {

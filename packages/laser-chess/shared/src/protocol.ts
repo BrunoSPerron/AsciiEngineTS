@@ -38,7 +38,7 @@ export type RoomBroadcast =
   | { type: 'message'; player: PlayerSummary; text: string }
   | { type: 'matchStart'; players: PlayerSummary[] }
   | { type: 'boardSelected'; boardName: string }
-  | { type: 'actionApplied'; action: Action; state: GameState }
+  | { type: 'actionApplied'; action: Action; playerNum: number; state: GameState }
   | { type: 'gameOver'; winner: 1 | 2 }
 
 export type ServerMessage =

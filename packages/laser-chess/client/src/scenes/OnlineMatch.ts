@@ -53,10 +53,8 @@ export class OnlineMatch implements BaseGameScene {
   private _logic: GameLogic
   private _myPlayer: 1 | 2
 
-  /** Listeners/cleanup functions registered during a phase — cleared on phase transition. */
+  private _socketMsgUnlisten = () => {}
   private _phaseCleanup: Array<() => void> = []
-
-  /** True while an animation is running — input is suppressed. */
   private _animating = false
 
   constructor(
@@ -82,6 +80,7 @@ export class OnlineMatch implements BaseGameScene {
 
   unload(): void {
     this._clearPhase()
+    this._socketMsgUnlisten()
   }
 
   // ---------------------------------------------------------------------------
@@ -89,28 +88,24 @@ export class OnlineMatch implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _listenToServer(): void {
-    const unlisten = this._conn.onMessage((msg) => {
+    this._socketMsgUnlisten = this._conn.onMessage((msg) => {
       switch (msg.type) {
         case 'actionApplied':
-          // Only apply if it was the opponent's action (our own actions update state locally
-          // before sending, so we don't double-apply)
-          if (this._state.currentPlayer !== this._myPlayer) {
+          // Only apply if it was the opponent's action
+          if (msg.playerNum !== this._myPlayer) {
             void this._applyRemoteAction(msg.action, msg.state)
           }
           break
         case 'gameOver':
           this._clearPhase()
           this._showVictory(msg.winner)
-          unlisten()
           break
         case 'playerLeft':
           this._clearPhase()
           this._showDisconnected()
-          unlisten()
           break
       }
     })
-    this._phaseCleanup.push(unlisten)
   }
 
   // ---------------------------------------------------------------------------
