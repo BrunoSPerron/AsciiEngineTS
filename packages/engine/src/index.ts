@@ -16,17 +16,14 @@ export { MASK, maskToGlyph, invertDirectionMask } from './render/lineGlyph'
 export type { TileMetricsData } from './render/tileMetrics'
 export { UILayout } from './render/ui/UILayout'
 
-export { UIContainerBase, type InnerLineData } from './render/ui/layout_elements/UIContainerBase'
-export { UIContainerVertical } from './render/ui/layout_elements/UIContainerVertical'
-export { UIInputBase, type UIInputOptions } from './render/ui/layout_elements/UIInputBase'
-export { UINode } from './render/ui/layout_elements/UINode'
-export { UISelectBase } from './render/ui/layout_elements/UISelectBase'
-export { UISelectElement } from './render/ui/layout_elements/UISelectElement'
-export { UITextBox } from './render/ui/layout_elements/UITextBox'
-export {
-  UITextInputElement,
-  type UITextInputOptions,
-} from './render/ui/layout_elements/UITextInputElement'
+export { UIContainerBase, type InnerLineData } from './render/ui/node/UIContainerBase'
+export { UIContainerVertical } from './render/ui/node/UIContainerVertical'
+export { UIInputBase, type UIInputOptions } from './render/ui/node/UIInputBase'
+export { UINode } from './render/ui/node/UINode'
+export { UISelectBase } from './render/ui/node/UISelectBase'
+export { UISelectElement } from './render/ui/node/UISelectElement'
+export { UITextBox } from './render/ui/node/UITextBox'
+export { UITextInputElement, type UITextInputOptions } from './render/ui/node/UITextInputElement'
 
 export { WorldUILayer } from './render/ui/WorldUILayer'
 

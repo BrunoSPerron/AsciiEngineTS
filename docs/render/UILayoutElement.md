@@ -1,8 +1,8 @@
-`UILayoutElement` is a managed region within [[UiLayout|UILayout]]. It occupies a rectangular area of the viewport, gets a double-line border drawn around it by `UILayout`, and exposes a DOM element for your content.
+`UINode` is a managed region within [[UiLayout|UILayout]]. It occupies a rectangular area of the viewport, gets a double-line border drawn around it by `UILayout`, and exposes a DOM element for your content.
 
 ---
 
-## Getting a UILayoutElement
+## Getting a UINode
 
 Elements are created through `UILayout`, never directly:
 
@@ -22,12 +22,12 @@ See [[UiLayout]] for the full positioning and sizing reference.
 
 ## Subclassing
 
-`UILayoutElement` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. The engine calls them at the right time.
+`UINode` is designed to be subclassed. Override lifecycle hooks to build content and clean up after yourself. The engine calls them at the right time.
 
 ```ts
-import { UILayoutElement } from 'ascii-game-engine'
+import { UINode } from 'ascii-game-engine'
 
-class StatusBar extends UILayoutElement {
+class StatusBar extends UINode {
   private _unlisten: (() => void) | null = null
 
   loaded(): void {
@@ -199,7 +199,7 @@ All coordinates are in **viewport-local tile grid coordinates** — `(0, 0)` is 
 
 ## Related
 
-- [[UiLayout]] — creates and manages UILayoutElements, handles positioning and border reconciliation
-- [[UISelectElement]] — a ready-made select list built on UILayoutElement
+- [[UiLayout]] — creates and manages UINodes, handles positioning and border reconciliation
+- [[UISelectElement]] — a ready-made select list built on UINode
 - [[input/ContextManager|ContextManager]] — input context stack
 - [[engine/Engine|Engine]] — `engine.renderer.ui` access point

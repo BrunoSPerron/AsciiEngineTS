@@ -1,6 +1,6 @@
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { TileMetricsData } from '../tileMetrics'
-import type { UINode } from './layout_elements/UINode'
+import type { UINode } from './node/UINode'
 import type { Segment } from './segment'
 
 // ---------------------------------------------------------------------------
