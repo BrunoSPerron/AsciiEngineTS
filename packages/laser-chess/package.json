@@ -1,0 +1,8 @@
+{
+  "name": "laser-chess",
+  "workspaces": [
+    "server",
+    "shared",
+    "client"
+  ]
+}
