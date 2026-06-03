@@ -25,7 +25,7 @@ export class MainMenu extends BaseGameScene {
 
   openLabelElement() {
     if (this.labelElement !== null) return
-    this.labelElement = new UITextBox(['Laser Chess'], 'centered')
+    this.labelElement = new UITextBox(['Laser Chess', 'Beta'], 'centered')
     this.ui.addElement(this.labelElement, {
       y: -2,
       h: 5,
@@ -93,7 +93,7 @@ export class MainMenu extends BaseGameScene {
     const ui = this.sceneManager.engine.renderer.ui
 
     // Show a connecting status box while the socket opens
-    const statusBox = new UITextBox([' Connecting...'], 'centered')
+    const statusBox = new UITextBox(['Connecting...'], 'centered')
     ui.addElement(statusBox, {
       w: 20,
       h: 1,
@@ -112,7 +112,7 @@ export class MainMenu extends BaseGameScene {
         this.sceneManager.NavigateTo(Scene.Lobby, { conn })
       } else if (state === 'error' || state === 'closed') {
         unlistenState()
-        statusBox.content = ' Could not connect'
+        statusBox.content = 'Could not connect'
         setTimeout(() => {
           if (this.sceneManager.currentScreen === this) {
             ui.removeElement(statusBox.id)
