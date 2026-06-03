@@ -70,9 +70,6 @@ export function buildBoardFromState(state: GameState, engine: AsciiEngine): Boar
   chunk.dirty = true
   engine.renderer.invalidateChunks()
 
-  // Construct Board — pass the already-filled chunk so _prepareForGame
-  // finds only spaces (pawns were not written as glyphs) and does nothing.
-  // We then manually spawn the pawns below.
   const board = new Board(chunk, engine)
 
   // Spawn pawns from state.pawns

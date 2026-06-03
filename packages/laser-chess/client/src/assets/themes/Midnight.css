@@ -9,27 +9,27 @@
     circle at center,
     transparent 0%,
     transparent 25%,
-    #8d540925 45%,
-    #7a330a8c 70%,
-    #6e0c09eb 100%
+    rgba(0, 0, 0, 0.15) 45%,
+    rgba(0, 0, 0, 0.55) 70%,
+    rgba(0, 0, 0, 0.92) 100%
   );
 
   mix-blend-mode: multiply;
 }
 
 .ascii-game-engine {
-  --color-bg: #251811;
-  --color-text: #d48a62;
+  --color-bg: #182338;
+  --color-text: #7f93ab;
 }
 
 .ascii-game-engine .layer .tile-odd {
-  background-color: #312019;
+  background-color: #22314a;
 }
 
 .ascii-game-engine .actor.player-one {
-  color: #7da0c7;
+  color: #7fb7be;
 }
 
 .ascii-game-engine .actor.player-two {
-  color: #e06d45;
+  color: #d2a15a;
 }
