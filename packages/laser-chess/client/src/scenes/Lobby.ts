@@ -45,6 +45,7 @@ export class Lobby extends BaseGameScene {
             conn: this._conn,
             room: msg.room,
             players: msg.players,
+            localPlayerId: this._playerId,
           })
           break
         case 'error':

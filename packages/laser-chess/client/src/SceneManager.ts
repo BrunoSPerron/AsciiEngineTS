@@ -14,6 +14,7 @@ export type NavigationData = {
   conn?: ServerConnection
   room?: RoomSummary
   players?: PlayerSummary[]
+  localPlayerId?: string
 }
 
 export enum Scene {
@@ -22,6 +23,7 @@ export enum Scene {
   MainMenu,
   Lobby,
   Room,
+  OnlineMatch,
 }
 
 export class SceneManager {
@@ -51,14 +53,21 @@ export class SceneManager {
         this.currentScreen = new Lobby(this, d.conn)
         break
       }
+      case Scene.MainMenu:
+        this.currentScreen = new MainMenu(this)
+        break
       case Scene.Room: {
-        if (!d.conn || !d.room || !d.players) {
-          throw new Error('Scene.Room requires conn, room, and players in NavigationData')
+        if (!d.conn || !d.room || !d.players || !d.localPlayerId) {
+          throw new Error(
+            'Scene.Room requires conn, room, players and localPlayerId in NavigationData',
+          )
         }
-        this.currentScreen = new Room(this, d.conn, d.room, d.players)
+        this.currentScreen = new Room(this, d.conn, d.room, d.players, d.localPlayerId)
         break
       }
-      case Scene.MainMenu:
+      case Scene.OnlineMatch:
+        console.log('I am an online match !!!')
+        break
       default:
         this.currentScreen = new MainMenu(this)
         break

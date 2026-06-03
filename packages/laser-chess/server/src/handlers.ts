@@ -1,8 +1,7 @@
 import type { ServerWebSocket } from 'bun'
-import type { RoomBroadcast } from './protocol'
 import type { Room } from './RoomManager'
 import { RoomManager } from './RoomManager'
-import type { ClientMessage, ServerMessage } from '@laser-chess/shared'
+import type { ClientMessage, RoomBroadcast, ServerMessage } from '@laser-chess/shared'
 
 // ---------------------------------------------------------------------------
 // WebSocketData — attached to each socket by Bun
@@ -17,12 +16,6 @@ export type WebSocketData = {
 // ---------------------------------------------------------------------------
 
 const rooms = new RoomManager()
-
-/**
- * Live socket map — needed so we can push to individual players and broadcast
- * to rooms. Bun's `ws.publish` only works for subscriptions; we use this map
- * to target players directly when needed.
- */
 const sockets = new Map<string, ServerWebSocket<WebSocketData>>()
 
 // ---------------------------------------------------------------------------
@@ -42,7 +35,9 @@ export function onClose(ws: ServerWebSocket<WebSocketData>): void {
   sockets.delete(playerId)
 
   const player = rooms.getPlayer(playerId)
-  const playerSummary = player ? rooms.toPlayerSummary(player) : { id: playerId, name: 'Bob' }
+  const playerSummary = player
+    ? rooms.toPlayerSummary(player)
+    : { id: playerId, name: 'Bob', ready: false }
 
   const vacatedRoom = rooms.removePlayer(playerId)
   if (vacatedRoom) {
@@ -80,6 +75,9 @@ export function onMessage(ws: ServerWebSocket<WebSocketData>, raw: string | Buff
     case 'message':
       handleMessage(ws, playerId, msg.text)
       break
+    case 'setReady':
+      handleSetReady(ws, playerId, msg.ready)
+      break
     default:
       send(ws, { type: 'error', message: 'Unknown message type.' })
   }
@@ -107,7 +105,6 @@ function handleCreateRoom(
   const player = rooms.getPlayer(playerId)!
   const { room, evicted } = rooms.createRoom(playerId, roomName)
 
-  // Notify the room the creator was evicted from
   if (evicted) {
     broadcast(evicted, { type: 'playerLeft', player: rooms.toPlayerSummary(player) })
   }
@@ -134,15 +131,12 @@ function handleJoinRoom(
 
   const { room, evicted } = result
 
-  // Notify the room the player was evicted from
   if (evicted) {
     broadcast(evicted, { type: 'playerLeft', player: rooms.toPlayerSummary(player) })
   }
 
-  // Notify existing members of the new arrival
   broadcast(room, { type: 'playerJoined', player: rooms.toPlayerSummary(player) }, playerId)
 
-  // Confirm to the joiner with the current player list
   send(ws, {
     type: 'joined',
     room: rooms.toRoomSummary(room),
@@ -165,7 +159,7 @@ function handleLeaveRoom(ws: ServerWebSocket<WebSocketData>, playerId: string): 
 
 function handleMessage(_ws: ServerWebSocket<WebSocketData>, playerId: string, text: string): void {
   const player = rooms.getPlayer(playerId)!
-  if (!player.roomId) return // silently drop
+  if (!player.roomId) return
 
   const room = rooms.getRoom(player.roomId)
   if (!room) return
@@ -176,6 +170,40 @@ function handleMessage(_ws: ServerWebSocket<WebSocketData>, playerId: string, te
   broadcast(room, { type: 'message', player: rooms.toPlayerSummary(player), text: trimmed })
 }
 
+function handleSetReady(
+  ws: ServerWebSocket<WebSocketData>,
+  playerId: string,
+  ready: boolean,
+): void {
+  const player = rooms.setReady(playerId, ready)
+  if (!player || !player.roomId) {
+    send(ws, { type: 'error', message: 'Not in a room.' })
+    return
+  }
+
+  const room = rooms.getRoom(player.roomId)
+  if (!room) return
+
+  // Broadcast the ready change to everyone in the room
+  broadcast(room, { type: 'playerReadyChanged', player: rooms.toPlayerSummary(player) })
+
+  // Check if a match should start: exactly 2 ready players
+  const readyPlayers = rooms.getReadyPlayers(room.id)
+  if (readyPlayers.length >= 2) {
+    const matchPlayers = readyPlayers.slice(0, 2).map((p) => rooms.toPlayerSummary(p))
+    rooms.resetReadyState(room.id)
+
+    // Broadcast matchStart only to the two matched players
+    const payload = JSON.stringify({
+      type: 'matchStart',
+      players: matchPlayers,
+    } satisfies RoomBroadcast)
+    for (const p of matchPlayers) {
+      sockets.get(p.id)?.send(payload)
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // I/O helpers
 // ---------------------------------------------------------------------------
@@ -184,10 +212,6 @@ function send(ws: ServerWebSocket<WebSocketData>, msg: ServerMessage): void {
   ws.send(JSON.stringify(msg))
 }
 
-/**
- * Send a broadcast message to all players in the room.
- * Pass `excludeId` to skip one player (e.g. the sender).
- */
 function broadcast(room: Room, msg: RoomBroadcast, excludeId?: string): void {
   const payload = JSON.stringify(msg)
   for (const pid of room.playerIds) {

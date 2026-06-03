@@ -9,6 +9,7 @@ export type ClientMessage =
   | { type: 'joinRoom'; roomId: string }
   | { type: 'leaveRoom' }
   | { type: 'message'; text: string }
+  | { type: 'setReady'; ready: boolean }
 
 // ---------------------------------------------------------------------------
 // Server → Client
@@ -23,12 +24,15 @@ export type RoomSummary = {
 export type PlayerSummary = {
   id: string
   name: string
+  ready: boolean
 }
 
 export type RoomBroadcast =
   | { type: 'playerJoined'; player: PlayerSummary }
   | { type: 'playerLeft'; player: PlayerSummary }
+  | { type: 'playerReadyChanged'; player: PlayerSummary }
   | { type: 'message'; player: PlayerSummary; text: string }
+  | { type: 'matchStart'; players: PlayerSummary[] }
 
 export type ServerMessage =
   | { type: 'welcome'; playerId: string; playerName: string }

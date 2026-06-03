@@ -9,6 +9,7 @@ export type Player = {
   id: string
   name: string
   roomId: string | null
+  ready: boolean
 }
 
 export type Room = {
@@ -50,6 +51,7 @@ export class RoomManager {
       id: nextPlayerId(),
       name: 'Bob',
       roomId: null,
+      ready: false,
     }
     this._players.set(player.id, player)
     return player
@@ -70,6 +72,43 @@ export class RoomManager {
     return player
   }
 
+  /**
+   * Toggle a player's ready state.
+   * Resets all players' ready state when a match is triggered (caller decides).
+   * Returns the updated player, or null if not found or not in a room.
+   */
+  setReady(playerId: string, ready: boolean): Player | null {
+    const player = this._players.get(playerId)
+    if (!player || !player.roomId) return null
+    player.ready = ready
+    return player
+  }
+
+  /**
+   * Returns all players in the room who are ready.
+   * Caller uses this to decide if a match should start.
+   */
+  getReadyPlayers(roomId: string): Player[] {
+    const room = this._rooms.get(roomId)
+    if (!room) return []
+    return [...room.playerIds]
+      .map((id) => this._players.get(id))
+      .filter((p): p is Player => p !== undefined && p.ready)
+  }
+
+  /**
+   * Reset all players in a room to not-ready.
+   * Called after a match starts so the room can host a new game.
+   */
+  resetReadyState(roomId: string): void {
+    const room = this._rooms.get(roomId)
+    if (!room) return
+    for (const id of room.playerIds) {
+      const p = this._players.get(id)
+      if (p) p.ready = false
+    }
+  }
+
   getPlayer(playerId: string): Player | null {
     return this._players.get(playerId) ?? null
   }
@@ -82,11 +121,6 @@ export class RoomManager {
     return [...this._rooms.values()].map((r) => this.toRoomSummary(r))
   }
 
-  /**
-   * Creates a room and immediately joins the creator.
-   * Always succeeds (creator is in at most one room, and one person < 100).
-   * Returns the new room and any room the creator was evicted from.
-   */
   createRoom(creatorId: string, roomName: string): { room: Room; evicted: Room | null } {
     const player = this._players.get(creatorId)!
     const evicted = player.roomId ? this._leaveRoom(player) : null
@@ -99,6 +133,7 @@ export class RoomManager {
     }
     this._rooms.set(room.id, room)
     player.roomId = room.id
+    player.ready = false
 
     return { room, evicted }
   }
@@ -116,6 +151,7 @@ export class RoomManager {
 
     room.playerIds.add(playerId)
     player.roomId = roomId
+    player.ready = false
 
     return { ok: true, room, evicted }
   }
@@ -148,22 +184,18 @@ export class RoomManager {
   }
 
   toPlayerSummary(player: Player): PlayerSummary {
-    return { id: player.id, name: player.name }
+    return { id: player.id, name: player.name, ready: player.ready }
   }
 
   // ---------------------------------------------------------------------------
   // Private
   // ---------------------------------------------------------------------------
 
-  /**
-   * Removes player from their current room.
-   * Destroys the room if it becomes empty.
-   * Returns the room the player was in (before potential destruction).
-   */
   private _leaveRoom(player: Player): Room | null {
     if (!player.roomId) return null
     const room = this._rooms.get(player.roomId)
     player.roomId = null
+    player.ready = false
     if (!room) return null
 
     room.playerIds.delete(player.id)

@@ -11,6 +11,9 @@ export class Room extends BaseGameScene {
   private _conn: ServerConnection
   private _room: RoomSummary
   private _players: PlayerSummary[]
+  private _localPlayerId: string
+
+  private _isReady = false
 
   // Chat history as display strings
   private _chatLines: string[] = []
@@ -28,11 +31,13 @@ export class Room extends BaseGameScene {
     conn: ServerConnection,
     room: RoomSummary,
     players: PlayerSummary[],
+    localPlayerId: string,
   ) {
     super(sceneManager)
     this._conn = conn
     this._room = room
     this._players = [...players]
+    this._localPlayerId = localPlayerId
 
     this._unlisten = this._conn.onMessage((msg) => {
       switch (msg.type) {
@@ -46,11 +51,21 @@ export class Room extends BaseGameScene {
           this._rebuildPlayerList()
           this._appendChat(`  ${msg.player.name} left`)
           break
+        case 'playerReadyChanged': {
+          const idx = this._players.findIndex((p) => p.id === msg.player.id)
+          if (idx !== -1) this._players[idx] = msg.player
+          this._rebuildPlayerList()
+          const label = msg.player.ready ? 'ready' : 'not ready'
+          this._appendChat(`  ${msg.player.name} is ${label}`)
+          break
+        }
+        case 'matchStart':
+          this._onMatchStart(msg.players)
+          break
         case 'message':
           this._appendChat(` ${msg.player.name}: ${msg.text}`)
           break
         case 'left':
-          // Server confirmed our leave — navigate back
           this.sceneManager.NavigateTo(Scene.Lobby, { conn: this._conn })
           break
         case 'error':
@@ -93,7 +108,7 @@ export class Room extends BaseGameScene {
     // Player list — left side
     this._playerListEl = new UISelectElement(this._playerLabels(), { closeOnSelect: false })
     ui.addElement(this._playerListEl, {
-      w: 20,
+      w: 24,
       h: 10,
       anchorX: 0,
       anchorY: 50,
@@ -117,8 +132,21 @@ export class Room extends BaseGameScene {
       minW: 16,
     })
 
-    // Actions — right side
-    const actions = ['Send Message', 'Leave Room']
+    // Actions — right side (includes ready toggle)
+    this._buildActionsEl()
+  }
+
+  private _buildActionsEl(): void {
+    const ui = this.sceneManager.engine.renderer.ui
+
+    if (this._actionsEl) {
+      ui.removeElement(this._actionsEl.id, false)
+      this._actionsEl = null
+    }
+
+    const readyLabel = this._isReady ? ' ✓ Unready' : ' ○ Ready'
+    const actions = [readyLabel, 'Send Message', 'Leave Room']
+
     this._actionsEl = new UISelectElement(actions, { closeOnSelect: false })
     ui.addElement(this._actionsEl, {
       w: 16,
@@ -134,6 +162,9 @@ export class Room extends BaseGameScene {
 
     this._actionsEl.onSelect((i) => {
       switch (actions[i]) {
+        case readyLabel:
+          this._toggleReady()
+          break
         case 'Send Message':
           this._openChat()
           break
@@ -145,7 +176,38 @@ export class Room extends BaseGameScene {
   }
 
   // ---------------------------------------------------------------------------
-  // Actions
+  // Ready toggle
+  // ---------------------------------------------------------------------------
+
+  private _toggleReady(): void {
+    this._isReady = !this._isReady
+    this._conn.send({ type: 'setReady', ready: this._isReady })
+
+    // Optimistically update local player entry so the list reflects immediately
+    const localIdx = this._players.findIndex((p) => p.id === this._localPlayerId)
+    if (localIdx !== -1) {
+      this._players[localIdx] = { ...this._players[localIdx], ready: this._isReady }
+      this._rebuildPlayerList()
+    }
+
+    // Rebuild actions to flip the button label
+    this._buildActionsEl()
+  }
+
+  // ---------------------------------------------------------------------------
+  // Match start
+  // ---------------------------------------------------------------------------
+
+  private _onMatchStart(players: PlayerSummary[]): void {
+    this.sceneManager.NavigateTo(Scene.OnlineMatch, {
+      conn: this._conn,
+      players,
+      localPlayerId: this._localPlayerId,
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Chat
   // ---------------------------------------------------------------------------
 
   private _openChat(): void {
@@ -188,7 +250,7 @@ export class Room extends BaseGameScene {
 
     this._playerListEl = new UISelectElement(this._playerLabels(), { closeOnSelect: false })
     ui.addElement(this._playerListEl, {
-      w: 20,
+      w: 24,
       h: 10,
       anchorX: 0,
       anchorY: 50,
@@ -206,7 +268,11 @@ export class Room extends BaseGameScene {
 
   private _playerLabels(): string[] {
     if (this._players.length === 0) return [' (empty)']
-    return this._players.map((p) => ` ${p.name}`)
+    return this._players.map((p) => {
+      const readyMark = p.ready ? ' ✓' : '  '
+      const youMark = p.id === this._localPlayerId ? ' (you)' : ''
+      return `${readyMark} ${p.name}${youMark}`
+    })
   }
 
   private _visibleChatLines(): string[] {
