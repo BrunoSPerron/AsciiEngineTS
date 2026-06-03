@@ -1,5 +1,5 @@
 import { UISelectElement, UITextBox, UITextInputElement } from 'ascii-game-engine'
-import type { PlayerSummary, RoomSummary } from '@laser-chess/shared'
+import type { GameState, PlayerSummary, RoomSummary } from '@laser-chess/shared'
 import type { SceneManager } from '../SceneManager'
 import { Scene } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
@@ -15,16 +15,16 @@ export class Room extends BaseGameScene {
 
   private _isReady = false
 
-  // Chat history as display strings
   private _chatLines: string[] = []
 
-  // UI elements
   private _roomTitleEl: UITextBox | null = null
   private _playerListEl: UISelectElement | null = null
   private _chatEl: UITextBox | null = null
   private _actionsEl: UISelectElement | null = null
 
   private _unlisten: () => void = () => {}
+
+  private _boardMap: Map<string, string> = new Map()
 
   constructor(
     sceneManager: SceneManager,
@@ -38,6 +38,8 @@ export class Room extends BaseGameScene {
     this._room = room
     this._players = [...players]
     this._localPlayerId = localPlayerId
+
+    this._loadBoards()
 
     this._unlisten = this._conn.onMessage((msg) => {
       switch (msg.type) {
@@ -61,6 +63,12 @@ export class Room extends BaseGameScene {
         }
         case 'matchStart':
           this._onMatchStart(msg.players)
+          break
+        case 'boardSelected':
+          this._appendChat(`  Board: ${msg.boardName}`)
+          break
+        case 'gameStarted':
+          this._onGameStarted(msg.state, msg.yourPlayer)
           break
         case 'message':
           this._appendChat(` ${msg.player.name}: ${msg.text}`)
@@ -87,13 +95,30 @@ export class Room extends BaseGameScene {
   }
 
   // ---------------------------------------------------------------------------
+  // Board loading (same glob as BoardConfig)
+  // ---------------------------------------------------------------------------
+
+  private _loadBoards(): void {
+    const files = import.meta.glob('../assets/boards/**/*.txt', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    })
+    for (const [path, content] of Object.entries(files)) {
+      const filename = path.split('/').pop()?.replace('.txt', '')
+      if (filename && typeof content === 'string') {
+        this._boardMap.set(filename, content)
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Build
   // ---------------------------------------------------------------------------
 
   private _build(): void {
     const ui = this.sceneManager.engine.renderer.ui
 
-    // Room title
     this._roomTitleEl = new UITextBox([` ${this._room.name}`], 'centered')
     ui.addElement(this._roomTitleEl, {
       w: 30,
@@ -105,7 +130,6 @@ export class Room extends BaseGameScene {
       y: 1,
     })
 
-    // Player list — left side
     this._playerListEl = new UISelectElement(this._playerLabels(), { closeOnSelect: false })
     ui.addElement(this._playerListEl, {
       w: 24,
@@ -119,7 +143,6 @@ export class Room extends BaseGameScene {
       minW: 8,
     })
 
-    // Chat — center
     this._chatEl = new UITextBox(this._visibleChatLines())
     ui.addElement(this._chatEl, {
       w: 36,
@@ -132,7 +155,6 @@ export class Room extends BaseGameScene {
       minW: 16,
     })
 
-    // Actions — right side (includes ready toggle)
     this._buildActionsEl()
   }
 
@@ -176,33 +198,79 @@ export class Room extends BaseGameScene {
   }
 
   // ---------------------------------------------------------------------------
-  // Ready toggle
+  // Ready
   // ---------------------------------------------------------------------------
 
   private _toggleReady(): void {
     this._isReady = !this._isReady
     this._conn.send({ type: 'setReady', ready: this._isReady })
 
-    // Optimistically update local player entry so the list reflects immediately
     const localIdx = this._players.findIndex((p) => p.id === this._localPlayerId)
     if (localIdx !== -1) {
       this._players[localIdx] = { ...this._players[localIdx], ready: this._isReady }
       this._rebuildPlayerList()
     }
 
-    // Rebuild actions to flip the button label
     this._buildActionsEl()
   }
 
   // ---------------------------------------------------------------------------
-  // Match start
+  // Match flow
   // ---------------------------------------------------------------------------
 
   private _onMatchStart(players: PlayerSummary[]): void {
+    // Determine if this client is player one (first in the matched pair)
+    const isPlayerOne = players[0].id === this._localPlayerId
+
+    if (isPlayerOne) {
+      this._openBoardSelect()
+    } else {
+      this._appendChat('  Waiting for host to select a board...')
+    }
+  }
+
+  private _openBoardSelect(): void {
+    const ui = this.sceneManager.engine.renderer.ui
+    const names = [...this._boardMap.keys()]
+
+    const select = new UISelectElement(names, { closeOnSelect: true })
+    ui.addElement(select, {
+      w: 24,
+      h: Math.min(names.length, 12),
+      anchorX: 50,
+      anchorY: 50,
+      pivotX: 50,
+      pivotY: 50,
+    })
+
+    const title = new UITextBox([' Select a board'], 'centered')
+    ui.addElement(title, {
+      w: 20,
+      h: 1,
+      anchorX: 50,
+      anchorY: 50,
+      pivotX: 50,
+      pivotY: 50,
+      y: -8,
+    })
+
+    select.onSelect((idx) => {
+      ui.removeElement(title.id, false)
+      if (idx === -1) return
+
+      const boardName = names[idx]
+      const boardTxt = this._boardMap.get(boardName)
+      if (!boardTxt) return
+
+      this._conn.send({ type: 'selectBoard', boardTxt, boardName })
+    })
+  }
+
+  private _onGameStarted(state: GameState, yourPlayer: 1 | 2): void {
     this.sceneManager.NavigateTo(Scene.OnlineMatch, {
       conn: this._conn,
-      players,
-      localPlayerId: this._localPlayerId,
+      initialState: state,
+      myPlayer: yourPlayer,
     })
   }
 
@@ -235,12 +303,8 @@ export class Room extends BaseGameScene {
 
   private _appendChat(line: string): void {
     this._chatLines.push(line)
-    if (this._chatLines.length > MAX_CHAT_LINES) {
-      this._chatLines.shift()
-    }
-    if (this._chatEl) {
-      this._chatEl.content = this._visibleChatLines()
-    }
+    if (this._chatLines.length > MAX_CHAT_LINES) this._chatLines.shift()
+    if (this._chatEl) this._chatEl.content = this._visibleChatLines()
   }
 
   private _rebuildPlayerList(): void {

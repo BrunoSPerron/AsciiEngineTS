@@ -17,6 +17,8 @@ export type Room = {
   name: string
   playerIds: Set<string>
   createdAt: number
+  /** Set when a matchStart fires; cleared after game ends or players leave. */
+  matchPlayers: { playerOneId: string; playerTwoId: string } | null
 }
 
 export type JoinResult =
@@ -72,11 +74,6 @@ export class RoomManager {
     return player
   }
 
-  /**
-   * Toggle a player's ready state.
-   * Resets all players' ready state when a match is triggered (caller decides).
-   * Returns the updated player, or null if not found or not in a room.
-   */
   setReady(playerId: string, ready: boolean): Player | null {
     const player = this._players.get(playerId)
     if (!player || !player.roomId) return null
@@ -84,10 +81,6 @@ export class RoomManager {
     return player
   }
 
-  /**
-   * Returns all players in the room who are ready.
-   * Caller uses this to decide if a match should start.
-   */
   getReadyPlayers(roomId: string): Player[] {
     const room = this._rooms.get(roomId)
     if (!room) return []
@@ -96,10 +89,6 @@ export class RoomManager {
       .filter((p): p is Player => p !== undefined && p.ready)
   }
 
-  /**
-   * Reset all players in a room to not-ready.
-   * Called after a match starts so the room can host a new game.
-   */
   resetReadyState(roomId: string): void {
     const room = this._rooms.get(roomId)
     if (!room) return
@@ -111,6 +100,29 @@ export class RoomManager {
 
   getPlayer(playerId: string): Player | null {
     return this._players.get(playerId) ?? null
+  }
+
+  // ---------------------------------------------------------------------------
+  // Match player assignment
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Record which two players are matched in a room.
+   * playerOneId acts first and is the one allowed to select the board.
+   */
+  setMatchPlayers(roomId: string, playerOneId: string, playerTwoId: string): void {
+    const room = this._rooms.get(roomId)
+    if (!room) return
+    room.matchPlayers = { playerOneId, playerTwoId }
+  }
+
+  getMatchPlayers(roomId: string): { playerOneId: string; playerTwoId: string } | null {
+    return this._rooms.get(roomId)?.matchPlayers ?? null
+  }
+
+  clearMatchPlayers(roomId: string): void {
+    const room = this._rooms.get(roomId)
+    if (room) room.matchPlayers = null
   }
 
   // ---------------------------------------------------------------------------
@@ -130,6 +142,7 @@ export class RoomManager {
       name: roomName.trim().slice(0, 64) || 'Room',
       playerIds: new Set([creatorId]),
       createdAt: Date.now(),
+      matchPlayers: null,
     }
     this._rooms.set(room.id, room)
     player.roomId = room.id

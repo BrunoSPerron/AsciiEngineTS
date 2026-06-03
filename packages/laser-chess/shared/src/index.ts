@@ -11,6 +11,7 @@ import type { GameRule } from './GameRules'
 import { computeLaser, type Direction, type LaserResult } from './laser'
 
 export type { VictoryResult } from './actions'
+export { loadBoard } from './board'
 export type { GameRule } from './GameRules'
 export type { Action, MoveAction, MirrorAction, ShootAction, GameState } from './GameState'
 export { CELL, type CellChar } from './GameState'

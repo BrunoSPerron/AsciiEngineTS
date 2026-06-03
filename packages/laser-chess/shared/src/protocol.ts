@@ -1,3 +1,5 @@
+import type { Action, GameState } from './GameState'
+
 // ---------------------------------------------------------------------------
 // Client → Server
 // ---------------------------------------------------------------------------
@@ -10,6 +12,8 @@ export type ClientMessage =
   | { type: 'leaveRoom' }
   | { type: 'message'; text: string }
   | { type: 'setReady'; ready: boolean }
+  | { type: 'selectBoard'; boardTxt: string; boardName: string }
+  | { type: 'gameAction'; action: Action }
 
 // ---------------------------------------------------------------------------
 // Server → Client
@@ -33,6 +37,9 @@ export type RoomBroadcast =
   | { type: 'playerReadyChanged'; player: PlayerSummary }
   | { type: 'message'; player: PlayerSummary; text: string }
   | { type: 'matchStart'; players: PlayerSummary[] }
+  | { type: 'boardSelected'; boardName: string }
+  | { type: 'actionApplied'; action: Action; state: GameState }
+  | { type: 'gameOver'; winner: 1 | 2 }
 
 export type ServerMessage =
   | { type: 'welcome'; playerId: string; playerName: string }
@@ -41,3 +48,4 @@ export type ServerMessage =
   | { type: 'joined'; room: RoomSummary; players: PlayerSummary[] }
   | { type: 'left' }
   | { type: 'error'; message: string }
+  | { type: 'gameStarted'; state: GameState; yourPlayer: 1 | 2 }

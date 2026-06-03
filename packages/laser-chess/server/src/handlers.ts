@@ -1,7 +1,8 @@
 import type { ServerWebSocket } from 'bun'
 import type { Room } from './RoomManager'
 import { RoomManager } from './RoomManager'
-import type { ClientMessage, RoomBroadcast, ServerMessage } from '@laser-chess/shared'
+import { MatchManager } from './MatchManager'
+import type { Action, ClientMessage, RoomBroadcast, ServerMessage } from '@laser-chess/shared'
 
 // ---------------------------------------------------------------------------
 // WebSocketData — attached to each socket by Bun
@@ -16,6 +17,7 @@ export type WebSocketData = {
 // ---------------------------------------------------------------------------
 
 const rooms = new RoomManager()
+const matches = new MatchManager()
 const sockets = new Map<string, ServerWebSocket<WebSocketData>>()
 
 // ---------------------------------------------------------------------------
@@ -38,6 +40,17 @@ export function onClose(ws: ServerWebSocket<WebSocketData>): void {
   const playerSummary = player
     ? rooms.toPlayerSummary(player)
     : { id: playerId, name: 'Bob', ready: false }
+
+  // Clean up any active match this player was in
+  const match = matches.getMatchByPlayer(playerId)
+  if (match) {
+    matches.removeMatch(match.roomId)
+    broadcastRoomById(
+      match.roomId,
+      { type: 'gameOver', winner: match.playerOne === playerId ? 2 : 1 },
+      playerId,
+    )
+  }
 
   const vacatedRoom = rooms.removePlayer(playerId)
   if (vacatedRoom) {
@@ -78,13 +91,19 @@ export function onMessage(ws: ServerWebSocket<WebSocketData>, raw: string | Buff
     case 'setReady':
       handleSetReady(ws, playerId, msg.ready)
       break
+    case 'selectBoard':
+      handleSelectBoard(ws, playerId, msg.boardTxt, msg.boardName)
+      break
+    case 'gameAction':
+      handleGameAction(ws, playerId, msg.action)
+      break
     default:
       send(ws, { type: 'error', message: 'Unknown message type.' })
   }
 }
 
 // ---------------------------------------------------------------------------
-// Handlers
+// Lobby handlers
 // ---------------------------------------------------------------------------
 
 function handleSetName(ws: ServerWebSocket<WebSocketData>, playerId: string, name: string): void {
@@ -184,16 +203,16 @@ function handleSetReady(
   const room = rooms.getRoom(player.roomId)
   if (!room) return
 
-  // Broadcast the ready change to everyone in the room
   broadcast(room, { type: 'playerReadyChanged', player: rooms.toPlayerSummary(player) })
 
-  // Check if a match should start: exactly 2 ready players
   const readyPlayers = rooms.getReadyPlayers(room.id)
   if (readyPlayers.length >= 2) {
     const matchPlayers = readyPlayers.slice(0, 2).map((p) => rooms.toPlayerSummary(p))
     rooms.resetReadyState(room.id)
 
-    // Broadcast matchStart only to the two matched players
+    // Store which player is one/two on the room record so selectBoard can use it
+    rooms.setMatchPlayers(room.id, readyPlayers[0].id, readyPlayers[1].id)
+
     const payload = JSON.stringify({
       type: 'matchStart',
       players: matchPlayers,
@@ -201,6 +220,105 @@ function handleSetReady(
     for (const p of matchPlayers) {
       sockets.get(p.id)?.send(payload)
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Game handlers
+// ---------------------------------------------------------------------------
+
+function handleSelectBoard(
+  ws: ServerWebSocket<WebSocketData>,
+  playerId: string,
+  boardTxt: string,
+  boardName: string,
+): void {
+  const player = rooms.getPlayer(playerId)
+  if (!player?.roomId) {
+    send(ws, { type: 'error', message: 'Not in a room.' })
+    return
+  }
+
+  const matchPlayers = rooms.getMatchPlayers(player.roomId)
+  if (!matchPlayers) {
+    send(ws, { type: 'error', message: 'No match pending for this room.' })
+    return
+  }
+
+  // Only player one (room creator / first ready player) may select the board
+  if (matchPlayers.playerOneId !== playerId) {
+    send(ws, { type: 'error', message: 'Only player one may select the board.' })
+    return
+  }
+
+  let match
+  try {
+    match = matches.createMatch(
+      player.roomId,
+      matchPlayers.playerOneId,
+      matchPlayers.playerTwoId,
+      boardTxt,
+    )
+  } catch (err) {
+    send(ws, { type: 'error', message: `Invalid board: ${String(err)}` })
+    return
+  }
+
+  const room = rooms.getRoom(player.roomId)!
+
+  // Tell everyone the board name (for display)
+  broadcast(room, { type: 'boardSelected', boardName })
+
+  // Tell each player their side and the initial state
+  const p1Ws = sockets.get(match.playerOne)
+  const p2Ws = sockets.get(match.playerTwo)
+  if (p1Ws) send(p1Ws, { type: 'gameStarted', state: match.state, yourPlayer: 1 })
+  if (p2Ws) send(p2Ws, { type: 'gameStarted', state: match.state, yourPlayer: 2 })
+}
+
+function handleGameAction(
+  ws: ServerWebSocket<WebSocketData>,
+  playerId: string,
+  action: Action,
+): void {
+  const player = rooms.getPlayer(playerId)
+  if (!player?.roomId) {
+    send(ws, { type: 'error', message: 'Not in a room.' })
+    return
+  }
+
+  const match = matches.getMatch(player.roomId)
+  if (!match) {
+    send(ws, { type: 'error', message: 'No active match in this room.' })
+    return
+  }
+
+  // Enforce turn order
+  const playerNum = match.playerOne === playerId ? 1 : 2
+  if (match.state.currentPlayer !== playerNum) {
+    send(ws, { type: 'error', message: 'Not your turn.' })
+    return
+  }
+
+  // applyAction throws on illegal moves — catch and reject
+  let nextState
+  try {
+    nextState = match.logic.applyAction(match.state, action)
+  } catch (err) {
+    send(ws, { type: 'error', message: `Illegal action: ${String(err)}` })
+    return
+  }
+
+  match.state = nextState
+
+  const room = rooms.getRoom(player.roomId)!
+  broadcast(room, { type: 'actionApplied', action, state: nextState })
+
+  const victory = match.logic.checkVictory(nextState)
+  if (victory) {
+    broadcast(room, { type: 'gameOver', winner: victory.winner })
+    matches.removeMatch(player.roomId)
+    rooms.clearMatchPlayers(player.roomId)
   }
 }
 
@@ -218,4 +336,9 @@ function broadcast(room: Room, msg: RoomBroadcast, excludeId?: string): void {
     if (pid === excludeId) continue
     sockets.get(pid)?.send(payload)
   }
+}
+
+function broadcastRoomById(roomId: string, msg: RoomBroadcast, excludeId?: string): void {
+  const room = rooms.getRoom(roomId)
+  if (room) broadcast(room, msg, excludeId)
 }
