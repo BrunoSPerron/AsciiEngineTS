@@ -1,9 +1,9 @@
 import { UISelectElement, UITextBox, UITextInputElement } from 'ascii-game-engine'
+import type { RoomSummary } from '@laser-chess/shared'
 import type { SceneManager } from '../SceneManager'
 import { Scene } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 import type { ServerConnection } from '../net/ServerConnection'
-import type { RoomSummary } from '@laser-chess/shared'
 
 export class Lobby extends BaseGameScene {
   private _conn: ServerConnection
@@ -13,7 +13,7 @@ export class Lobby extends BaseGameScene {
   private _playerName = 'Bob'
   private _rooms: RoomSummary[] = []
 
-  // UI element ids for cleanup
+  // UI elements for cleanup
   private _statusEl: UITextBox | null = null
   private _roomListEl: UISelectElement | null = null
   private _actionsEl: UISelectElement | null = null
@@ -55,7 +55,7 @@ export class Lobby extends BaseGameScene {
 
     this._build()
 
-    // If already connected (reconnect case), request rooms immediately
+    // If already connected (e.g. navigated back from Room), request rooms immediately
     if (conn.state === 'open') {
       this._conn.send({ type: 'getRooms' })
     }
@@ -76,8 +76,7 @@ export class Lobby extends BaseGameScene {
   private _build(): void {
     const ui = this.sceneManager.engine.renderer.ui
 
-    // Title
-    const title = new UITextBox(['Lobby'], 'centered')
+    const title = new UITextBox([' Lobby'], 'centered')
     ui.addElement(title, {
       w: 20,
       h: 1,
@@ -88,7 +87,7 @@ export class Lobby extends BaseGameScene {
       y: 1,
     })
 
-    // Status bar — shows player name
+    // Status bar — player name + id
     this._statusEl = new UITextBox([this._statusLine()])
     ui.addElement(this._statusEl, {
       w: 30,
@@ -99,7 +98,7 @@ export class Lobby extends BaseGameScene {
       y: 1,
     })
 
-    // Room list — left panel
+    // Room list — left side
     this._roomListEl = new UISelectElement(this._roomLabels(), { closeOnSelect: false })
     ui.addElement(this._roomListEl, {
       w: 30,
@@ -113,7 +112,7 @@ export class Lobby extends BaseGameScene {
       minW: 10,
     })
 
-    // Actions — right panel
+    // Actions — right side
     const actions = ['Join', 'Create Room', 'Set Name', 'Refresh']
     this._actionsEl = new UISelectElement(actions, { closeOnSelect: false })
     ui.addElement(this._actionsEl, {
@@ -213,7 +212,6 @@ export class Lobby extends BaseGameScene {
 
   private _rebuildRoomList(): void {
     if (!this._roomListEl) return
-    // UISelectElement doesn't support item mutation — remove and re-add
     const ui = this.sceneManager.engine.renderer.ui
     const prevIndex = this._roomListEl.currentIndex
     ui.removeElement(this._roomListEl.id, false)

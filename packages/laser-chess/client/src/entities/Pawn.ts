@@ -44,7 +44,7 @@ export class Pawn extends Entity {
     return this._health
   }
 
-  public damage(value: number) {
-    this._health = Math.max(this._health - value, 0)
+  set health(value: number) {
+    this._health = Math.max(value, 0)
   }
 }

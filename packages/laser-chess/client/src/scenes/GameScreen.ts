@@ -26,6 +26,7 @@ import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
+import { idx } from '../../../shared/src/board'
 
 // ---------------------------------------------------------------------------
 // Helpers — keep shared Direction in sync with MASK bits for animations
@@ -498,10 +499,11 @@ export class GameScreen implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _syncPawnHealth(): void {
-    // TODO
-    // The legacy approach just checked health for victory — pawn entities remain
-    // in the world. The hp values live in this._state.pawns which applyAction
-    // already updated. Nothing extra needed here unless we display HP bars.
+    for (const pawnEntity of [...this.board.playerOneUnits, ...this.board.playerTwoUnits]) {
+      const Pawnidx = idx(this._state, pawnEntity.pos.x, pawnEntity.pos.y)
+      const pawnRecord = this._state.pawns[Pawnidx]
+      pawnEntity.health = pawnRecord.hp
+    }
   }
 
   // ---------------------------------------------------------------------------
