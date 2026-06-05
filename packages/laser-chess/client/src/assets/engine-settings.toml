@@ -4,7 +4,7 @@
 [game]
 title = "Laser Chess"
 disable_context_menu = true
-initial_theme = "Ashen Library"
+initial_theme = "Desert Sunset"
 engine_themes = []
 # "Chiffon", "Copper", "Flamingo", "Grey and Beige", "Midnight", "Old Parchment", "Raspberry", "Retro Gold", "Saphire Peach"
 

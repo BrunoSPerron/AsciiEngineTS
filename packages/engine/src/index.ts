@@ -23,7 +23,7 @@ export { UINode } from './render/ui/node/UINode'
 export { UISelectBase } from './render/ui/node/UISelectBase'
 export { UISelectElement } from './render/ui/node/UISelectElement'
 export { UITextBox } from './render/ui/node/UITextBox'
-export { UITextInputElement, type UITextInputOptions } from './render/ui/node/UITextInputElement'
+export { UITextInputNode, type UITextInputOptions } from './render/ui/node/UITextInputNode'
 
 export { WorldUILayer } from './render/ui/WorldUILayer'
 

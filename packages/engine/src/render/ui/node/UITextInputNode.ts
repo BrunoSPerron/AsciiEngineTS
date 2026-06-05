@@ -1,6 +1,8 @@
 import { UIInputBase, type UIInputOptions } from './UIInputBase'
 
-export type UITextInputOptions = UIInputOptions
+export type UITextInputOptions = UIInputOptions & {
+  message?: string[]
+}
 
 /**
  * A single-line text input element.
@@ -16,17 +18,17 @@ export type UITextInputOptions = UIInputOptions
  *
  * Resolves result with the entered string, or null on cancel (Escape).
  */
-export class UITextInputElement extends UIInputBase<string> {
+export class UITextInputNode extends UIInputBase<string> {
   private _label: string
   private _message: string[]
 
   private _inputEl: HTMLInputElement | null = null
   private _messageEls: HTMLDivElement[] = []
 
-  constructor(label: string, message: string[] = [], options: UITextInputOptions = {}) {
+  constructor(label: string, options: UITextInputOptions = {}) {
     super(options)
     this._label = label
-    this._message = message
+    this._message = options.message ?? []
   }
 
   // ---------------------------------------------------------------------------

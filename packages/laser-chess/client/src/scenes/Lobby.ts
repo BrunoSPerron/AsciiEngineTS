@@ -1,4 +1,4 @@
-import { UISelectElement, UITextBox, UITextInputElement } from 'ascii-game-engine'
+import { UISelectElement, UITextBox, UITextInputNode } from 'ascii-game-engine'
 import type { RoomSummary } from '@laser-chess/shared'
 import type { SceneManager } from '../SceneManager'
 import { Scene } from '../SceneManager'
@@ -14,6 +14,7 @@ export class Lobby extends BaseGameScene {
   private _rooms: RoomSummary[] = []
 
   // UI elements for cleanup
+  private _titleEl: UITextBox | null = null
   private _statusEl: UITextBox | null = null
   private _roomListEl: UISelectElement | null = null
   private _actionsEl: UISelectElement | null = null
@@ -65,6 +66,7 @@ export class Lobby extends BaseGameScene {
   unload(): void {
     this._unlisten()
     const ui = this.sceneManager.engine.renderer.ui
+    if (this._titleEl) ui.removeElement(this._titleEl.id, false)
     if (this._statusEl) ui.removeElement(this._statusEl.id, false)
     if (this._roomListEl) ui.removeElement(this._roomListEl.id, false)
     if (this._actionsEl) ui.removeElement(this._actionsEl.id, false)
@@ -77,15 +79,14 @@ export class Lobby extends BaseGameScene {
   private _build(): void {
     const ui = this.sceneManager.engine.renderer.ui
 
-    const title = new UITextBox([' Lobby'], 'centered')
-    ui.addElement(title, {
+    this._titleEl = new UITextBox(['Lobby'], 'centered')
+    ui.addElement(this._titleEl, {
       w: 20,
       h: 1,
       anchorX: 50,
       anchorY: 0,
       pivotX: 50,
       pivotY: 0,
-      y: 1,
     })
 
     // Status bar — player name + id
@@ -95,8 +96,6 @@ export class Lobby extends BaseGameScene {
       h: 1,
       anchorX: 0,
       anchorY: 0,
-      x: 1,
-      y: 1,
     })
 
     // Room list — left side
@@ -108,7 +107,6 @@ export class Lobby extends BaseGameScene {
       anchorY: 50,
       pivotX: 0,
       pivotY: 50,
-      x: 1,
       minH: 1,
       minW: 10,
     })
@@ -123,7 +121,6 @@ export class Lobby extends BaseGameScene {
       anchorY: 50,
       pivotX: 100,
       pivotY: 50,
-      x: -1,
       minH: 1,
       minW: 8,
     })
@@ -159,7 +156,7 @@ export class Lobby extends BaseGameScene {
 
   private _openCreateRoom(): void {
     const ui = this.sceneManager.engine.renderer.ui
-    const input = new UITextInputElement('Room name', ['Enter a name for your room:'])
+    const input = new UITextInputNode('Room name', { message: ['Enter a name for your room:'] })
     ui.addElement(input, {
       w: 32,
       h: 3,
@@ -176,7 +173,7 @@ export class Lobby extends BaseGameScene {
 
   private _openSetName(): void {
     const ui = this.sceneManager.engine.renderer.ui
-    const input = new UITextInputElement('Name', [`Current: ${this._playerName}`])
+    const input = new UITextInputNode('Name', { message: [`Current: ${this._playerName}`] })
     ui.addElement(input, {
       w: 30,
       h: 3,
@@ -225,7 +222,6 @@ export class Lobby extends BaseGameScene {
       anchorY: 50,
       pivotX: 0,
       pivotY: 50,
-      x: 1,
       minH: 1,
       minW: 10,
     })

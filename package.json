@@ -10,7 +10,7 @@
     "dev": "npm run dev -w ascii-game-engine-example",
     "bun": "npm run bun -w @laser-chess/server",
     "chess": "npm run dev -w @laser-chess/client",
-    "build": "npm run build -w ascii-game-engine",
+    "build": "npm run build -w @laser-chess/client",
     "pack": "npm run build -w ascii-game-engine && npm pack -w ascii-game-engine",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

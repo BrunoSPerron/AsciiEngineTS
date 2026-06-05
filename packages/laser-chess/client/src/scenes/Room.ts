@@ -1,4 +1,4 @@
-import { UISelectElement, UITextBox, UITextInputElement } from 'ascii-game-engine'
+import { UISelectElement, UITextBox, UITextInputNode } from 'ascii-game-engine'
 import type { GameState, PlayerSummary, RoomSummary } from '@laser-chess/shared'
 import type { SceneManager } from '../SceneManager'
 import { Scene } from '../SceneManager'
@@ -119,7 +119,7 @@ export class Room extends BaseGameScene {
   private _build(): void {
     const ui = this.sceneManager.engine.renderer.ui
 
-    this._roomTitleEl = new UITextBox([` ${this._room.name}`], 'centered')
+    this._roomTitleEl = new UITextBox([`Room: ${this._room.name}`], 'centered')
     ui.addElement(this._roomTitleEl, {
       w: 30,
       h: 1,
@@ -127,7 +127,6 @@ export class Room extends BaseGameScene {
       anchorY: 0,
       pivotX: 50,
       pivotY: 0,
-      y: 1,
     })
 
     this._playerListEl = new UISelectElement(this._playerLabels(), { closeOnSelect: false })
@@ -138,7 +137,6 @@ export class Room extends BaseGameScene {
       anchorY: 50,
       pivotX: 0,
       pivotY: 50,
-      x: 1,
       minH: 1,
       minW: 8,
     })
@@ -177,7 +175,6 @@ export class Room extends BaseGameScene {
       anchorY: 50,
       pivotX: 100,
       pivotY: 50,
-      x: -1,
       minH: 1,
       minW: 8,
     })
@@ -280,7 +277,7 @@ export class Room extends BaseGameScene {
 
   private _openChat(): void {
     const ui = this.sceneManager.engine.renderer.ui
-    const input = new UITextInputElement('Message', [])
+    const input = new UITextInputNode('Message')
     ui.addElement(input, {
       w: 40,
       h: 2,
@@ -288,7 +285,6 @@ export class Room extends BaseGameScene {
       anchorY: 100,
       pivotX: 50,
       pivotY: 100,
-      y: -1,
       minW: 16,
     })
     void input.result.then((text) => {
@@ -320,7 +316,6 @@ export class Room extends BaseGameScene {
       anchorY: 50,
       pivotX: 0,
       pivotY: 50,
-      x: 1,
       minH: 1,
       minW: 8,
     })

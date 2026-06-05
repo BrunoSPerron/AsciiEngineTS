@@ -128,7 +128,7 @@ export class Renderer {
       this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
       this.ui.drawFrame()
       this.ui._start()
-    }, 200)
+    }, 500)
   }
 
   destroy(): void {
