@@ -2,12 +2,14 @@ import type { UILayout } from 'ascii-game-engine'
 import { UISelectElement, type Chunk } from 'ascii-game-engine'
 import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
-import { Board } from '../Board'
+import { DEFAULT_GAME_RULE, loadBoard, type GameRule, type GameState } from '@laser-chess/shared'
 
 export class BoardConfig extends BaseGameScene {
   ui: UILayout
   chunk: Chunk
   boardMap: Map<string, string> = new Map<string, string>()
+
+  private _gameRule: GameRule = DEFAULT_GAME_RULE
 
   constructor(sceneManager: SceneManager) {
     super(sceneManager)
@@ -78,8 +80,21 @@ export class BoardConfig extends BaseGameScene {
     })
 
     boardSelectElement.onSelect(() => {
-      const board = new Board(this.chunk, this.sceneManager.engine)
-      this.sceneManager.NavigateTo(Scene.Game, { board: board })
+      const name = [...this.boardMap.keys()][boardSelectElement.currentIndex]
+      const txt = this.boardMap.get(name)
+      if (!txt) return
+
+      const { board, sizeX, sizeY, pawns } = loadBoard(txt, this._gameRule)
+      const initialState: GameState = {
+        board,
+        pawns,
+        sizeX: sizeX,
+        sizeY: sizeY,
+        currentPlayer: 1,
+        phase: 'move',
+      }
+
+      this.sceneManager.NavigateTo(Scene.Game, { initialState })
     })
   }
 

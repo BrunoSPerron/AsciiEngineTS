@@ -28,19 +28,24 @@ export function setCell(state: GameState, x: number, y: number, char: CellChar):
  * Expected txt format: 31x31 chars per line, 'K' = player one king,
  * 'k' = player two king, '#' = wall, '/' '\' = mirror, 'F' 'f' = fixed.
  */
-export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board' | 'pawns'> {
+export function loadBoard(
+  txt: string,
+  rules: GameRule,
+): Pick<GameState, 'board' | 'sizeX' | 'sizeY' | 'pawns'> {
   const lines = txt.split('\n')
-  let size: number = 0
+  let sizeX: number = 0
+  let sizeY: number = 0
   for (const line of lines) {
-    if (line.length > size) size = line.length
+    sizeY++
+    if (line.length > sizeX) sizeX = line.length
   }
-  const board: string[] = new Array<string>(size * size).fill(CELL.EMPTY)
+  const board: string[] = new Array<string>(sizeX * sizeY).fill(CELL.EMPTY)
   const pawns: Record<number, Pawn> = {}
-  for (let y = 0; y < size; y++) {
+  for (let y = 0; y < sizeY; y++) {
     const line = (lines[y] ?? '').replace('\r', '')
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < sizeX; x++) {
       const ch = line[x] ?? ' '
-      const i = y * size + x
+      const i = y * sizeX + x
 
       switch (ch) {
         case 'K':
@@ -64,7 +69,7 @@ export function loadBoard(txt: string, rules: GameRule): Pick<GameState, 'board'
     }
   }
 
-  return { board, pawns }
+  return { board, sizeX, sizeY, pawns }
 }
 
 // ---------------------------------------------------------------------------

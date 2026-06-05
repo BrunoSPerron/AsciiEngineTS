@@ -1,5 +1,5 @@
 import type { GameState } from '@laser-chess/shared'
-import { createGame, loadBoard, type GameLogic } from '@laser-chess/shared'
+import { createGame, loadBoard, DEFAULT_GAME_RULE, type GameLogic } from '@laser-chess/shared'
 import type { GameRule } from '@laser-chess/shared'
 
 // ---------------------------------------------------------------------------
@@ -13,16 +13,6 @@ export type MatchState = {
   state: GameState
   rule: GameRule
   logic: GameLogic
-}
-
-// ---------------------------------------------------------------------------
-// Default rule — matches the client-side GAME_RULE constant
-// ---------------------------------------------------------------------------
-
-const DEFAULT_RULE: GameRule = {
-  bounceDamage: 1,
-  kingHP: 5,
-  kingMoveType: 'king',
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +37,7 @@ export class MatchManager {
     playerTwoId: string,
     boardTxt: string,
   ): MatchState {
-    const rule = DEFAULT_RULE
+    const rule = DEFAULT_GAME_RULE
     const logic = createGame(rule)
 
     const { board, pawns } = loadBoard(boardTxt, rule)

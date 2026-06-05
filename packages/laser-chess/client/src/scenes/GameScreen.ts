@@ -10,14 +10,13 @@ import {
 } from 'ascii-game-engine'
 
 import type {
-  GameRule,
   Direction,
   GameState,
   GameLogic,
   LaserResult,
   LaserWaypoint,
 } from '@laser-chess/shared'
-import { createGame, DIR_DELTA, CELL } from '@laser-chess/shared'
+import { createGame, DIR_DELTA, DEFAULT_GAME_RULE, CELL, idx } from '@laser-chess/shared'
 
 import type { BaseGameScene } from './BaseGameScene'
 import { ARROW_SET } from '../arrowSets'
@@ -26,7 +25,6 @@ import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
-import { idx } from '../../../shared/src/board'
 
 // ---------------------------------------------------------------------------
 // Helpers — keep shared Direction in sync with MASK bits for animations
@@ -151,8 +149,6 @@ function syncStateToChunk(state: GameState, board: Board): void {
 // GameScreen
 // ---------------------------------------------------------------------------
 
-const GAME_RULE: GameRule = { bounceDamage: 1, kingHP: 5, kingMoveType: 'king' }
-
 export class GameScreen implements BaseGameScene {
   sceneManager: SceneManager
   board: Board
@@ -165,7 +161,7 @@ export class GameScreen implements BaseGameScene {
     this.sceneManager = sceneManager
     this.board = board
 
-    this._logic = createGame(GAME_RULE)
+    this._logic = createGame(DEFAULT_GAME_RULE)
     this._engine = sceneManager.engine
 
     this._state = buildGameState(board)
