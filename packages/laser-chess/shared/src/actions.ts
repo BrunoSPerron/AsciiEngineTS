@@ -5,6 +5,10 @@ import { cellAt, idx, movePawn, setCell } from './board'
 import { computeLaser, applyLaserResult } from './laser'
 import type { Direction } from './laser'
 
+function isBorderCell(state: GameState, x: number, y: number): boolean {
+  return x === 0 || y === 0 || x === state.sizeX - 1 || y === state.sizeY - 1
+}
+
 // ---------------------------------------------------------------------------
 // Movement options (king = 8-directional)
 // ---------------------------------------------------------------------------
@@ -45,6 +49,7 @@ export function getLegalMoves(
     const tx = px + dx
     const ty = py + dy
     if (tx < 0 || ty < 0 || tx >= state.sizeX || ty >= state.sizeY) continue
+    if (isBorderCell(state, tx, ty)) continue // ← new
     if (cellAt(state, tx, ty) === CELL.EMPTY) {
       moves.push({ type: 'move', fromX: x, fromY: y, toX: tx, toY: ty })
     }
@@ -79,6 +84,7 @@ export function getLegalShots(
 
 export function canPlaceMirror(_rule: GameRule, state: GameState, x: number, y: number): boolean {
   if (x < 0 || y < 0 || x >= state.sizeX || y >= state.sizeY) return false
+  if (isBorderCell(state, x, y)) return false
   return cellAt(state, x, y) === CELL.EMPTY
 }
 
