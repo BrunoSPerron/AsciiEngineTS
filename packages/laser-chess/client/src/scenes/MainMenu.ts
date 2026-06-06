@@ -43,7 +43,7 @@ export class MainMenu extends BaseGameScene {
   }
 
   openMainMenu() {
-    const options = ['Hotseat', 'Multiplayer', 'Palette', 'Quit']
+    const options = ['Hotseat', 'Multiplayer', 'Palette']
     const selectEl = new UISelectElement(options, { closeOnSelect: false })
     this.ui.addElement(selectEl, {
       x: 0,
