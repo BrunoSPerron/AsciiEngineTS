@@ -53,6 +53,9 @@
   --font-size: 18px;
   --line-height: var(--font-size);
 
+  --ui-font-size: var(--font-size);
+  --ui-line-height: var(--line-height);
+
   position: absolute;
   box-sizing: border-box;
 
@@ -110,6 +113,11 @@
 }
 
 /* ----- UI Layer ----- */
+
+.ascii-game-engine .ui-layout-root {
+  font-size: var(--ui-font-size);
+  line-height: var(--ui-line-height);
+}
 
 .ascii-game-engine .layer-ui {
   user-select: none;

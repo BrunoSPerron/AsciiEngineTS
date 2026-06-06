@@ -14,47 +14,29 @@ type WorldUIEntry = {
 
 /**
  * Manages UINodes anchored to world-space positions or moving entities.
- *
- * Elements are positioned every camera frame using a PositionProvider — a
- * function that returns the current [worldX, worldY]. For entity anchors the
- * provider calls entity.visualPosition(now) so elements track the interpolated
- * glyph position sub-tile-precisely, matching actor rendering.
- *
- * No border drawing or open/close animations — elements are plain content
- * containers positioned in world space.
- *
- * Owned by UILayout and accessible via engine.renderer.ui.world.
- *
- * Usage:
- *
- *   // Static world position
- *   const remove = engine.renderer.ui.world.add(myElement, { w: 10, h: 3 }, () => [12, 8])
- *
- *   // Entity anchor (speech bubble, health bar, …)
- *   const remove = engine.renderer.ui.world.addToEntity(myElement, { w: 10, h: 3 }, entity, 0, -1)
- *
- *   // Remove when done
- *   remove()
  */
 export class WorldUILayer {
   readonly el: HTMLDivElement
 
   private _entries = new Map<number, WorldUIEntry>()
   private _camera: Camera
-  private _tileMetrics: TileMetricsData
+  private _worldTileMetrics: TileMetricsData
+  private _uiTileMetrics: TileMetricsData
   private _engine: AsciiEngine
   private _unlisten: (() => void) | null = null
   private _nextId = 1
 
   constructor(
     camera: Camera,
-    tileMetrics: TileMetricsData,
+    worldTileMetrics: TileMetricsData,
+    uiTileMetrics: TileMetricsData,
     engine: AsciiEngine,
     layerEl: HTMLDivElement,
   ) {
     this.el = layerEl
     this._camera = camera
-    this._tileMetrics = tileMetrics
+    this._worldTileMetrics = worldTileMetrics
+    this._uiTileMetrics = uiTileMetrics
     this._engine = engine
   }
 
@@ -76,13 +58,9 @@ export class WorldUILayer {
   // Public API
   // ---------------------------------------------------------------------------
 
-  /**
-   * Add a UINode anchored to a world-space position provider.
-   * Returns a dispose function that removes the element.
-   */
   add(element: UINode, spatialConfig: UISpatialConfig, provider: PositionProvider): () => void {
     const id = this._nextId++
-    element._mount(id, spatialConfig, this._tileMetrics, this._engine)
+    element._mount(id, spatialConfig, this._uiTileMetrics, this._engine)
     this.el.appendChild(element.el)
 
     const w = spatialConfig.w ?? 0
@@ -91,7 +69,6 @@ export class WorldUILayer {
 
     this._entries.set(id, { element, provider })
 
-    // Position immediately so there's no one-frame flash at origin
     this._positionEl(element, provider, performance.now())
 
     queueMicrotask(() => element.loaded())
@@ -99,12 +76,6 @@ export class WorldUILayer {
     return () => this.remove(id)
   }
 
-  /**
-   * Add a UINode anchored to an entity's interpolated visual position.
-   *
-   * offsetX / offsetY are tile offsets applied on top of the entity position.
-   * Example: offsetY -1 places a speech bubble one tile above the entity head.
-   */
   addToEntity(
     element: UINode,
     spatialConfig: UISpatialConfig,
@@ -119,7 +90,6 @@ export class WorldUILayer {
     return this.add(element, spatialConfig, provider)
   }
 
-  /** Remove a world element by id. Calls unloaded() and destroy(). */
   remove(id: number): void {
     const entry = this._entries.get(id)
     if (!entry) return
@@ -140,7 +110,7 @@ export class WorldUILayer {
 
   private _positionEl(element: UINode, provider: PositionProvider, now: number): void {
     const [wx, wy] = provider(now)
-    const { w, h } = this._tileMetrics
+    const { w, h } = this._worldTileMetrics
     const cam = this._camera.pos
     const px = (wx - cam.x) * w
     const py = (wy - cam.y) * h

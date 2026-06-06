@@ -64,12 +64,14 @@ Override any of these in your theme file to break from the derived defaults:
 
 The font size is set once in `base.css` and used throughout. Override it in your theme if needed.
 
-| Variable        | Default            | Description                               |
-| --------------- | ------------------ | ----------------------------------------- |
-| `--font-size`   | `18px`             | Monospace glyph size                      |
-| `--line-height` | `var(--font-size)` | Row height — tied to font size by default |
+| Variable           | Default              | Description                              |
+| ------------------ | -------------------- | ---------------------------------------- |
+| `--font-size`      | `18px`               | Monospace glyph size                     |
+| `--line-height`    | `var(--font-size)`   | Row height, tied to font size by default |
+| `--ui-font-size`   | `var(--font-size)`   | UI layer' monospace glyph size           |
+| `--ui-line-height` | `var(--line-height)` | UI layer's row height                    |
 
-Changing `--font-size` affects tile metrics. If you do this, be aware that tile width and height are measured from a live DOM element after fonts are ready. The [[ThemeManager|theme manager]] handles this automatically on theme change.
+Changing `--font-size` affects tile metrics. When you do this, tile width and height are measured from a live DOM element after fonts are ready. The [[ThemeManager|theme manager]] handles this automatically on theme change.
 
 ---
 

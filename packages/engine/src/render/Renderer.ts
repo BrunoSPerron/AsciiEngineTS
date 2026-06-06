@@ -52,6 +52,7 @@ function buildChunkHTML(chunk: {
 export class Renderer {
   root: HTMLElement
   tileMetrics: TileMetricsData
+  uiTileMetrics: TileMetricsData
   viewDistance = 3
 
   camera: Camera
@@ -68,6 +69,7 @@ export class Renderer {
   private chunksNeedRefresh = true
   private _unlistenFns = new Map<number, () => void>()
   private _world: World | null = null
+  private _uiLayoutEl!: HTMLDivElement
 
   constructor(
     engine: AsciiEngine,
@@ -78,6 +80,7 @@ export class Renderer {
   ) {
     this.root = root
     this.tileMetrics = tileMetrics
+    this.uiTileMetrics = { w: tileMetrics.w, h: tileMetrics.h }
 
     const style = document.createElement('style')
     style.textContent = baseCss
@@ -93,8 +96,17 @@ export class Renderer {
     const uiLayerEl = this._makeLayer('layer-ui')
     const worldUILayerEl = this._makeLayer('layer-world-ui', uiLayerEl)
     const uiLayoutEl = this._makeLayer('ui-layout-root', uiLayerEl)
+    this._uiLayoutEl = uiLayoutEl
 
-    this.ui = new UILayout(uiLayerEl, uiLayoutEl, tileMetrics, engine, camera, worldUILayerEl)
+    this.ui = new UILayout(
+      uiLayerEl,
+      uiLayoutEl,
+      tileMetrics,
+      this.uiTileMetrics,
+      engine,
+      camera,
+      worldUILayerEl,
+    )
 
     this.bindWorld(world)
   }
@@ -136,23 +148,35 @@ export class Renderer {
   }
 
   setTileHAndW() {
-    const span = document.createElement('span')
-    span.style.visibility = 'hidden'
-    span.style.whiteSpace = 'pre'
-    span.style.position = 'absolute'
-    span.style.left = '0'
-    span.style.top = '0'
-    span.style.padding = '0'
-    span.style.border = '0'
-    span.style.margin = '0'
-    span.style.transform = 'none'
-    span.style.scale = '1'
-    span.textContent = 'M'
+    const makeSpan = () => {
+      const span = document.createElement('span')
+      span.style.visibility = 'hidden'
+      span.style.whiteSpace = 'pre'
+      span.style.position = 'absolute'
+      span.style.left = '0'
+      span.style.top = '0'
+      span.style.padding = '0'
+      span.style.border = '0'
+      span.style.margin = '0'
+      span.style.transform = 'none'
+      span.style.scale = '1'
+      span.textContent = 'M'
+      return span
+    }
 
-    this.root.appendChild(span)
-    this.tileMetrics.w = span.getBoundingClientRect().width
-    this.tileMetrics.h = parseFloat(getComputedStyle(span).lineHeight)
-    span.remove()
+    // World tile metrics
+    const worldSpan = makeSpan()
+    this.root.appendChild(worldSpan)
+    this.tileMetrics.w = worldSpan.getBoundingClientRect().width
+    this.tileMetrics.h = parseFloat(getComputedStyle(worldSpan).lineHeight)
+    worldSpan.remove()
+
+    // UI tile metrics
+    const uiSpan = makeSpan()
+    this._uiLayoutEl.appendChild(uiSpan)
+    this.uiTileMetrics.w = uiSpan.getBoundingClientRect().width
+    this.uiTileMetrics.h = parseFloat(getComputedStyle(uiSpan).lineHeight)
+    uiSpan.remove()
   }
 
   invalidateChunks = () => {

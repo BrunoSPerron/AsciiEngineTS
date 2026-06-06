@@ -12,6 +12,7 @@ export class Camera {
   private tileMetrics: TileMetricsData
   private _unlistenMove: (() => void) | null = null
 
+  /** Returns the content-center offset in **pixels**. */
   private _getContentOffset: () => { x: number; y: number } = () => ({ x: 0, y: 0 })
 
   private _rafId = 0
@@ -47,6 +48,7 @@ export class Camera {
     this._halfLife = Math.max(halfLife, 0)
   }
 
+  /** Provider must return the offset in **pixels**. */
   setContentOffsetProvider(fn: () => { x: number; y: number }) {
     this._getContentOffset = fn
   }
@@ -79,9 +81,11 @@ export class Camera {
     const now = performance.now()
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const offset = this._getContentOffset()
-    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2 - offset.x + 0.5
-    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2 - offset.y + 0.5
+    const offsetPx = this._getContentOffset()
+    this.pos.x =
+      pos[0] - clientRect.width / this.tileMetrics.w / 2 - offsetPx.x / this.tileMetrics.w + 0.5
+    this.pos.y =
+      pos[1] - clientRect.height / this.tileMetrics.h / 2 - offsetPx.y / this.tileMetrics.h + 0.5
   }
 
   start() {
@@ -115,9 +119,11 @@ export class Camera {
   private _update(now: number, delta: number) {
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const offset = this._getContentOffset()
-    const tx = pos[0] - clientRect.width / this.tileMetrics.w / 2 - offset.x + 0.5
-    const ty = pos[1] - clientRect.height / this.tileMetrics.h / 2 - offset.y + 0.5
+    const offsetPx = this._getContentOffset()
+    const tx =
+      pos[0] - clientRect.width / this.tileMetrics.w / 2 - offsetPx.x / this.tileMetrics.w + 0.5
+    const ty =
+      pos[1] - clientRect.height / this.tileMetrics.h / 2 - offsetPx.y / this.tileMetrics.h + 0.5
     const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
     this.pos.x = lerp(this.pos.x, tx, alpha)
     this.pos.y = lerp(this.pos.y, ty, alpha)

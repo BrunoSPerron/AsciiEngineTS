@@ -83,7 +83,8 @@ export class UILayout {
   constructor(
     parentRoot: HTMLDivElement,
     root: HTMLDivElement,
-    tileMetrics: TileMetricsData,
+    worldTileMetrics: TileMetricsData,
+    uiTileMetrics: TileMetricsData,
     engine: AsciiEngine,
     camera: Camera,
     worldLayerEl: HTMLDivElement,
@@ -92,12 +93,12 @@ export class UILayout {
     this.root = root
     this.root.style.position = 'absolute'
     this._engine = engine
-    this.tileMetrics = tileMetrics
+    this.tileMetrics = uiTileMetrics
 
-    this.world = new WorldUILayer(camera, tileMetrics, engine, worldLayerEl)
+    this.world = new WorldUILayer(camera, worldTileMetrics, uiTileMetrics, engine, worldLayerEl)
 
     this._animator = new BorderAnimator({
-      tileMetrics,
+      tileMetrics: uiTileMetrics,
       cellOccupied: (x, y) => this._cellOccupied(x, y),
       flushSegment: (seg) => this._flushSegment(seg),
     })
@@ -247,9 +248,10 @@ export class UILayout {
 
   getContentCenterOffset(): { x: number; y: number } {
     const { x, y, cols, rows } = this._contentRect
+    const { w, h } = this.tileMetrics
     return {
-      x: x + (cols - this._cols) / 2,
-      y: y + (rows - this._rows) / 2,
+      x: (x + (cols - this._cols) / 2) * w,
+      y: (y + (rows - this._rows) / 2) * h,
     }
   }
 

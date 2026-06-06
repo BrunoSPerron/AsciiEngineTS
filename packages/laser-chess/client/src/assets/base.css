@@ -1,6 +1,9 @@
 .ascii-game-engine {
   --font-size: 30px;
   --line-height: 27px;
+
+  --ui-font-size: 18px;
+  --ui-line-height: 18px;
 }
 
 /* ===--- Background ---===*/
