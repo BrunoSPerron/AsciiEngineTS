@@ -49,7 +49,7 @@ export function getLegalMoves(
     const tx = px + dx
     const ty = py + dy
     if (tx < 0 || ty < 0 || tx >= state.sizeX || ty >= state.sizeY) continue
-    if (isBorderCell(state, tx, ty)) continue // ← new
+    if (isBorderCell(state, tx, ty)) continue
     if (cellAt(state, tx, ty) === CELL.EMPTY) {
       moves.push({ type: 'move', fromX: x, fromY: y, toX: tx, toY: ty })
     }

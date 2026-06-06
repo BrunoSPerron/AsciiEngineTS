@@ -40,12 +40,10 @@ export function buildBoardFromState(state: GameState, engine: AsciiEngine): Boar
         case CELL.MIRROR:
           tile.glyph = '/'
           tile.solid = true
-          tile.style = 'fixed'
           break
         case CELL.MIRROR_FLIP:
           tile.glyph = '\\'
           tile.solid = true
-          tile.style = 'fixed'
           break
         case CELL.FIXED:
           tile.glyph = '/'

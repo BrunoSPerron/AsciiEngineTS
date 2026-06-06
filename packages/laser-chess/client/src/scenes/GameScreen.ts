@@ -41,13 +41,11 @@ const DIR_TO_MASK: Record<Direction, number> = {
 
 /** Sync a GameState back into the Board's chunk tiles so the renderer stays accurate. */
 function syncStateToChunk(state: GameState, board: Board): void {
-  const sizeX = state.sizeX
-  const sizeY = state.sizeY
+  const { sizeX, sizeY } = state
   for (let y = 0; y < sizeY; y++) {
     for (let x = 0; x < sizeX; x++) {
       const ch = state.board[y * sizeX + x]
       const tile = board.tile(x, y)
-
       switch (ch) {
         case CELL.WALL:
           tile.glyph = '#'
@@ -64,18 +62,12 @@ function syncStateToChunk(state: GameState, board: Board): void {
         case CELL.FIXED:
           tile.glyph = '/'
           tile.solid = true
-          tile.style += ' fixed'
+          tile.style = 'fixed'
           break
         case CELL.FIXED_FLIP:
           tile.glyph = '\\'
           tile.solid = true
-          tile.style += ' fixed'
-          break
-        case CELL.PAWN_1:
-        case CELL.PAWN_2:
-          // Pawns are rendered as entities;
-          tile.glyph = ' '
-          tile.solid = false
+          tile.style = 'fixed'
           break
         default:
           tile.glyph = ' '

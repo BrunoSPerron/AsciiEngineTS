@@ -372,17 +372,14 @@ export class OnlineMatch implements BaseGameScene {
           case CELL.WALL:
             tile.glyph = '#'
             tile.solid = true
-            tile.style = undefined
             break
           case CELL.MIRROR:
             tile.glyph = '/'
             tile.solid = true
-            tile.style = undefined
             break
           case CELL.MIRROR_FLIP:
             tile.glyph = '\\'
             tile.solid = true
-            tile.style = undefined
             break
           case CELL.FIXED:
             tile.glyph = '/'
@@ -397,7 +394,6 @@ export class OnlineMatch implements BaseGameScene {
           default:
             tile.glyph = ' '
             tile.solid = false
-            tile.style = undefined
         }
       }
     }
