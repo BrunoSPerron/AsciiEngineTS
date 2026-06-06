@@ -20,15 +20,7 @@ const sharedRules = {
 
 export default [
   {
-    ignores: [
-      'packages/engine/dist/**',
-      'packages/perso/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      'node_modules/**',
-      '**/vite.config.ts',
-    ],
+    ignores: ['**/dist/**', 'build/**', 'coverage/**', 'node_modules/**', '**/vite.config.ts'],
   },
 
   js.configs.recommended,

@@ -11,15 +11,20 @@ export class BoardConfig extends BaseGameScene {
 
   private _gameRule: GameRule = DEFAULT_GAME_RULE
 
+  //current CheckerPattern Dimensions
+  private _sizeX: number = 0
+  private _sizeY: number = 0
+
   constructor(sceneManager: SceneManager) {
     super(sceneManager)
     this.ui = sceneManager.engine.renderer.ui
 
     this.chunk = sceneManager.engine.world.getChunkXY(0, 0)
-    this._createCheckerPattern()
     this._loadBoards()
-    this._setupBoard('Arena')
-
+    const boardKeys = [...this.boardMap.keys()]
+    if (boardKeys.length) {
+      this._previewBoard(boardKeys[0])
+    }
     this.openBoardConfigMenu()
   }
 
@@ -39,18 +44,26 @@ export class BoardConfig extends BaseGameScene {
     }
   }
 
-  private _createCheckerPattern() {
-    for (let i = 0; i < 31; i++) {
-      for (let j = 0; j < 31; j++) {
-        const tile = this.chunk.get(i, j)
+  private _createCheckerPattern(sizeX: number, sizeY: number) {
+    for (let y = 0; y < Math.max(this._sizeY, sizeY); y++) {
+      for (let x = 0; x < Math.max(this._sizeX, sizeX); x++) {
+        const tile = this.chunk.get(x, y)
         tile.glyph = ' '
-        if (((i % 2) + j) % 2 === 0) {
-          tile.style = 'odd'
+        if (((x % 2) + y) % 2 === 0) {
+          tile.style = x < sizeX && y < sizeY ? 'odd' : undefined
         }
       }
     }
+
+    this._sizeX = sizeX
+    this._sizeY = sizeY
     this.chunk.dirty = true
     this.sceneManager.engine.renderer.invalidateChunks()
+
+    const camera = this.sceneManager.engine.renderer.camera
+    camera.target.pos.setXY((this._sizeX - 1) / 2, (this._sizeY - 1) / 2)
+    camera.target.previousPos.setXY((this._sizeX - 1) / 2, (this._sizeY - 1) / 2)
+    camera.jumpToTarget()
   }
 
   unload() {}
@@ -76,7 +89,7 @@ export class BoardConfig extends BaseGameScene {
 
     boardSelectElement.onChange((selectId: number) => {
       if (selectId === -1) return
-      this._setupBoard([...this.boardMap.keys()][selectId])
+      this._previewBoard([...this.boardMap.keys()][selectId])
     })
 
     boardSelectElement.onSelect(() => {
@@ -98,7 +111,7 @@ export class BoardConfig extends BaseGameScene {
     })
   }
 
-  private _setupBoard(name: string) {
+  private _previewBoard(name: string) {
     const boardData = this.boardMap.get(name)
 
     if (!boardData) {
@@ -108,11 +121,20 @@ export class BoardConfig extends BaseGameScene {
 
     const lines = boardData.split('\n')
 
-    for (let y = 0; y < 31; y++) {
-      const line = lines[y]?.replace('\r', '') ?? ''
-      for (let x = 0; x < 31; x++) {
+    let sizeX: number = 0
+    let sizeY: number = 0
+    for (let line of lines) {
+      line = line?.replace('\r', '') ?? ''
+      sizeY++
+      if (line.length > sizeX) sizeX = line.length
+    }
+
+    this._createCheckerPattern(sizeX, sizeY)
+
+    for (let y = 0; y < sizeY; y++) {
+      for (let x = 0; x < sizeX; x++) {
         const tile = this.chunk.get(x, y)
-        tile.glyph = line[x] ?? ' '
+        tile.glyph = lines[y][x] ?? ' '
       }
     }
 

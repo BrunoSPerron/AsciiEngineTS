@@ -124,7 +124,6 @@ export function computeLaser(
     }
   }
 
-  console.log(result.waypoints)
   return result
 }
 

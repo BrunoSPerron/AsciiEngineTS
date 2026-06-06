@@ -2,7 +2,6 @@ import { type AsciiEngine } from 'ascii-game-engine'
 import type { BaseGameScene } from './scenes/BaseGameScene'
 import { MainMenu } from './scenes/MainMenu'
 import { BoardConfig } from './scenes/BoardConfig'
-import { Board } from './Board'
 import { GameScreen } from './scenes/GameScreen'
 import { Lobby } from './scenes/Lobby'
 import { Room } from './scenes/Room'
@@ -12,15 +11,13 @@ import type { ServerConnection } from './net/ServerConnection'
 import type { PlayerSummary, RoomSummary, GameState } from '@laser-chess/shared'
 
 export type NavigationData = {
-  // Hotseat
-  board?: Board
+  initialState?: GameState
   // Multiplayer — lobby / room
   conn?: ServerConnection
   room?: RoomSummary
   players?: PlayerSummary[]
   localPlayerId?: string
   // Online match
-  initialState?: GameState
   myPlayer?: 1 | 2
 }
 
@@ -52,8 +49,8 @@ export class SceneManager {
         break
 
       case Scene.Game: {
-        const board = d.board ?? new Board(this.engine.world.getChunkXY(0, 0), this.engine)
-        this.currentScreen = new GameScreen(this, board)
+        if (!d.initialState) throw new Error('Scene.Game requires initialState in NavigationData')
+        this.currentScreen = new GameScreen(this, d.initialState)
         break
       }
 

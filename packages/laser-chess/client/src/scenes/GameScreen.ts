@@ -25,6 +25,7 @@ import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
 import { MirrorCursor } from '../entities/MirrorCursor'
 import type { Pawn } from '../entities/Pawn'
+import { buildBoardFromState } from '../buildBoardFromState'
 
 // ---------------------------------------------------------------------------
 // Helpers — keep shared Direction in sync with MASK bits for animations
@@ -36,66 +37,6 @@ const DIR_TO_MASK: Record<Direction, number> = {
   down: MASK.BOTTOM,
   left: MASK.LEFT,
   none: 0,
-}
-
-/**
- * Build the initial GameState from the Board.
- *
- * Board._prepareForGame() has already run: pawn glyphs ('K'/'k') are cleared
- * from tiles and Pawn entities exist in board.playerOneUnits /
- * board.playerTwoUnits. We reconstruct the flat board array from the remaining
- * tile glyphs and then inject pawn markers at the entity positions.
- */
-function buildGameState(board: Board): GameState {
-  const sizeX = board.size.x
-  const sizeY = board.size.y
-
-  // Build the flat board array from tiles (walls, mirrors, spaces)
-  const boardArr: string[] = new Array<string>(sizeX * sizeY).fill(' ')
-  const pawns: GameState['pawns'] = {}
-
-  for (let y = 0; y < sizeY; y++) {
-    for (let x = 0; x < sizeX; x++) {
-      const tile = board.tile(x, y)
-      const i = y * sizeX + x
-      switch (tile.glyph) {
-        case '#':
-          boardArr[i] = CELL.WALL
-          break
-        case '/':
-          boardArr[i] = tile.style === 'fixed' ? CELL.FIXED : CELL.MIRROR
-          break
-        case '\\':
-          boardArr[i] = tile.style === 'fixed' ? CELL.FIXED_FLIP : CELL.MIRROR_FLIP
-          break
-        default:
-          boardArr[i] = CELL.EMPTY
-      }
-    }
-  }
-
-  // Inject player one pawns
-  for (const pawn of board.playerOneUnits) {
-    const i = pawn.pos.y * sizeX + pawn.pos.x
-    boardArr[i] = CELL.PAWN_1
-    pawns[i] = { player: 1, hp: 5, moveType: 'king' }
-  }
-
-  // Inject player two pawns
-  for (const pawn of board.playerTwoUnits) {
-    const i = pawn.pos.y * sizeX + pawn.pos.x
-    boardArr[i] = CELL.PAWN_2
-    pawns[i] = { player: 2, hp: 5, moveType: 'king' }
-  }
-
-  return {
-    board: boardArr,
-    pawns,
-    sizeX,
-    sizeY,
-    currentPlayer: 1,
-    phase: 'move',
-  }
 }
 
 /** Sync a GameState back into the Board's chunk tiles so the renderer stays accurate. */
@@ -157,14 +98,14 @@ export class GameScreen implements BaseGameScene {
   private _state: GameState
   private _logic: GameLogic
 
-  constructor(sceneManager: SceneManager, board: Board) {
+  constructor(sceneManager: SceneManager, initialState: GameState) {
     this.sceneManager = sceneManager
-    this.board = board
 
     this._logic = createGame(DEFAULT_GAME_RULE)
     this._engine = sceneManager.engine
+    this.board = buildBoardFromState(initialState, this._engine)
 
-    this._state = buildGameState(board)
+    this._state = initialState
     syncStateToChunk(this._state, this.board)
 
     this._startPhase()

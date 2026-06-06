@@ -80,8 +80,8 @@ export class Camera {
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
     const offset = this._getContentOffset()
-    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2 + offset.x
-    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2 + offset.y
+    this.pos.x = pos[0] - clientRect.width / this.tileMetrics.w / 2 - offset.x + 0.5
+    this.pos.y = pos[1] - clientRect.height / this.tileMetrics.h / 2 - offset.y + 0.5
   }
 
   start() {

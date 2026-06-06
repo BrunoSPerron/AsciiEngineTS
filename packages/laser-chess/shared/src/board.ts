@@ -35,16 +35,16 @@ export function loadBoard(
   const lines = txt.split('\n')
   let sizeX: number = 0
   let sizeY: number = 0
-  for (const line of lines) {
+  for (let line of lines) {
+    line = line.replace('\r', '')
     sizeY++
     if (line.length > sizeX) sizeX = line.length
   }
   const board: string[] = new Array<string>(sizeX * sizeY).fill(CELL.EMPTY)
   const pawns: Record<number, Pawn> = {}
   for (let y = 0; y < sizeY; y++) {
-    const line = (lines[y] ?? '').replace('\r', '')
     for (let x = 0; x < sizeX; x++) {
-      const ch = line[x] ?? ' '
+      const ch = lines[y][x] ?? ' '
       const i = y * sizeX + x
 
       switch (ch) {
