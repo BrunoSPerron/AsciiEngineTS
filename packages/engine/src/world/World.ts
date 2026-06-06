@@ -2,7 +2,7 @@ import { Chunk, CHUNK_SIZE } from './Chunk'
 import { ChunkRecord } from './ChunkRecord'
 import type { Entity } from './entities/Entity'
 import type { Region } from './Region'
-import type { AsciiEngine } from '../core/Engine'
+import { EngineObject } from '../core/EngineObject'
 import type { GridVector } from '../math/GridVector'
 
 // ---------------------------------------------------------------------------
@@ -25,12 +25,19 @@ export type GlobalState = {
 export type ChunkGenerator = (cx: number, cy: number, chunk: Chunk) => void
 
 // ---------------------------------------------------------------------------
+// World events
+// ---------------------------------------------------------------------------
+
+type WorldEvents = {
+  spawn: [entity: Entity]
+  despawn: [entity: Entity]
+}
+
+// ---------------------------------------------------------------------------
 // World
 // ---------------------------------------------------------------------------
 
-type EntityHandler = (entity: Entity) => void
-
-export class World {
+export class World extends EngineObject<WorldEvents> {
   readonly local: LocalState = {
     chunks: new Map(),
     entities: new Map(),
@@ -43,32 +50,9 @@ export class World {
   }
 
   private nextId = 1
-  private engine: AsciiEngine
-
   private _chunkGenerator: ChunkGenerator | null = null
 
-  private _spawnListeners = new Set<EntityHandler>()
-  private _despawnListeners = new Set<EntityHandler>()
-  private _moveUnlisteners = new Map<number, () => void>()
-  private _chunkChangeListeners = new Set<(cx: number, cy: number) => void>()
-
-  constructor(engine: AsciiEngine) {
-    this.engine = engine
-  }
-
-  // --------------------------------------------------------------------------
-  // Spawn / despawn listeners
-  // --------------------------------------------------------------------------
-
-  onSpawn = (fn: EntityHandler): (() => void) => {
-    this._spawnListeners.add(fn)
-    return () => this._spawnListeners.delete(fn)
-  }
-
-  onDespawn = (fn: EntityHandler): (() => void) => {
-    this._despawnListeners.add(fn)
-    return () => this._despawnListeners.delete(fn)
-  }
+  private _entityMoveSubscriptions = new Map<number, () => void>()
 
   // --------------------------------------------------------------------------
   // Entity lifecycle
@@ -77,28 +61,27 @@ export class World {
   spawnEntity<T extends Entity>(entity: T): T {
     if (entity.uid === -1) entity.uid = this.nextId++
     this.local.entities.set(entity.uid, entity)
+    entity._init(this.engine)
 
-    // Register entity into its starting chunk
+    // Register entity into starting chunk
     const startChunk = this.getChunkXY(
       Math.floor(entity.pos.x / CHUNK_SIZE),
       Math.floor(entity.pos.y / CHUNK_SIZE),
     )
     startChunk.entities.add(entity.uid)
 
-    // Keep chunk sets in sync as entity moves
-    const unlistenMove = entity.onMove((e) => this._entityMoved(e))
-    this._moveUnlisteners.set(entity.uid, unlistenMove)
+    // Keep chunk membership in sync
+    const unsub = entity.on('move', (movedEntity) => this._entityMoved(movedEntity))
+    this._entityMoveSubscriptions.set(entity.uid, unsub)
 
-    entity.engine = this.engine
     entity.scheduleFirst()
-    queueMicrotask(() => {
-      entity.loaded()
-    })
-    for (const fn of this._spawnListeners) fn(entity)
+    this.engine.renderer._registerActor(entity)
+    entity.loaded()
+    this.emit('spawn', entity)
     return entity
   }
 
-  deleteEntity(entity: Entity) {
+  deleteEntity(entity: Entity): void {
     this.extractEntity(entity.uid)
   }
 
@@ -108,8 +91,8 @@ export class World {
 
     entity.unschedule()
 
-    this._moveUnlisteners.get(id)?.()
-    this._moveUnlisteners.delete(id)
+    this._entityMoveSubscriptions.get(id)?.()
+    this._entityMoveSubscriptions.delete(id)
 
     entity.unloaded()
 
@@ -117,8 +100,8 @@ export class World {
 
     const chunk = this._chunkForEntity(entity)
     chunk?.entities.delete(id)
-
-    for (const fn of this._despawnListeners) fn(entity)
+    this.engine.renderer._unregisterActor(entity)
+    this.emit('despawn', entity)
     return entity
   }
 
@@ -212,11 +195,6 @@ export class World {
     this._chunkGenerator = fn
   }
 
-  onChunkChange = (fn: (cx: number, cy: number) => void): (() => void) => {
-    this._chunkChangeListeners.add(fn)
-    return () => this._chunkChangeListeners.delete(fn)
-  }
-
   updateActiveChunks(cx: number, cy: number, viewDistance: number): void {
     const desired = new Set<string>()
     for (let dy = -viewDistance; dy <= viewDistance; dy++) {
@@ -242,18 +220,39 @@ export class World {
   }
 
   // --------------------------------------------------------------------------
+  // Lifecycle
+  // --------------------------------------------------------------------------
+
+  override _destroy(): void {
+    if (this.destroyed) return
+
+    for (const entity of [...this.local.entities.values()]) {
+      this.extractEntity(entity.uid)
+    }
+
+    this.local.chunks.clear()
+    this.global.chunkRecords.clear()
+    this.global.entities.clear()
+    this.global.regions.clear()
+
+    super._destroy()
+  }
+
+  // --------------------------------------------------------------------------
   // Private helpers
   // --------------------------------------------------------------------------
 
-  private _entityMoved(entity: Entity) {
+  private _entityMoved(entity: Entity): void {
     const oldCx = Math.floor(entity.previousPos.x / CHUNK_SIZE)
     const oldCy = Math.floor(entity.previousPos.y / CHUNK_SIZE)
     const newCx = Math.floor(entity.pos.x / CHUNK_SIZE)
     const newCy = Math.floor(entity.pos.y / CHUNK_SIZE)
     if (oldCx === newCx && oldCy === newCy) return
-    this.local.chunks.get(`${oldCx},${oldCy}`)?.entities.delete(entity.uid)
-    this.local.chunks.get(`${newCx},${newCy}`)?.entities.add(entity.uid)
-    for (const fn of this._chunkChangeListeners) fn(newCx, newCy)
+    const oldChunk = this.local.chunks.get(`${oldCx},${oldCy}`)
+    oldChunk?.entities.delete(entity.uid)
+    const newChunk = this.local.chunks.get(`${newCx},${newCy}`)
+    newChunk?.entities.add(entity.uid)
+    entity.chunkChanged(oldChunk, newChunk)
   }
 
   private _chunkForEntity(entity: Entity): Chunk | undefined {

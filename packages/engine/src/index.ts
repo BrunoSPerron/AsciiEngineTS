@@ -1,4 +1,5 @@
 export { AsciiEngine } from './core/Engine'
+export { EngineObject } from './core/EngineObject'
 
 export type { GameAssets } from './core/GameAssets'
 

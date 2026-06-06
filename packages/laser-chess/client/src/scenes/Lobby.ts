@@ -25,7 +25,7 @@ export class Lobby extends BaseGameScene {
     super(sceneManager)
     this._conn = conn
 
-    this._unlisten = this._conn.onMessage((msg) => {
+    this._unlisten = this._conn.on('message', (msg) => {
       switch (msg.type) {
         case 'welcome':
           this._playerId = msg.playerId

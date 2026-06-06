@@ -18,14 +18,16 @@ export class MirrorCursor extends Entity {
     this._addGuides()
 
     // Hook into camera raf loop
-    this.engine.renderer.camera.onFrame((now) => {
-      const delta = now - this._last
-      this._last = now
-      const alpha = 1 - Math.pow(0.5, delta / 40)
-      this.pos.x = lerp(this.pos.x, this._targetPos.x, alpha)
-      this.pos.y = lerp(this.pos.y, this._targetPos.y, alpha)
-      this._el.style.transform = `translate(${this.pos.x * tm.w}px, ${this.pos.y * tm.h}px)`
-    })
+    this.listen(
+      this.engine.renderer.camera.on('frame', (now) => {
+        const delta = now - this._last
+        this._last = now
+        const alpha = 1 - Math.pow(0.5, delta / 40)
+        this.pos.x = lerp(this.pos.x, this._targetPos.x, alpha)
+        this.pos.y = lerp(this.pos.y, this._targetPos.y, alpha)
+        this._el.style.transform = `translate(${this.pos.x * tm.w}px, ${this.pos.y * tm.h}px)`
+      }),
+    )
   }
 
   private _addGuides() {

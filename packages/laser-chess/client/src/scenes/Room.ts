@@ -41,7 +41,7 @@ export class Room extends BaseGameScene {
 
     this._loadBoards()
 
-    this._unlisten = this._conn.onMessage((msg) => {
+    this._unlisten = this._conn.on('message', (msg) => {
       switch (msg.type) {
         case 'playerJoined':
           this._players.push(msg.player)

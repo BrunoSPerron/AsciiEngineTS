@@ -1,18 +1,20 @@
+import { EngineObject } from '../../core/EngineObject'
 import { MIN_ACTION_INTERVAL } from '../../core/constants'
 import { lerp } from '../../math/utils'
-import type { AsciiEngine } from '../../core/Engine'
 import type { GridVector } from '../../math/GridVector'
+import type { Chunk } from '../Chunk'
 
-type MoveHandler = (entity: Entity) => void
+export type EntityEvents = {
+  move: [entity: Entity]
+  chunkchange: [old?: Chunk, new?: Chunk]
+}
 
-export class Entity {
+export class Entity extends EngineObject<EntityEvents> {
   uid = -1
   glyph: string
 
   pos: GridVector
   previousPos: GridVector
-
-  engine!: AsciiEngine
 
   private _extraCss: Set<string> = new Set()
 
@@ -30,9 +32,8 @@ export class Entity {
   private _lastActTime: number = performance.now()
   private _scheduledAt: number = 0
 
-  private _moveListeners = new Set<MoveHandler>()
-
   constructor(glyph: string, pos: GridVector, speed: number = 0) {
+    super()
     this.glyph = glyph
 
     this.pos = pos
@@ -52,12 +53,12 @@ export class Entity {
 
   public addCss(cssClass: string) {
     this._extraCss.add(cssClass)
-    this.engine?.renderer.addCssToActor(this, cssClass)
+    this._engine?.renderer.addCssToActor(this, cssClass)
   }
 
   public removeCss(cssClass: string) {
     this._extraCss.delete(cssClass)
-    this.engine?.renderer.removeCssFromActor(this, cssClass)
+    this._engine?.renderer.removeCssFromActor(this, cssClass)
   }
 
   public get speed(): number {
@@ -78,11 +79,6 @@ export class Entity {
       lerp(this.previousPos.x, this.pos.x, alpha),
       lerp(this.previousPos.y, this.pos.y, alpha),
     ]
-  }
-
-  onMove = (fn: MoveHandler): (() => void) => {
-    this._moveListeners.add(fn)
-    return () => this._moveListeners.delete(fn)
   }
 
   loaded() {}
@@ -106,7 +102,7 @@ export class Entity {
 
       this.currentActMs = this.act()
       if (!this.pos.equal(this.previousPos)) {
-        this._emitMove()
+        this.emit('move', this)
       }
 
       const drift = now - (this._scheduledAt + delay)
@@ -135,7 +131,7 @@ export class Entity {
     return this._speed
   }
 
-  private _emitMove() {
-    for (const fn of this._moveListeners) fn(this)
+  chunkChanged(oldChunk?: Chunk, newChunk?: Chunk): void {
+    this.emit('chunkchange', oldChunk, newChunk)
   }
 }

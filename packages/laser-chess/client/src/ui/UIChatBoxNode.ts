@@ -6,8 +6,6 @@ export class UIChatNode extends UIContainerBase {
   private _inputNode: UITextInputNode
   private _msgBox: UITextBox
 
-  private _unlisten: () => void = () => {}
-
   constructor(conn: ServerConnection) {
     super()
     this._conn = conn
@@ -18,38 +16,36 @@ export class UIChatNode extends UIContainerBase {
   }
 
   loaded(): void {
-    this._unlisten = this._conn.onMessage((msg) => {
-      switch (msg.type) {
-        case 'playerJoined':
-          /*this._players.push(msg.player)
+    this.listen(
+      this._conn.on('message', (msg) => {
+        switch (msg.type) {
+          case 'playerJoined':
+            /*this._players.push(msg.player)
           this._rebuildPlayerList()
           this._appendChat(`  ${msg.player.name} joined`)*/
-          break
-        case 'playerLeft':
-          /*this._players = this._players.filter((p) => p.id !== msg.player.id)
+            break
+          case 'playerLeft':
+            /*this._players = this._players.filter((p) => p.id !== msg.player.id)
           this._rebuildPlayerList()
           this._appendChat(`  ${msg.player.name} left`)*/
-          break
-        case 'playerReadyChanged': {
-          /*const idx = this._players.findIndex((p) => p.id === msg.player.id)
+            break
+          case 'playerReadyChanged': {
+            /*const idx = this._players.findIndex((p) => p.id === msg.player.id)
           if (idx !== -1) this._players[idx] = msg.player
           this._rebuildPlayerList()
           const label = msg.player.ready ? 'ready' : 'not ready'
           this._appendChat(`  ${msg.player.name} is ${label}`)*/
-          break
+            break
+          }
+          case 'matchStart':
+            /*this._onMatchStart(msg.players)*/
+            break
+          case 'error':
+            /*this._appendChat(`  [error] ${msg.message}`)*/
+            break
         }
-        case 'matchStart':
-          /*this._onMatchStart(msg.players)*/
-          break
-        case 'error':
-          /*this._appendChat(`  [error] ${msg.message}`)*/
-          break
-      }
-    })
-  }
-
-  unloaded(): void {
-    this._unlisten()
+      }),
+    )
   }
 
   getInnerLineData(): InnerLineData[] {

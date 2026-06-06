@@ -1,13 +1,14 @@
+import type { AsciiEngine } from '../core/Engine'
+import { EngineObject } from '../core/EngineObject'
+import type { EngineConfig } from '../core/Config'
+import type { GameAssets } from '../core/GameAssets'
 import type { Entity } from '../world/entities/Entity'
 import { CHUNK_SIZE } from '../world/Chunk'
 import type { World } from '../world/World'
 import { type Camera } from './Camera'
 import { ThemeManager } from './ThemeManager'
 import { type TileMetricsData } from './tileMetrics'
-import type { EngineConfig } from '../core/Config'
-import type { GameAssets } from '../core/GameAssets'
 import { UILayout } from './ui/UILayout'
-import type { AsciiEngine } from '../core/Engine'
 
 import baseCss from './css/base.css?inline'
 
@@ -49,7 +50,11 @@ function buildChunkHTML(chunk: {
   return html
 }
 
-export class Renderer {
+export type RendererEvents = {
+  none: []
+}
+
+export class Renderer extends EngineObject<RendererEvents> {
   root: HTMLElement
   tileMetrics: TileMetricsData
   uiTileMetrics: TileMetricsData
@@ -78,6 +83,7 @@ export class Renderer {
     camera: Camera,
     tileMetrics: TileMetricsData,
   ) {
+    super()
     this.root = root
     this.tileMetrics = tileMetrics
     this.uiTileMetrics = { w: tileMetrics.w, h: tileMetrics.h }
@@ -136,7 +142,7 @@ export class Renderer {
     //  SetTileHAndW also need to be called on theme change
     setTimeout(() => {
       this.setTileHAndW()
-      this.camera.onFrame((now) => this._onCameraFrame(now))
+      this.listen(this.camera.on('frame', (now) => this._onCameraFrame(now)))
       this.camera.setContentOffsetProvider(() => this.ui.getContentCenterOffset())
       this.ui.drawFrame()
       this.ui._start()
@@ -185,18 +191,20 @@ export class Renderer {
 
   bindWorld(world: World) {
     this._world = world
-    world.onSpawn((entity) => this._registerActor(entity))
-    world.onDespawn((entity) => this._unregisterActor(entity))
     for (const entity of world.local.entities.values()) {
       this._registerActor(entity)
     }
-    this._world.onChunkChange((cx, cy) => {
+
+    this.camera.on('chunkinvalidated', () => {
+      const entity = this.camera.target
+      const cx = Math.floor(entity.pos.x / CHUNK_SIZE)
+      const cy = Math.floor(entity.pos.y / CHUNK_SIZE)
       this._world?.updateActiveChunks(cx, cy, this.viewDistance)
       this.invalidateChunks()
     })
   }
 
-  private _registerActor(entity: Entity) {
+  _registerActor(entity: Entity) {
     const el = document.createElement('div')
     el.className = `actor ${[...entity.extraCss].join(' ')}`
     el.textContent = entity.glyph
@@ -204,11 +212,11 @@ export class Renderer {
     this.actors.appendChild(el)
     this.actorEls.set(entity.uid, el)
 
-    const unlisten = entity.onMove((e) => this.renderActor(e))
+    const unlisten = this.listen(entity.on('move', (e) => this.renderActor(e)))
     this._unlistenFns.set(entity.uid, unlisten)
   }
 
-  private _unregisterActor(entity: Entity) {
+  _unregisterActor(entity: Entity) {
     this.actorEls.get(entity.uid)?.remove()
     this.actorEls.delete(entity.uid)
     this._unlistenFns.get(entity.uid)?.()

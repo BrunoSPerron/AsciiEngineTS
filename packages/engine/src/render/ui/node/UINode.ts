@@ -1,4 +1,5 @@
 import type { AsciiEngine } from '../../../core/Engine'
+import { EngineObject } from '../../../core/EngineObject'
 import type { TileMetricsData } from '../../tileMetrics'
 
 export type UISpatialConfig = {
@@ -20,6 +21,10 @@ export type UISpatialConfig = {
   priority?: number
 
   dock?: 'left' | 'right' | 'top' | 'bottom'
+}
+
+type UINodeEvents = {
+  none: []
 }
 
 /**
@@ -52,7 +57,7 @@ export type UISpatialConfig = {
  *   - destroy()   — called by UILayout after unloaded for final DOM teardown.
  *                   Call super.destroy() to remove this.el.
  */
-export class UINode {
+export class UINode extends EngineObject<UINodeEvents> {
   private _id?: number
   readonly el: HTMLDivElement
 
@@ -85,9 +90,9 @@ export class UINode {
   private _hidden = false
 
   protected tileMetrics!: TileMetricsData
-  protected engine!: AsciiEngine
 
   constructor() {
+    super()
     this.el = document.createElement('div')
     this.el.className = 'ui-layout-element'
   }
@@ -118,7 +123,7 @@ export class UINode {
     engine: AsciiEngine,
   ): void {
     this._id = id
-    this.engine = engine
+    this._init(engine)
 
     this.priority = spatialConfig.priority ?? 0
 

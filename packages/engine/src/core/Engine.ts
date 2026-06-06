@@ -43,7 +43,9 @@ export class AsciiEngine {
     const tileMetrics = { w: 19.90625, h: 18 }
     const camera = new Camera(gameContainer, tileMetrics)
 
-    this.world = new World(this)
+    this.world = new World()
+    this.world._init(this)
+
     this.contextManager = new ContextManager()
     this.renderer = new Renderer(this, gameContainer, this.world, camera, tileMetrics)
     this.pointerManager = new PointerManager(
@@ -53,7 +55,7 @@ export class AsciiEngine {
       this.contextManager,
     )
 
-    camera.onChunksInvalidated(() => this.renderer.invalidateChunks())
+    camera.on('chunkinvalidated', () => this.renderer.invalidateChunks())
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleResize)
   }

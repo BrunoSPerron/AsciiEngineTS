@@ -2,15 +2,22 @@ import { lerp } from '../math/utils'
 import { GridVector } from '../math/GridVector'
 import { Entity } from '../world/entities/Entity'
 import type { TileMetricsData } from './tileMetrics'
+import { EngineObject } from '../core/EngineObject'
 
-export class Camera {
+export type CameraEvent = {
+  frame: [now: number]
+  chunkinvalidated: []
+}
+
+export class Camera extends EngineObject<CameraEvent> {
   pos = new GridVector()
 
   private _target: Entity
   private _placeholder: Entity | null
   private _halfLife: number = 120
   private tileMetrics: TileMetricsData
-  private _unlistenMove: (() => void) | null = null
+
+  private _targetUnlisten: () => void = () => {}
 
   /** Returns the content-center offset in **pixels**. */
   private _getContentOffset: () => { x: number; y: number } = () => ({ x: 0, y: 0 })
@@ -20,10 +27,8 @@ export class Camera {
 
   viewport: HTMLDivElement
 
-  private _chunksInvalidatedListeners = new Set<() => void>()
-  private _frameListeners = new Set<(now: number) => void>()
-
   constructor(viewport: HTMLDivElement, tileMetrics: TileMetricsData) {
+    super()
     this.viewport = viewport
     this.tileMetrics = tileMetrics
 
@@ -37,11 +42,10 @@ export class Camera {
   }
 
   set target(entity: Entity) {
-    this._unlistenMove?.()
     this._placeholder = null
     this._target = entity
     this._listenToTarget()
-    for (const fn of this._chunksInvalidatedListeners) fn()
+    this.emit('chunkinvalidated')
   }
 
   set halfLife(halfLife: number) {
@@ -53,20 +57,13 @@ export class Camera {
     this._getContentOffset = fn
   }
 
-  onChunksInvalidated = (fn: () => void): (() => void) => {
-    this._chunksInvalidatedListeners.add(fn)
-    return () => this._chunksInvalidatedListeners.delete(fn)
-  }
-
-  onFrame = (fn: (now: number) => void): (() => void) => {
-    this._frameListeners.add(fn)
-    return () => this._frameListeners.delete(fn)
-  }
-
   private _listenToTarget() {
-    this._unlistenMove = this._target.onMove(() => {
-      for (const fn of this._chunksInvalidatedListeners) fn()
-    })
+    this._targetUnlisten()
+    this._targetUnlisten = this.listen(
+      this._target.on('chunkchange', () => {
+        this.emit('chunkinvalidated')
+      }),
+    )
   }
 
   setInitialPosition(x: number, y: number) {
@@ -111,7 +108,7 @@ export class Camera {
     this._last = now
 
     this._update(now, delta)
-    for (const fn of this._frameListeners) fn(now)
+    this.emit('frame', now)
 
     this._rafId = requestAnimationFrame(this._frame)
   }

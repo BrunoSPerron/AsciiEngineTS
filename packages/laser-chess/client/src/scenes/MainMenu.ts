@@ -105,7 +105,7 @@ export class MainMenu extends BaseGameScene {
 
     const conn = new ServerConnection(SERVER_URL)
 
-    const unlistenState = conn.onStateChange((state) => {
+    const unlistenState = conn.on('statechange', (state) => {
       if (state === 'open') {
         unlistenState()
         ui.removeElement(statusBox.id, false)

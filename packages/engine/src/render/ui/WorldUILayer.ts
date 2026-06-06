@@ -46,7 +46,7 @@ export class WorldUILayer {
 
   _start(): void {
     if (this._unlisten) return
-    this._unlisten = this._camera.onFrame((now) => this._tick(now))
+    this._unlisten = this._camera.on('frame', (now) => this._tick(now))
   }
 
   _stop(): void {

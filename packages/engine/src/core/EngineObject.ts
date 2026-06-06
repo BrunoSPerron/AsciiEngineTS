@@ -4,7 +4,7 @@ type EventMap = Record<string, unknown[]>
 type Handler<A extends unknown[]> = (...args: A) => void
 
 export class EngineObject<E extends EventMap = Record<never, never>> {
-  private _engine: AsciiEngine | null = null
+  protected _engine: AsciiEngine | null = null
   private _events = new Map<keyof E, Set<Handler<unknown[]>>>()
   private _subscriptions = new Set<() => void>()
   private _destroyed = false
@@ -18,7 +18,7 @@ export class EngineObject<E extends EventMap = Record<never, never>> {
     return this._engine
   }
 
-  _initEngine(engine: AsciiEngine): void {
+  _init(engine: AsciiEngine): void {
     if (this._engine) throw new Error(`${this.constructor.name}: engine already initialized`)
     this._engine = engine
   }
