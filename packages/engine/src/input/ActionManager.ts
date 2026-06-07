@@ -1,4 +1,6 @@
-import type { ContextManager, ContextListener } from './ContextManager'
+import type { AsciiEngine } from '../core/Engine'
+import { EngineObject } from '../core/EngineObject'
+import type { ContextListener } from './ContextManager'
 
 type ActionHandler = (action: string) => void
 
@@ -12,14 +14,17 @@ type ListenOptions = {
   global?: boolean
 }
 
+export type ActionManagerEvents = {
+  none: []
+}
+
 // ---------------------------------------------------------------------------
 // ActionManager
 // ---------------------------------------------------------------------------
 
-export class ActionManager implements ContextListener {
+export class ActionManager extends EngineObject<ActionManagerEvents> implements ContextListener {
   private _codeToActions = new Map<string, string[]>()
 
-  private _contextManager: ContextManager
   private _idCounter = 0
 
   private _downListeners = new Map<string, ListenerEntry>()
@@ -50,10 +55,10 @@ export class ActionManager implements ContextListener {
     if (document.visibilityState === 'hidden') this._resetKeys()
   }
 
-  constructor(bindings: Record<string, string[]>, contextManager: ContextManager) {
-    this._contextManager = contextManager
-    this._loadBindings(bindings)
-    contextManager.registerListener(this)
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+    this._loadBindings(engine.config.bindings)
+    engine.contextManager.registerListener(this)
 
     window.addEventListener('keydown', this._boundKeyDown)
     window.addEventListener('keyup', this._boundKeyUp)
@@ -97,7 +102,7 @@ export class ActionManager implements ContextListener {
    */
   onActionKeyDown(fn: ActionHandler, options: ListenOptions = {}): () => void {
     const key = this._nextId()
-    const context = options.global === true ? null : this._contextManager.active
+    const context = options.global === true ? null : this.engine.contextManager.active
     this._downListeners.set(key, { fn, context })
     return () => this._downListeners.delete(key)
   }
@@ -108,7 +113,7 @@ export class ActionManager implements ContextListener {
    */
   onActionKeyUp(fn: ActionHandler, options: ListenOptions = {}): () => void {
     const key = this._nextId()
-    const context = options.global === true ? null : this._contextManager.active
+    const context = options.global === true ? null : this.engine.contextManager.active
     this._upListeners.set(key, { fn, context })
     return () => this._upListeners.delete(key)
   }
@@ -117,12 +122,12 @@ export class ActionManager implements ContextListener {
    * Returns true if the action is currently held and the given context is active.
    */
   isActionKeyDown(action: string, context: string): boolean {
-    if (this._contextManager.active !== context) return false
+    if (this.engine.contextManager.active !== context) return false
     return (this._actionPressCount.get(action) ?? 0) > 0
   }
 
   clearAllKeyDown(): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const [action, count] of this._actionPressCount) {
       if (count > 0) {
         this._emitUp(active, action)
@@ -151,7 +156,7 @@ export class ActionManager implements ContextListener {
   private _pressAction(action: string): void {
     const count = this._actionPressCount.get(action) ?? 0
     if (count === 0) {
-      this._emitDown(this._contextManager.active, action)
+      this._emitDown(this.engine.contextManager.active, action)
       this._emitGlobalDown(action)
     }
     this._actionPressCount.set(action, count + 1)
@@ -161,7 +166,7 @@ export class ActionManager implements ContextListener {
     const count = this._actionPressCount.get(action) ?? 0
     if (count <= 1) {
       this._actionPressCount.delete(action)
-      this._emitUp(this._contextManager.active, action)
+      this._emitUp(this.engine.contextManager.active, action)
       this._emitGlobalUp(action)
       return
     }
@@ -193,7 +198,7 @@ export class ActionManager implements ContextListener {
   }
 
   private _resetKeys(): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const [action, count] of this._actionPressCount) {
       if (count > 0) {
         this._emitUp(active, action)

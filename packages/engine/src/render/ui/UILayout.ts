@@ -1,7 +1,4 @@
-import type { AsciiEngine } from '../../core/Engine'
-import type { Camera } from '../Camera'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
-import type { TileMetricsData } from '../tileMetrics'
 import type { UINode, UISpatialConfig } from './node/UINode'
 import type { UIContainerBase } from './node/UIContainerBase'
 import type { UISelectBase } from './node/UISelectBase'
@@ -9,6 +6,9 @@ import { UISelectElement } from './node/UISelectElement'
 import type { Segment } from './segment'
 import { BorderAnimator } from './BorderAnimator'
 import { WorldUILayer } from './WorldUILayer'
+import { EngineObject } from '../../core/EngineObject'
+import { makeLayer } from '../utils'
+import type { AsciiEngine } from '../../core/Engine'
 
 export type { Segment }
 
@@ -38,12 +38,13 @@ const FRAME_ID = -1
 // UILayout
 // ---------------------------------------------------------------------------
 
-export class UILayout {
-  private parentRoot: HTMLDivElement
-  private root: HTMLDivElement
-  private _engine: AsciiEngine
+export type UILayoutEvents = {
+  none: []
+}
 
-  tileMetrics: TileMetricsData
+export class UILayout extends EngineObject<UILayoutEvents> {
+  private _layoutEl!: HTMLDivElement
+  private _layerEl!: HTMLDivElement
 
   /** World-space anchored elements — speech bubbles, labels, health bars, etc. */
   readonly world: WorldUILayer
@@ -80,28 +81,29 @@ export class UILayout {
 
   private _animator: BorderAnimator
 
-  constructor(
-    parentRoot: HTMLDivElement,
-    root: HTMLDivElement,
-    worldTileMetrics: TileMetricsData,
-    uiTileMetrics: TileMetricsData,
-    engine: AsciiEngine,
-    camera: Camera,
-    worldLayerEl: HTMLDivElement,
-  ) {
-    this.parentRoot = parentRoot
-    this.root = root
-    this.root.style.position = 'absolute'
-    this._engine = engine
-    this.tileMetrics = uiTileMetrics
-
-    this.world = new WorldUILayer(camera, worldTileMetrics, uiTileMetrics, engine, worldLayerEl)
-
+  constructor() {
+    super()
+    this.world = new WorldUILayer()
     this._animator = new BorderAnimator({
-      tileMetrics: uiTileMetrics,
       cellOccupied: (x, y) => this._cellOccupied(x, y),
       flushSegment: (seg) => this._flushSegment(seg),
     })
+  }
+
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+    this._layerEl = makeLayer('layer-ui', this.engine.gameContainer)
+    this._layoutEl = makeLayer('ui-layout-root', this._layerEl)
+    this.world._init(engine)
+    this._animator._init(engine)
+  }
+
+  get layerElement(): HTMLDivElement {
+    return this._layerEl
+  }
+
+  get layoutElement(): HTMLDivElement {
+    return this._layoutEl
   }
 
   // ---------------------------------------------------------------------------
@@ -123,19 +125,20 @@ export class UILayout {
   // ---------------------------------------------------------------------------
 
   drawFrame(): void {
-    const rawCols = this.parentRoot.clientWidth / this.tileMetrics.w
-    const rawRows = this.parentRoot.clientHeight / this.tileMetrics.h
+    const tm = this.engine.renderer.uiTileMetrics
+    const rawCols = this.layerElement.clientWidth / tm.w
+    const rawRows = this.layerElement.clientHeight / tm.h
     const cols = Math.floor(rawCols)
     const rows = Math.floor(rawRows)
 
-    const paddingX = (rawCols - cols) * this.tileMetrics.w
-    const paddingY = (rawRows - rows) * this.tileMetrics.h
+    const paddingX = (rawCols - cols) * tm.w
+    const paddingY = (rawRows - rows) * tm.h
 
-    this.root.style.padding = `${paddingY / 2}px ${paddingX / 2}px`
-    this.root.style.left = `${this.tileMetrics.w}px`
-    this.root.style.top = `${this.tileMetrics.h}px`
-    this.root.style.width = `${(cols - 2) * this.tileMetrics.w}px`
-    this.root.style.height = `${(rows - 2) * this.tileMetrics.h}px`
+    this.layoutElement.style.padding = `${paddingY / 2}px ${paddingX / 2}px`
+    this.layoutElement.style.left = `${tm.w}px`
+    this.layoutElement.style.top = `${tm.h}px`
+    this.layoutElement.style.width = `${(cols - 2) * tm.w}px`
+    this.layoutElement.style.height = `${(rows - 2) * tm.h}px`
 
     if (this._frame && cols === this._cols && rows === this._rows) return
 
@@ -153,8 +156,8 @@ export class UILayout {
   }
 
   addElement(element: UINode, spatialConfig: UISpatialConfig, animate = true): number {
-    element._mount(this._nextId++, spatialConfig, this.tileMetrics, this._engine)
-    this.root.appendChild(element.el)
+    element._mount(this._nextId++, spatialConfig, this.engine)
+    this.layoutElement.appendChild(element.el)
 
     this._elements.set(element.id, element)
 
@@ -223,13 +226,13 @@ export class UILayout {
     spatialConfig: UISpatialConfig,
     uiSelectClass?: new (themes: string[], ...args: unknown[]) => UISelectBase,
   ): void {
-    const themeManager = this._engine.renderer.themeManager
+    const themeManager = this.engine.renderer.themeManager
     const themes = themeManager.getThemeNames()
     const currentTheme = themeManager.current
     const previousTheme = currentTheme
 
     const selectEl = uiSelectClass ? new uiSelectClass(themes) : new UISelectElement(themes)
-    this._engine.renderer.ui.addElement(selectEl, spatialConfig)
+    this.engine.renderer.ui.addElement(selectEl, spatialConfig)
     selectEl.currentIndex = themes.indexOf(currentTheme)
 
     selectEl.onChange((selectId: number) => {
@@ -248,7 +251,7 @@ export class UILayout {
 
   getContentCenterOffset(): { x: number; y: number } {
     const { x, y, cols, rows } = this._contentRect
-    const { w, h } = this.tileMetrics
+    const { w, h } = this.engine.renderer.uiTileMetrics
     return {
       x: (x + (cols - this._cols) / 2) * w,
       y: (y + (rows - this._rows) / 2) * h,
@@ -474,11 +477,11 @@ export class UILayout {
     ownerId: number,
     glyph: string = ' ',
     vertical: boolean = false,
-    parentEl: HTMLElement = this.root,
+    parentEl: HTMLElement = this.layoutElement,
   ): Segment {
     const el = document.createElement('pre')
     el.className = 'ui-layout-line'
-    const { w, h } = this.tileMetrics
+    const { w, h } = this.engine.renderer.uiTileMetrics
     el.style.transform = `translate(${x * w}px, ${y * h}px)`
     const chars = new Array<string>(length).fill(glyph)
     const seg: Segment = { el, vertical, x, y, length, chars, ownerId }
@@ -493,7 +496,7 @@ export class UILayout {
     line: { x: number; y: number; length: number; vertical: boolean },
     element: UINode,
   ): Segment {
-    const { w, h } = this.tileMetrics
+    const { w, h } = this.engine.renderer.uiTileMetrics
     const el = document.createElement('pre')
     el.className = 'ui-layout-line'
     el.style.transform = `translate(${line.x * w}px, ${line.y * h}px)`

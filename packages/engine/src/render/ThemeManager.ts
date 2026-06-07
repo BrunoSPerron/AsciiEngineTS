@@ -13,6 +13,8 @@ import RetroGold from './css/themes/Retro Gold.css?inline'
 import OldParchment from './css/themes/Old Parchment.css?inline'
 import PurpleSpace from './css/themes/Purple Space.css?inline'
 import DeepSea from './css/themes/Deep Sea.css?inline'
+import { EngineObject } from '../core/EngineObject'
+import type { AsciiEngine } from '../core/Engine'
 
 const ENGINE_THEMES: Record<string, string> = {
   Flamingo: Flamingo,
@@ -38,7 +40,11 @@ type ThemeDef = {
   url: string | null // null = inline
 }
 
-export class ThemeManager {
+export type ThemeManagerEvent = {
+  none: []
+}
+
+export class ThemeManager extends EngineObject<ThemeManagerEvent> {
   private themes = new Map<string, ThemeDef>()
   private _styleEl: HTMLStyleElement
   private _linkEl: HTMLLinkElement
@@ -50,6 +56,7 @@ export class ThemeManager {
   }
 
   constructor() {
+    super()
     this._styleEl = document.createElement('style')
     document.head.appendChild(this._styleEl)
 
@@ -59,8 +66,16 @@ export class ThemeManager {
     document.head.appendChild(this._linkEl)
   }
 
-  init(engineThemeWhitelist: string[]) {
-    for (const name of engineThemeWhitelist) {
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+
+    for (const { name, url } of engine.assets.themes) {
+      this.register(name, url, true)
+    }
+    this.set(engine.config.game.initial_theme)
+
+    const whiteList = this.engine.config.game.engine_themes
+    for (const name of whiteList) {
       const css = ENGINE_THEMES[name]
       if (css) this.register(name, css)
     }

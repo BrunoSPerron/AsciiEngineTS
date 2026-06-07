@@ -1,6 +1,5 @@
 import type { AsciiEngine } from '../../../core/Engine'
 import { EngineObject } from '../../../core/EngineObject'
-import type { TileMetricsData } from '../../tileMetrics'
 
 export type UISpatialConfig = {
   x?: number
@@ -89,8 +88,6 @@ export class UINode extends EngineObject<UINodeEvents> {
   /** True when the element was hidden because it could not fit in the layout */
   private _hidden = false
 
-  protected tileMetrics!: TileMetricsData
-
   constructor() {
     super()
     this.el = document.createElement('div')
@@ -116,12 +113,7 @@ export class UINode extends EngineObject<UINodeEvents> {
   // Engine-internal mount — called once by UILayout.addElement()
   // ---------------------------------------------------------------------------
 
-  _mount(
-    id: number,
-    spatialConfig: UISpatialConfig,
-    tileMetrics: TileMetricsData,
-    engine: AsciiEngine,
-  ): void {
+  _mount(id: number, spatialConfig: UISpatialConfig, engine: AsciiEngine): void {
     this._id = id
     this._init(engine)
 
@@ -147,8 +139,6 @@ export class UINode extends EngineObject<UINodeEvents> {
     this._originalY = this.y
 
     this.dock = spatialConfig.dock
-
-    this.tileMetrics = tileMetrics
   }
 
   // ---------------------------------------------------------------------------
@@ -244,13 +234,14 @@ export class UINode extends EngineObject<UINodeEvents> {
    * Subclasses can override to intercept raw coords, but must call super first.
    */
   layout(x: number, y: number, w: number, h: number): void {
+    const tm = this.engine.renderer.uiTileMetrics
     this.x = x
     this.y = y
     this.w = w
     this.h = h
-    this.el.style.transform = `translate(${x * this.tileMetrics.w}px, ${y * this.tileMetrics.h}px)`
-    this.el.style.width = `${w * this.tileMetrics.w}px`
-    this.el.style.height = `${h * this.tileMetrics.h}px`
+    this.el.style.transform = `translate(${x * tm.w}px, ${y * tm.h}px)`
+    this.el.style.width = `${w * tm.w}px`
+    this.el.style.height = `${h * tm.h}px`
     this.resized()
   }
 

@@ -1,6 +1,6 @@
-import type { ContextManager, ContextListener } from './ContextManager'
-import type { Camera } from '../render/Camera'
-import type { TileMetricsData } from '../render/tileMetrics'
+import type { ContextListener } from './ContextManager'
+import { EngineObject } from '../core/EngineObject'
+import type { AsciiEngine } from '../core/Engine'
 
 type WorldPointerHandler = (wx: number, wy: number, button: number) => void
 type WorldHoverHandler = (wx: number, wy: number) => void
@@ -18,16 +18,15 @@ type ListenerEntry<T> = {
   context: string
 }
 
+export type PointerManagerEvents = {
+  none: []
+}
+
 // ---------------------------------------------------------------------------
 // PointerManager
 // ---------------------------------------------------------------------------
 
-export class PointerManager implements ContextListener {
-  private _container: HTMLElement
-  private _contextManager: ContextManager
-  private _tileMetrics: TileMetricsData
-  private _camera: Camera
-
+export class PointerManager extends EngineObject<PointerManagerEvents> implements ContextListener {
   private _idCounter = 0
 
   private _worldHoverListeners = new Map<string, ListenerEntry<WorldHoverHandler>>()
@@ -46,19 +45,16 @@ export class PointerManager implements ContextListener {
    */
   private _hoveredUIElements = new Set<HTMLElement>()
 
-  constructor(
-    container: HTMLElement,
-    tileMetrics: TileMetricsData,
-    camera: Camera,
-    contextManager: ContextManager,
-  ) {
-    this._container = container
-    this._tileMetrics = tileMetrics
-    this._camera = camera
-    this._contextManager = contextManager
+  constructor() {
+    super()
+  }
 
-    contextManager.registerListener(this)
+  _init(engine: AsciiEngine) {
+    super._init(engine)
 
+    this.engine.contextManager.registerListener(this)
+
+    const container = this.engine.gameContainer
     container.addEventListener('pointermove', this._onPointerMove)
     container.addEventListener('pointerdown', this._onPointerDown)
     container.addEventListener('pointerup', this._onPointerUp)
@@ -137,25 +133,25 @@ export class PointerManager implements ContextListener {
 
   onWorldHover(fn: WorldHoverHandler): () => void {
     const key = this._nextId()
-    this._worldHoverListeners.set(key, { fn, context: this._contextManager.active })
+    this._worldHoverListeners.set(key, { fn, context: this.engine.contextManager.active })
     return () => this._worldHoverListeners.delete(key)
   }
 
   onWorldHoverEnd(fn: WorldHoverEndHandler): () => void {
     const key = this._nextId()
-    this._worldHoverEndListeners.set(key, { fn, context: this._contextManager.active })
+    this._worldHoverEndListeners.set(key, { fn, context: this.engine.contextManager.active })
     return () => this._worldHoverEndListeners.delete(key)
   }
 
   onWorldPointerDown(fn: WorldPointerHandler): () => void {
     const key = this._nextId()
-    this._worldPointerDownListeners.set(key, { fn, context: this._contextManager.active })
+    this._worldPointerDownListeners.set(key, { fn, context: this.engine.contextManager.active })
     return () => this._worldPointerDownListeners.delete(key)
   }
 
   onWorldPointerUp(fn: WorldPointerHandler): () => void {
     const key = this._nextId()
-    this._worldPointerUpListeners.set(key, { fn, context: this._contextManager.active })
+    this._worldPointerUpListeners.set(key, { fn, context: this.engine.contextManager.active })
     return () => this._worldPointerUpListeners.delete(key)
   }
 
@@ -164,10 +160,11 @@ export class PointerManager implements ContextListener {
   // ---------------------------------------------------------------------------
 
   destroy(): void {
-    this._container.removeEventListener('pointermove', this._onPointerMove)
-    this._container.removeEventListener('pointerdown', this._onPointerDown)
-    this._container.removeEventListener('pointerup', this._onPointerUp)
-    this._container.removeEventListener('pointerleave', this._onPointerLeave)
+    const container = this.engine.gameContainer
+    container.removeEventListener('pointermove', this._onPointerMove)
+    container.removeEventListener('pointerdown', this._onPointerDown)
+    container.removeEventListener('pointerup', this._onPointerUp)
+    container.removeEventListener('pointerleave', this._onPointerLeave)
 
     this._worldHoverListeners.clear()
     this._worldHoverEndListeners.clear()
@@ -213,12 +210,14 @@ export class PointerManager implements ContextListener {
   // ---------------------------------------------------------------------------
 
   private _pixelToWorldCell(e: PointerEvent): { wx: number; wy: number } {
-    const rect = this._container.getBoundingClientRect()
+    const cameraPos = this.engine.renderer.camera.pos
+    const tm = this.engine.renderer.tileMetrics
+    const rect = this.engine.gameContainer.getBoundingClientRect()
     const px = e.clientX - rect.left
     const py = e.clientY - rect.top
     return {
-      wx: Math.floor(px / this._tileMetrics.w + this._camera.pos.x),
-      wy: Math.floor(py / this._tileMetrics.h + this._camera.pos.y),
+      wx: Math.floor(px / tm.w + cameraPos.x),
+      wy: Math.floor(py / tm.h + cameraPos.y),
     }
   }
 
@@ -239,28 +238,28 @@ export class PointerManager implements ContextListener {
   }
 
   private _emitWorldHover(wx: number, wy: number): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const { fn, context } of this._worldHoverListeners.values()) {
       if (context === active) fn(wx, wy)
     }
   }
 
   private _emitWorldHoverEnd(wx: number, wy: number): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const { fn, context } of this._worldHoverEndListeners.values()) {
       if (context === active) fn(wx, wy)
     }
   }
 
   private _emitWorldPointerDown(wx: number, wy: number, button: number): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const { fn, context } of this._worldPointerDownListeners.values()) {
       if (context === active) fn(wx, wy, button)
     }
   }
 
   private _emitWorldPointerUp(wx: number, wy: number, button: number): void {
-    const active = this._contextManager.active
+    const active = this.engine.contextManager.active
     for (const { fn, context } of this._worldPointerUpListeners.values()) {
       if (context === active) fn(wx, wy, button)
     }

@@ -1,5 +1,5 @@
+import { EngineObject } from '../../core/EngineObject'
 import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
-import type { TileMetricsData } from '../tileMetrics'
 import type { UINode } from './node/UINode'
 import type { Segment } from './segment'
 
@@ -23,7 +23,6 @@ type BorderSegments = {
 }
 
 type Deps = {
-  tileMetrics: TileMetricsData
   cellOccupied: (x: number, y: number) => boolean
   flushSegment: (seg: Segment) => void
 }
@@ -41,8 +40,11 @@ const MIN_DURATION = 1
 // BorderAnimator
 // ---------------------------------------------------------------------------
 
-export class BorderAnimator {
-  private _tileMetrics: TileMetricsData
+export type BorderAnimatorEvents = {
+  none: []
+}
+
+export class BorderAnimator extends EngineObject<BorderAnimatorEvents> {
   private _cellOccupied: (x: number, y: number) => boolean
   private _flushSegment: (seg: Segment) => void
 
@@ -52,8 +54,8 @@ export class BorderAnimator {
    */
   private _openingAnimations = new Map<number, Promise<void>>()
 
-  constructor({ tileMetrics, cellOccupied, flushSegment }: Deps) {
-    this._tileMetrics = tileMetrics
+  constructor({ cellOccupied, flushSegment }: Deps) {
+    super()
     this._cellOccupied = cellOccupied
     this._flushSegment = flushSegment
   }
@@ -105,6 +107,7 @@ export class BorderAnimator {
     const bw = element.w + 2
     const bh = element.h + 2
     const pivotRow = this._pivotRow(element, bh)
+    const tm = this.engine.renderer.uiTileMetrics
 
     return {
       top,
@@ -115,8 +118,8 @@ export class BorderAnimator {
       bw,
       bh,
       pivotRow,
-      tileW: this._tileMetrics.w,
-      tileH: this._tileMetrics.h,
+      tileW: tm.w,
+      tileH: tm.h,
       baseTopTransform: top.el.style.transform,
       baseBottomTransform: bottom.el.style.transform,
     }

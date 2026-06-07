@@ -1,5 +1,4 @@
 import { World } from '../world/World'
-import { Camera } from '../render/Camera'
 import { ActionManager } from '../input/ActionManager'
 import { ContextManager } from '../input/ContextManager'
 import { PointerManager } from '../input/PointerManager'
@@ -11,8 +10,9 @@ import { CHUNK_SIZE } from '../world/Chunk'
 
 export class AsciiEngine {
   private _container: HTMLDivElement
+  private _gameContainer: HTMLDivElement
   assets!: GameAssets
-  private _config!: EngineConfig
+  config!: EngineConfig
 
   private _boundContextMenu: ((e: PointerEvent) => void) | null = null
   private _boundTabKey: ((e: KeyboardEvent) => void) | null = null
@@ -22,7 +22,7 @@ export class AsciiEngine {
   world: World
   renderer: Renderer
 
-  actionManager!: ActionManager
+  actionManager: ActionManager
   pointerManager: PointerManager
   contextManager: ContextManager
 
@@ -33,29 +33,23 @@ export class AsciiEngine {
   private pausedTimeouts: Map<number, number> = new Map()
 
   constructor(root: HTMLDivElement, glob: Record<string, string> = {}) {
-    this._container = root
     this.assets = loadGameAssets(glob)
-    root.classList.add('ascii-game-engine-host')
-    const gameContainer = document.createElement('div')
-    gameContainer.classList.add('ascii-game-engine')
-    root.appendChild(gameContainer)
 
-    const tileMetrics = { w: 19.90625, h: 18 }
-    const camera = new Camera(gameContainer, tileMetrics)
+    this._container = root
+    root.classList.add('ascii-game-engine-host')
+
+    this._gameContainer = document.createElement('div')
+    this._gameContainer.classList.add('ascii-game-engine')
+    root.appendChild(this._gameContainer)
 
     this.world = new World()
-    this.world._init(this)
+
+    this.renderer = new Renderer()
 
     this.contextManager = new ContextManager()
-    this.renderer = new Renderer(this, gameContainer, this.world, camera, tileMetrics)
-    this.pointerManager = new PointerManager(
-      gameContainer,
-      tileMetrics,
-      camera,
-      this.contextManager,
-    )
+    this.actionManager = new ActionManager()
+    this.pointerManager = new PointerManager()
 
-    camera.on('chunkinvalidated', () => this.renderer.invalidateChunks())
     document.addEventListener('visibilitychange', this.handleVisibility)
     window.addEventListener('resize', this.handleResize)
   }
@@ -64,32 +58,36 @@ export class AsciiEngine {
     return this._paused || !this._running
   }
 
+  get gameContainer(): HTMLDivElement {
+    return this._gameContainer
+  }
+
   async init() {
-    this._config = await loadConfig(this.assets.configUrl)
-    document.title = this._config.game.title
+    this.config = await loadConfig(this.assets.configUrl)
     await document.fonts.ready
+    this._setupContextMenu(this.config.game.disable_context_menu)
 
-    this.actionManager = new ActionManager(this._config.bindings, this.contextManager)
-    this._unlistenCycleFocus = this.actionManager.onActionKeyDown((action) => {
-      if (action === 'cycle_focus') this.contextManager.cycleFocus(1)
-      // TODO Shift+Tab would need a separate 'cycle_focus_back' binding, or
-      // ActionManager could detect shift state.
-    })
-
-    this.renderer.init(this._config, this.assets)
-    this._setupContextMenu(this._config.game.disable_context_menu)
+    this.actionManager._init(this)
+    this.pointerManager._init(this)
+    this.world._init(this)
+    this.renderer._init(this)
 
     this._boundTabKey = (e: KeyboardEvent) => {
       if (e.code === 'Tab') e.preventDefault()
     }
     window.addEventListener('keydown', this._boundTabKey)
+    this._unlistenCycleFocus = this.actionManager.onActionKeyDown((action) => {
+      if (action === 'cycle_focus') this.contextManager.cycleFocus(1)
+      // TODO Shift+Tab would need a separate 'cycle_focus_back' binding, or
+      // ActionManager could detect shift state.
+    })
   }
 
   start() {
     const initPos = this.renderer.camera.target.pos
     const initCx = Math.floor(initPos.x / CHUNK_SIZE)
     const initCy = Math.floor(initPos.y / CHUNK_SIZE)
-    this.world.updateActiveChunks(initCx, initCy, this.renderer.viewDistance)
+    this.world.updateActiveChunks(initCx, initCy)
     this.renderer.camera.jumpToTarget()
 
     this.environmentReady = true
@@ -139,6 +137,9 @@ export class AsciiEngine {
     if (!this._paused) this.world.local.entities.forEach((e) => e.scheduleFirst())
   }
 
+  /**
+   *  Disable "right click" menu
+   */
   private _setupContextMenu(disabled: boolean): void {
     if (this._boundContextMenu) {
       this._container.removeEventListener('contextmenu', this._boundContextMenu)

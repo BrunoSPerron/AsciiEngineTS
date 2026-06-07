@@ -1,8 +1,8 @@
 import { lerp } from '../math/utils'
 import { GridVector } from '../math/GridVector'
 import { Entity } from '../world/entities/Entity'
-import type { TileMetricsData } from './tileMetrics'
 import { EngineObject } from '../core/EngineObject'
+import type { AsciiEngine } from '../core/Engine'
 
 export type CameraEvent = {
   frame: [now: number]
@@ -14,23 +14,18 @@ export class Camera extends EngineObject<CameraEvent> {
 
   private _target: Entity
   private _placeholder: Entity | null
-  private _halfLife: number = 120
-  private tileMetrics: TileMetricsData
 
   private _targetUnlisten: () => void = () => {}
-
-  /** Returns the content-center offset in **pixels**. */
-  private _getContentOffset: () => { x: number; y: number } = () => ({ x: 0, y: 0 })
 
   private _rafId = 0
   private _last = 0
 
-  viewport: HTMLDivElement
+  get viewport(): HTMLDivElement {
+    return this.engine.gameContainer
+  }
 
-  constructor(viewport: HTMLDivElement, tileMetrics: TileMetricsData) {
+  constructor() {
     super()
-    this.viewport = viewport
-    this.tileMetrics = tileMetrics
 
     this._placeholder = new Entity(' ', new GridVector(0, 0), 0)
     this._target = this._placeholder
@@ -48,13 +43,9 @@ export class Camera extends EngineObject<CameraEvent> {
     this.emit('chunkinvalidated')
   }
 
-  set halfLife(halfLife: number) {
-    this._halfLife = Math.max(halfLife, 0)
-  }
-
-  /** Provider must return the offset in **pixels**. */
-  setContentOffsetProvider(fn: () => { x: number; y: number }) {
-    this._getContentOffset = fn
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+    this.setInitialPosition(...engine.config.camera.initial_position)
   }
 
   private _listenToTarget() {
@@ -75,14 +66,13 @@ export class Camera extends EngineObject<CameraEvent> {
   }
 
   jumpToTarget() {
+    const tm = this.engine.renderer.tileMetrics
     const now = performance.now()
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const offsetPx = this._getContentOffset()
-    this.pos.x =
-      pos[0] - clientRect.width / this.tileMetrics.w / 2 - offsetPx.x / this.tileMetrics.w + 0.5
-    this.pos.y =
-      pos[1] - clientRect.height / this.tileMetrics.h / 2 - offsetPx.y / this.tileMetrics.h + 0.5
+    const offsetPx = this.engine.renderer.ui.getContentCenterOffset()
+    this.pos.x = pos[0] - clientRect.width / tm.w / 2 - offsetPx.x / tm.w + 0.5
+    this.pos.y = pos[1] - clientRect.height / tm.h / 2 - offsetPx.y / tm.h + 0.5
   }
 
   start() {
@@ -114,14 +104,13 @@ export class Camera extends EngineObject<CameraEvent> {
   }
 
   private _update(now: number, delta: number) {
+    const tm = this.engine.renderer.tileMetrics
     const pos = this._target.visualPosition(now)
     const clientRect = this.viewport.getBoundingClientRect()
-    const offsetPx = this._getContentOffset()
-    const tx =
-      pos[0] - clientRect.width / this.tileMetrics.w / 2 - offsetPx.x / this.tileMetrics.w + 0.5
-    const ty =
-      pos[1] - clientRect.height / this.tileMetrics.h / 2 - offsetPx.y / this.tileMetrics.h + 0.5
-    const alpha = 1 - Math.pow(0.5, delta / this._halfLife)
+    const offsetPx = this.engine.renderer.ui.getContentCenterOffset()
+    const tx = pos[0] - clientRect.width / tm.w / 2 - offsetPx.x / tm.w + 0.5
+    const ty = pos[1] - clientRect.height / tm.h / 2 - offsetPx.y / tm.h + 0.5
+    const alpha = 1 - Math.pow(0.5, delta / this.engine.config.camera.half_life)
     this.pos.x = lerp(this.pos.x, tx, alpha)
     this.pos.y = lerp(this.pos.y, ty, alpha)
   }

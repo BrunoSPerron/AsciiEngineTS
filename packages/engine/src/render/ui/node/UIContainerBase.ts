@@ -1,5 +1,4 @@
 import type { AsciiEngine } from '../../../core/Engine'
-import type { TileMetricsData } from '../../tileMetrics'
 import { UINode, type UISpatialConfig } from './UINode'
 
 export type InnerLineData = {
@@ -100,13 +99,8 @@ export abstract class UIContainerBase extends UINode {
   // Semi Private overrides
   // ---------------------------------------------------------------------------
 
-  _mount(
-    id: number,
-    spatialConfig: UISpatialConfig,
-    tileMetrics: TileMetricsData,
-    engine: AsciiEngine,
-  ): void {
-    super._mount(id, spatialConfig, tileMetrics, engine)
+  _mount(id: number, spatialConfig: UISpatialConfig, engine: AsciiEngine): void {
+    super._mount(id, spatialConfig, engine)
     this._mounted = true
     for (const { element, config } of this._unmountedChildren) {
       this._children.push(element)
@@ -132,7 +126,7 @@ export abstract class UIContainerBase extends UINode {
     // TODO replace this ugly hack
     const childId = this.id * 1000 + this._children.findIndex((c) => c === element)
 
-    element._mount(childId, config, this.tileMetrics, this.engine)
+    element._mount(childId, config, this.engine)
     this.el.appendChild(element.el)
     element.loaded()
   }

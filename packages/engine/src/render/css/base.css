@@ -120,6 +120,7 @@
 }
 
 .ascii-game-engine .layer-ui {
+  position: 'absolute';
   user-select: none;
   -webkit-user-select: none;
 }

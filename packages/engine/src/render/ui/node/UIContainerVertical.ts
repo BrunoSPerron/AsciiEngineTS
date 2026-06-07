@@ -10,7 +10,7 @@ export class UIContainerVertical extends UIContainerBase {
   }
 
   protected _layoutChildren(): void {
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     if (!tm) return
 
     let cursorY = 0

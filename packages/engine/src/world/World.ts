@@ -195,7 +195,8 @@ export class World extends EngineObject<WorldEvents> {
     this._chunkGenerator = fn
   }
 
-  updateActiveChunks(cx: number, cy: number, viewDistance: number): void {
+  updateActiveChunks(cx: number, cy: number): void {
+    const viewDistance = this.engine.config.world.chunk_view_distance
     const desired = new Set<string>()
     for (let dy = -viewDistance; dy <= viewDistance; dy++) {
       for (let dx = -viewDistance; dx <= viewDistance; dx++) {

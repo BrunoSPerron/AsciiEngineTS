@@ -40,7 +40,7 @@ export class UITextInputNode extends UIInputBase<string> {
     this._inputEl = null
     this._messageEls = []
 
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     const h = this.h
     const w = this.w
 

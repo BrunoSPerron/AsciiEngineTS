@@ -183,7 +183,7 @@ export class UISelectElement extends UISelectBase {
     extraClass = '',
   ): void {
     const text = this._renderLabel(index)
-    const heightPx = this.tileMetrics.h
+    const heightPx = this.engine.renderer.uiTileMetrics.h
 
     const row = document.createElement('div')
     row.className = `ui-select-row ${extraClass ? extraClass : ''}`
@@ -214,7 +214,7 @@ export class UISelectElement extends UISelectBase {
 
     if (inverted) {
       inverted.style.transform = `translateY(${offsetY}px)`
-      const tm = this.tileMetrics
+      const tm = this.engine.renderer.uiTileMetrics
       const totalH = this._items.length * tm.h * 2
       const barTopPx = visualIndex * tm.h
       inverted.style.clipPath = this._clipPath(barTopPx, totalH)
@@ -223,7 +223,7 @@ export class UISelectElement extends UISelectBase {
 
   /** Build the clip-path inset string for the inverted layer. */
   private _clipPath(barTopPx: number, totalHeightPx: number): string {
-    const bottomPx = totalHeightPx - barTopPx - this.tileMetrics.h
+    const bottomPx = totalHeightPx - barTopPx - this.engine.renderer.uiTileMetrics.h
     return `inset(${barTopPx}px 0px ${Math.max(0, bottomPx)}px 0px)`
   }
 
@@ -232,7 +232,7 @@ export class UISelectElement extends UISelectBase {
   // ---------------------------------------------------------------------------
 
   private _buildList(): void {
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     const count = Math.min(this._items.length, this.h)
     const totalH = Math.max(this._items.length, this.h) * tm.h
     const barTopPx = this._currentIndex * tm.h
@@ -268,7 +268,7 @@ export class UISelectElement extends UISelectBase {
   }
 
   private _listRefresh(): void {
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     const count = Math.min(this._items.length, this.h)
     const totalH = Math.max(this._items.length, this.h) * tm.h
     const barTopPx = this._currentIndex * tm.h
@@ -295,7 +295,7 @@ export class UISelectElement extends UISelectBase {
   // ---------------------------------------------------------------------------
 
   private _buildRoller(): void {
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     const count = this._items.length
     const centerSlot = Math.floor(this.h / 2)
     const evenOffset = this.h % 2 === 0 ? -tm.h / 2 : 0
@@ -304,7 +304,7 @@ export class UISelectElement extends UISelectBase {
 
     // Scroll pair
     const [normal, inverted] = this._makeScrollPair('ui-select-scroll--roller')
-    inverted.style.height = `${this._items.length * this.tileMetrics.h * 2}px`
+    inverted.style.height = `${this._items.length * tm.h * 2}px`
     inverted.style.clipPath = this._clipPath(barTopPx, totalH)
     this.el.appendChild(normal)
     this.el.appendChild(inverted)
@@ -351,7 +351,7 @@ export class UISelectElement extends UISelectBase {
    */
   private _rollerRefresh(wrapDirection: number = 0): void {
     this.el.classList.add(ROOT_ROLLER_CLS)
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
     const centerSlot = Math.floor(this.h / 2)
     const evenOffset = this.h % 2 === 0 ? -tm.h / 2 : 0
 
@@ -381,7 +381,7 @@ export class UISelectElement extends UISelectBase {
   // ---------------------------------------------------------------------------
 
   private _buildSingle(): void {
-    const tm = this.tileMetrics
+    const tm = this.engine.renderer.uiTileMetrics
 
     const wrap = document.createElement('div')
     wrap.className = 'ui-select-single'

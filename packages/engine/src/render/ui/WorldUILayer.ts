@@ -1,9 +1,9 @@
 import type { AsciiEngine } from '../../core/Engine'
-import type { Camera } from '../Camera'
 import type { Entity } from '../../world/entities/Entity'
-import type { TileMetricsData } from '../tileMetrics'
 import type { UINode } from './node/UINode'
 import { type UISpatialConfig } from './node/UINode'
+import { makeLayer } from '../utils'
+import { EngineObject } from '../../core/EngineObject'
 
 export type PositionProvider = (now: number) => [number, number]
 
@@ -12,32 +12,31 @@ type WorldUIEntry = {
   provider: PositionProvider
 }
 
+export type WorldUILayerEvents = {
+  none: []
+}
+
 /**
  * Manages UINodes anchored to world-space positions or moving entities.
  */
-export class WorldUILayer {
-  readonly el: HTMLDivElement
+export class WorldUILayer extends EngineObject<WorldUILayerEvents> {
+  private _el!: HTMLDivElement
 
   private _entries = new Map<number, WorldUIEntry>()
-  private _camera: Camera
-  private _worldTileMetrics: TileMetricsData
-  private _uiTileMetrics: TileMetricsData
-  private _engine: AsciiEngine
   private _unlisten: (() => void) | null = null
   private _nextId = 1
 
-  constructor(
-    camera: Camera,
-    worldTileMetrics: TileMetricsData,
-    uiTileMetrics: TileMetricsData,
-    engine: AsciiEngine,
-    layerEl: HTMLDivElement,
-  ) {
-    this.el = layerEl
-    this._camera = camera
-    this._worldTileMetrics = worldTileMetrics
-    this._uiTileMetrics = uiTileMetrics
-    this._engine = engine
+  constructor() {
+    super()
+  }
+
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+    this._el = makeLayer('layer-world-ui', engine.renderer.ui.layerElement)
+  }
+
+  get el(): HTMLDivElement {
+    return this._el
   }
 
   // ---------------------------------------------------------------------------
@@ -46,7 +45,7 @@ export class WorldUILayer {
 
   _start(): void {
     if (this._unlisten) return
-    this._unlisten = this._camera.on('frame', (now) => this._tick(now))
+    this._unlisten = this.engine.renderer.camera.on('frame', (now) => this._tick(now))
   }
 
   _stop(): void {
@@ -60,7 +59,7 @@ export class WorldUILayer {
 
   add(element: UINode, spatialConfig: UISpatialConfig, provider: PositionProvider): () => void {
     const id = this._nextId++
-    element._mount(id, spatialConfig, this._uiTileMetrics, this._engine)
+    element._mount(id, spatialConfig, this.engine)
     this.el.appendChild(element.el)
 
     const w = spatialConfig.w ?? 0
@@ -110,8 +109,8 @@ export class WorldUILayer {
 
   private _positionEl(element: UINode, provider: PositionProvider, now: number): void {
     const [wx, wy] = provider(now)
-    const { w, h } = this._worldTileMetrics
-    const cam = this._camera.pos
+    const { w, h } = this.engine.renderer.tileMetrics
+    const cam = this.engine.renderer.camera.pos
     const px = (wx - cam.x) * w
     const py = (wy - cam.y) * h
     element.el.style.transform = `translate(${px}px, ${py}px)`
