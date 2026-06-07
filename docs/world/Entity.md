@@ -1,5 +1,7 @@
 An Entity is a living object in the world: a player, an NPC, a projectile, anything that has a position, acts on a timer, and can move. Entities are the primary unit of gameplay logic in AsciiEngine.
 
+`Entity` extends [[engine/EngineObject|EngineObject]], so the full event bus and managed subscription API (`on`, `listen`, etc.) is available inside lifecycle hooks.
+
 ---
 
 ## Creating an entity
@@ -20,13 +22,13 @@ export class Goblin extends Entity {
 const goblin = new Goblin('g', new GridVector(10, 10), 500)
 ```
 
-The return value of `act()` controls how long the engine waits before calling it again. The return value minimum is clamped to (16ms). `MIN_ACTION_INTERVAL`
+The return value of `act()` controls how long the engine waits before calling it again. The minimum is clamped to `MIN_ACTION_INTERVAL` (16ms).
 
 ---
 
 ## Spawning and despawning
 
-Entities must be added to the world through `world.spawnEntity()`. This registers the entity, calls `loaded()`, and starts its action timer.
+Entities must be added to the world through `world.spawnEntity()`. This registers the entity, calls `_init(engine)` on it, then calls `loaded()`, and starts its action timer.
 
 ```ts
 const goblin = engine.world.spawnEntity(new Goblin('☺', new GridVector(20, 20), 80))
@@ -47,13 +49,24 @@ To remove an entity, use `world.extractEntity(uid)`. This unschedules it, calls 
 
 Use `loaded()` to register input listeners and start any entity-specific logic. Use `unloaded()` to clean up those listeners.
 
+`this.engine` is available in both hooks. Use `this.listen()` to register subscriptions that are automatically cancelled when the entity is extracted.
+
 ```ts
 export class PlayerEntity extends Entity {
   private _unlisten: () => void = () => {}
 
   loaded(): void {
-    this._unlisten = this.engine.actionManager.onActionKeyDown((action) => {
-      // handle input
+    // Listeners registered via this.listen() are cancelled automatically
+    // when world.extractEntity() is called.
+    this.listen(
+      this.engine.actionManager.onActionKeyDown((action) => {
+        // handle input
+      }),
+    )
+
+    // Or store the unsubscribe manually for early cancellation:
+    this._unlisten = this.engine.world.on('spawn', (e) => {
+      console.log('something spawned near me', e.uid)
     })
   }
 
@@ -62,8 +75,6 @@ export class PlayerEntity extends Entity {
   }
 }
 ```
-
-The `engine` property is injected before `loaded()` is called, so it's safe to access `this.engine` inside both hooks.
 
 ---
 
@@ -98,24 +109,26 @@ act(): number {
 
 ## Properties
 
-| Property       | Type          | Description                                                       |
-| -------------- | ------------- | ----------------------------------------------------------------- |
-| `uid`          | `number`      | Unique ID assigned by the world on spawn. `-1` before spawn.      |
-| `glyph`        | `string`      | The character rendered to represent this entity.                  |
-| `pos`          | `GridVector`  | Current world position. Mutate this inside `act()` to move.       |
-| `previousPos`  | `GridVector`  | Position at the start of the current tick. Set automatically.     |
-| `speed`        | `number`      | Default delay between actions, in milliseconds. Minimum `32`.     |
-| `currentActMs` | `number`      | Actual delay used for the current tick (may differ from `speed`). |
-| `engine`       | `AsciiEngine` | Reference to the engine. Available after `unloaded()`.            |
+| Property       | Type                     | Description                                                                   |
+| -------------- | ------------------------ | ----------------------------------------------------------------------------- |
+| `uid`          | `number`                 | Unique ID assigned by the world on spawn. `-1` before spawn.                  |
+| `glyph`        | `string`                 | The character rendered to represent this entity.                              |
+| `pos`          | `GridVector`             | Current world position. Mutate this inside `act()` to move.                   |
+| `previousPos`  | `GridVector`             | Position at the start of the current tick. Set automatically.                 |
+| `speed`        | `number`                 | Default delay between actions, in milliseconds. Minimum `16`.                 |
+| `currentActMs` | `number`                 | Actual delay used for the current tick (may differ from `speed`).             |
+| `engine`       | `AsciiEngine`            | Reference to the engine. Available after spawn (inside `loaded()` and later). |
+| `el`           | `HTMLDivElement \| null` | The actor's DOM element. Available after spawn.                               |
 
 ---
 
-## Move listeners
+## Move events
 
-Subscribe to an entity's movement with `onMove()`. The callback fires after each `act()` call where the position changed. Returns an unsubscribe function.
+Entities emit a `'move'` event after each `act()` call where the position changed. Subscribe with `on('move', fn)` — either from outside the entity or via `listen()` inside it.
 
 ```ts
-const unlisten = entity.onMove((e) => {
+// From outside:
+const unlisten = entity.on('move', (e) => {
   console.log(`Entity moved to ${e.pos.x}, ${e.pos.y}`)
 })
 
@@ -123,10 +136,64 @@ const unlisten = entity.onMove((e) => {
 unlisten()
 ```
 
-You can use it to trigger sound, fog-of-war updates, or any position-dependent logic.
+```ts
+// From inside another EngineObject:
+this.listen(entity.on('move', (e) => this._syncPosition(e)))
+```
+
+The `'chunkchange'` event fires when the entity crosses a chunk boundary:
+
+```ts
+entity.on('chunkchange', (oldChunk, newChunk) => {
+  // oldChunk / newChunk may be undefined at world edges
+})
+```
+
+---
+
+## CSS classes
+
+Entities render as `div.actor` elements. Additional CSS classes can be added and removed at any time:
+
+```ts
+entity.addCss('player-one')
+entity.removeCss('player-one')
+```
+
+Classes passed to `addCss` before spawn (e.g. in the constructor via `this.extraCss.add(...)`) are applied when the actor element is created.
+
+---
+
+## Usage inside entities
+
+Register listeners in `loaded()` and clean them up in `unloaded()` (or use `listen()` for automatic cleanup). Store the active context at load time if you need `isActionKeyDown` to work correctly.
+
+```ts
+export class PlayerEntity extends Entity {
+  private _inputCtx: string = ''
+
+  loaded(): void {
+    this._inputCtx = this.engine.contextManager.active
+
+    this.listen(
+      this.engine.actionManager.onActionKeyDown((action) => {
+        if (action === 'confirm') this.shoot()
+      }),
+    )
+  }
+
+  act(): number {
+    if (this.engine.actionManager.isActionKeyDown('down', this._inputCtx)) {
+      this.pos.y++
+    }
+    return this._speed
+  }
+}
+```
 
 ---
 
 ## Related
 
-- [[Engine]] — lifecycle, pause/unpause, and the action loop
+- [[engine/EngineObject|EngineObject]] — base class, event bus, and `listen()` pattern
+- [[engine/Engine|Engine]] — lifecycle, pause/unpause, and the action loop

@@ -6,11 +6,12 @@ An ASCII game engine in TypeScript.
 
 ## Engine
 
-| Page                                        | Description                                                              |
-| ------------------------------------------- | ------------------------------------------------------------------------ |
-| [[engine/Engine\|Engine]]                   | Root object, lifecycle (`init`, `start`, `destroy`), pause, auto-suspend |
-| [[engine/engine-settings\|engine-settings]] | `engine-settings.toml` reference — all config keys and defaults          |
-| [[engine/Assets\|Assets]]                   | Asset discovery via Vite glob — config, CSS, and theme files             |
+| Page                                        | Description                                                                   |
+| ------------------------------------------- | ----------------------------------------------------------------------------- |
+| [[engine/Engine\|Engine]]                   | Root object, lifecycle (`init`, `start`, `destroy`), pause, auto-suspend      |
+| [[engine/EngineObject\|EngineObject]]       | Base class for all subsystems and entities — event bus, `listen()`, `_init()` |
+| [[engine/engine-settings\|engine-settings]] | `engine-settings.toml` reference — all config keys and defaults               |
+| [[engine/Assets\|Assets]]                   | Asset discovery via Vite glob — config, CSS, and theme files                  |
 
 ---
 
@@ -36,11 +37,12 @@ An ASCII game engine in TypeScript.
 
 ## Rendering
 
-| Page                          | Description                                                         |
-| ----------------------------- | ------------------------------------------------------------------- |
-| [[render/Theming\|Theming]]   | CSS variables, built-in themes, tile styles, runtime switching      |
-| [[render/UiLayout\|UILayout]] | Viewport frame, layout elements, positioning, border reconciliation |
-| [[render/UINode\|UINode]]     | Content container API, subclassing, resize hook                     |
+| Page                                  | Description                                                         |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| [[render/Theming\|Theming]]           | CSS variables, built-in themes, tile styles, runtime switching      |
+| [[render/ThemeManager\|ThemeManager]] | Runtime theme API — `set`, `current`, `getThemeNames`               |
+| [[render/UiLayout\|UILayout]]         | Viewport frame, layout elements, positioning, border reconciliation |
+| [[render/UINode\|UINode]]             | Content container API, subclassing, resize hook                     |
 
 ---
 

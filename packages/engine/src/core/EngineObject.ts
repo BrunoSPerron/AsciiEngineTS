@@ -71,13 +71,12 @@ export class EngineObject<E extends EventMap = Record<never, never>> {
   // Lifecycle
   // ---------------------------------------------------------------------------
 
-  get destroyed(): boolean {
-    return this._destroyed
-  }
+  destroyed(): void {}
 
   _destroy(): void {
     if (this._destroyed) return
     this._destroyed = true
+    this.destroyed()
     this._events.clear()
     for (const unsub of this._subscriptions) unsub()
     this._subscriptions.clear()
