@@ -75,16 +75,17 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
   _init(engine: AsciiEngine) {
     super._init(engine)
 
-    for (const { name, url } of engine.assets.themes) {
-      this.register(name, url, true)
-    }
-    this.set(engine.config.game.initial_theme)
-
     const whiteList = this.engine.config.game.engine_themes
     for (const name of whiteList) {
       const css = ENGINE_THEMES[name]
       if (css) this.register(name, css)
     }
+
+    for (const { name, url } of engine.assets.themes) {
+      this.register(name, url, true)
+    }
+
+    this.set(engine.config.game.initial_theme)
   }
 
   register(name: string, cssOrUrl: string, isUrl = false) {
@@ -115,7 +116,7 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
       this._linkEl.disabled = false
       this._current = theme.name
 
-      // Make sure the css is loaded before calling _onThemeLoaded()
+      // Make sure the css is loaded before refresh
       if (this._linkEl.sheet) {
         this._onThemeLoaded()
       } else {
@@ -146,8 +147,6 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
    */
   private _onThemeLoaded(): void {
     if (!this._engine) return
-    this.engine.renderer.setTileHAndW()
-    this.engine.renderer.ui.drawFrame()
-    this.engine.renderer.invalidateChunks()
+    this.engine.renderer.refresh()
   }
 }

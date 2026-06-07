@@ -134,6 +134,12 @@ export class Renderer extends EngineObject<RendererEvents> {
     this.ui._start()
   }
 
+  refresh(): void {
+    this.setTileHAndW()
+    this.ui.drawFrame()
+    this.invalidateChunks()
+  }
+
   destroy(): void {
     this.ui._stop()
   }
