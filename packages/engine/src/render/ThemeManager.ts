@@ -46,8 +46,8 @@ export type ThemeManagerEvent = {
 
 export class ThemeManager extends EngineObject<ThemeManagerEvent> {
   private themes = new Map<string, ThemeDef>()
-  private _styleEl: HTMLStyleElement
-  private _linkEl: HTMLLinkElement
+  private _styleEl!: HTMLStyleElement
+  private _linkEl!: HTMLLinkElement
 
   private _current: string = ''
 
@@ -61,8 +61,9 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
     return this._current
   }
 
-  constructor() {
-    super()
+  _init(engine: AsciiEngine) {
+    super._init(engine)
+
     this._styleEl = document.createElement('style')
     document.head.appendChild(this._styleEl)
 
@@ -70,10 +71,6 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
     this._linkEl.rel = 'stylesheet'
     this._linkEl.disabled = true
     document.head.appendChild(this._linkEl)
-  }
-
-  _init(engine: AsciiEngine) {
-    super._init(engine)
 
     const whiteList = this.engine.config.game.engine_themes
     for (const name of whiteList) {

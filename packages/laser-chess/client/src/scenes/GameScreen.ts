@@ -140,6 +140,7 @@ export class GameScreen implements BaseGameScene {
 
       const entity = new Entity(glyph, new GridVector(move.toX, move.toY), 500_000)
       entity.addCss('arrow')
+      entity.addCss(this._state.currentPlayer === 1 ? 'player-one' : 'player-two')
       this._engine.world.spawnEntity(entity)
       moveEntities.push(entity)
     }
@@ -247,6 +248,7 @@ export class GameScreen implements BaseGameScene {
         500_000,
       )
       entity.addCss('arrow')
+      entity.addCss(this._state.currentPlayer === 1 ? 'player-one' : 'player-two')
       this._engine.world.spawnEntity(entity)
       shotEntities.push(entity)
     }

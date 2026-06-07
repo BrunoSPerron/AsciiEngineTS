@@ -42,6 +42,22 @@
   animation: arrow-blink 1.2s linear infinite;
 }
 
+.ascii-game-engine .actor.arrow.player-one {
+  background-color: var(--p-one-color);
+}
+
+.ascii-game-engine .actor.arrow.reversed.player-one {
+  color: var(--p-one-color);
+}
+
+.ascii-game-engine .actor.arrow.player-two {
+  background-color: var(--p-two-color);
+}
+
+.ascii-game-engine .actor.arrow.reversed.player-two {
+  color: var(--p-two-color);
+}
+
 .ascii-game-engine .actor.arrow.reversed {
   background-color: var(--actor-bg);
   color: var(--actor-text);

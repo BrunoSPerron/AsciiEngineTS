@@ -88,7 +88,7 @@ export class OnlineMatch implements BaseGameScene {
   // ---------------------------------------------------------------------------
 
   private _listenToServer(): void {
-    this._socketMsgUnlisten = this._conn.onMessage((msg) => {
+    this._socketMsgUnlisten = this._conn.on('message', (msg) => {
       switch (msg.type) {
         case 'actionApplied':
           // Only apply if it was the opponent's action
@@ -172,6 +172,7 @@ export class OnlineMatch implements BaseGameScene {
       const glyph = this._arrowGlyph(dirX, dirY)
       const entity = new Entity(glyph, new GridVector(move.toX, move.toY), 500_000)
       entity.addCss('arrow')
+      entity.addCss(this._state.currentPlayer === 1 ? 'player-one' : 'player-two')
       this._engine.world.spawnEntity(entity)
       moveEntities.push(entity)
     }
@@ -272,6 +273,7 @@ export class OnlineMatch implements BaseGameScene {
         500_000,
       )
       entity.addCss('arrow')
+      entity.addCss(this._state.currentPlayer === 1 ? 'player-one' : 'player-two')
       this._engine.world.spawnEntity(entity)
       shotEntities.push(entity)
     }
@@ -520,6 +522,7 @@ export class OnlineMatch implements BaseGameScene {
         this._engine.renderer.worldEl,
         animSeqs,
         this._engine.renderer.tileMetrics,
+        this._state.currentPlayer === 1 ? 'player-one' : 'player-two',
       )
     }
   }

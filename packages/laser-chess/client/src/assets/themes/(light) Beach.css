@@ -1,17 +1,8 @@
 .ascii-game-engine {
   --color-text: #5a4d3f;
   --color-bg: #e8d8b8;
+  --odd-color: #f2e5cb;
+  --p-one-color: #2f7da6;
+  --p-two-color: #c96b3c;
   font-weight: bold;
-}
-
-.ascii-game-engine .layer .tile-odd {
-  background-color: #f2e5cb;
-}
-
-.ascii-game-engine .actor.player-one {
-  color: #2f7da6;
-}
-
-.ascii-game-engine .actor.player-two {
-  color: #c96b3c;
 }
