@@ -93,8 +93,8 @@ export class UILayout extends EngineObject<UILayoutEvents> {
   _init(engine: AsciiEngine) {
     super._init(engine)
     this._layerEl = makeLayer('layer-ui', this.engine.gameContainer)
-    this._layoutEl = makeLayer('ui-layout-root', this._layerEl)
     this.world._init(engine)
+    this._layoutEl = makeLayer('ui-layout-root', this._layerEl)
     this._animator._init(engine)
   }
 
