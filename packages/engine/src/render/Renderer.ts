@@ -84,11 +84,12 @@ export class Renderer extends EngineObject<RendererEvents> {
   _init(engine: AsciiEngine) {
     super._init(engine)
 
+    let cssLink: HTMLLinkElement | null = null
     if (engine.assets.baseCssUrl) {
-      const link = document.createElement('link')
-      link.rel = 'stylesheet'
-      link.href = engine.assets.baseCssUrl
-      document.head.appendChild(link)
+      cssLink = document.createElement('link')
+      cssLink.rel = 'stylesheet'
+      cssLink.href = engine.assets.baseCssUrl
+      document.head.appendChild(cssLink)
     }
 
     for (const entity of this.engine.world.local.entities.values()) {
@@ -114,15 +115,23 @@ export class Renderer extends EngineObject<RendererEvents> {
       }),
     )
 
-    // TODO Replace SetTimeout with something clean.
-    //  Dirty hack Let the style load before calculating h and w.
-    //  Do not always work
-    //  SetTileHAndW also need to be called on theme change
-    setTimeout(() => {
-      this.setTileHAndW()
-      this.ui.drawFrame()
-      this.ui._start()
-    }, 500)
+    // Make sure the css is loaded before calling _startUI()
+    if (cssLink) {
+      if (cssLink.sheet) {
+        this._startUI()
+      } else {
+        cssLink.addEventListener('load', this._startUI, { once: true })
+        cssLink.addEventListener('error', this._startUI, { once: true })
+      }
+    } else {
+      this._startUI()
+    }
+  }
+
+  private _startUI = (): void => {
+    this.setTileHAndW()
+    this.ui.drawFrame()
+    this.ui._start()
   }
 
   destroy(): void {

@@ -51,6 +51,12 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
 
   private _current: string = ''
 
+  /**
+   * Cancels the load/error listeners attached during the previous URL theme
+   * set() call. Cleared when the listeners fire or a new set() supersedes them.
+   */
+  private _pendingLinkCleanup: (() => void) | null = null
+
   get current(): string {
     return this._current
   }
@@ -93,20 +99,55 @@ export class ThemeManager extends EngineObject<ThemeManagerEvent> {
     const theme = this.themes.get(name.toLowerCase())
     if (!theme) return
 
+    // Cancel any in-flight load listener
+    this._pendingLinkCleanup?.()
+    this._pendingLinkCleanup = null
+
     if (theme.css) {
       this._styleEl.textContent = theme.css
       this._linkEl.disabled = true
       this._linkEl.href = ''
+      this._current = theme.name
+      this._onThemeLoaded()
     } else if (theme.url) {
       this._styleEl.textContent = ''
       this._linkEl.href = theme.url
       this._linkEl.disabled = false
-    }
+      this._current = theme.name
 
-    this._current = theme.name
+      // Make sure the css is loaded before calling _onThemeLoaded()
+      if (this._linkEl.sheet) {
+        this._onThemeLoaded()
+      } else {
+        const onSettled = () => {
+          this._pendingLinkCleanup = null
+          this._onThemeLoaded()
+        }
+        this._linkEl.addEventListener('load', onSettled, { once: true })
+        this._linkEl.addEventListener('error', onSettled, { once: true })
+        this._pendingLinkCleanup = () => {
+          this._linkEl.removeEventListener('load', onSettled)
+          this._linkEl.removeEventListener('error', onSettled)
+        }
+      }
+    }
   }
 
   getThemeNames(): string[] {
     return [...this.themes.values()].map((t) => t.name)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Refresh the rendering in case the --font-size changed
+   */
+  private _onThemeLoaded(): void {
+    if (!this._engine) return
+    this.engine.renderer.setTileHAndW()
+    this.engine.renderer.ui.drawFrame()
+    this.engine.renderer.invalidateChunks()
   }
 }
