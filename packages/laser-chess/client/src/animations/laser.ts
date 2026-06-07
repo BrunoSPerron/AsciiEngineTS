@@ -44,10 +44,12 @@ export function placeLaserLines(
   container: HTMLElement,
   animSeqInfos: LaserAnimSeqInfo[],
   tile: TileMetricsData,
+  extraCss: string,
 ): void {
   for (const info of animSeqInfos) {
     const el = info.line
     el.classList.add('laser-line')
+    el.classList.add(extraCss)
 
     const offsetX = info.direction === MASK.RIGHT ? 1 : 0
     const offsetY = info.direction === MASK.BOTTOM ? 1 : 0
@@ -111,8 +113,9 @@ export async function runLaserSequence(
   container: HTMLElement,
   animSeqInfos: LaserAnimSeqInfo[],
   tile: TileMetricsData,
+  extraCss: string,
 ): Promise<void> {
-  placeLaserLines(container, animSeqInfos, tile)
+  placeLaserLines(container, animSeqInfos, tile, extraCss)
   await revealLaserLines(animSeqInfos)
   void hideLaserLines(animSeqInfos)
 }

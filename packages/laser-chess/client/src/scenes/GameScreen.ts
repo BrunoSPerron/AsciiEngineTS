@@ -282,13 +282,14 @@ export class GameScreen implements BaseGameScene {
     dy: number,
     shotEntities: Entity[],
   ): Promise<void> {
+    const extraCss = this._state.currentPlayer === 1 ? 'p-one-laser' : 'p-two-laser'
     const dir = this._dxDyToDir(dx, dy)
     const x = shooter.pos.x
     const y = shooter.pos.y
     const result = this._logic.computeLaser(this._state, x, y, dir)
     this._state = this._logic.applyAction(this._state, { type: 'shoot', x, y, dx, dy, result })
     for (const e of shotEntities) this._engine.world.extractEntity(e.uid)
-    await this._animateLaser(result)
+    await this._animateLaser(result, extraCss)
     syncStateToChunk(this._state, this.board)
     this._syncPawnHealth()
     if (!this._checkAndShowVictory()) {
@@ -325,7 +326,7 @@ export class GameScreen implements BaseGameScene {
     return steps
   }
 
-  private async _animateLaser(result: LaserResult): Promise<void> {
+  private async _animateLaser(result: LaserResult, extraCss: string): Promise<void> {
     if (result.waypoints.length < 2) throw Error('Tried to animate laser with no waypoints')
     const animSeqs: LaserAnimSeqInfo[] = []
 
@@ -412,6 +413,7 @@ export class GameScreen implements BaseGameScene {
         this._engine.renderer.worldEl,
         animSeqs,
         this._engine.renderer.tileMetrics,
+        extraCss,
       )
     }
   }

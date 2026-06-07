@@ -8,6 +8,6 @@ export type GameRule = {
 
 export const DEFAULT_GAME_RULE: GameRule = {
   bounceDamage: 1,
-  kingHP: 5,
+  kingHP: 3,
   kingMoveType: 'king',
 }
