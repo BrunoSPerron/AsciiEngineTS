@@ -225,7 +225,7 @@ export class World extends EngineObject<WorldEvents> {
   // --------------------------------------------------------------------------
 
   override _destroy(): void {
-    if (this.destroyed) return
+    if (this._destroyed) return
 
     for (const entity of [...this.local.entities.values()]) {
       this.extractEntity(entity.uid)

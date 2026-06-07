@@ -7,7 +7,7 @@ export class EngineObject<E extends EventMap = Record<never, never>> {
   protected _engine: AsciiEngine | null = null
   private _events = new Map<keyof E, Set<Handler<unknown[]>>>()
   private _subscriptions = new Set<() => void>()
-  private _destroyed = false
+  protected _destroyed = false
 
   // ---------------------------------------------------------------------------
   // Engine ref
