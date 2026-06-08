@@ -40,20 +40,13 @@ export class MatchManager {
     const rule = GAME_RULE_DEATHMATCH
     const logic = createGame(rule)
 
-    const { board, pawns } = loadBoard(boardTxt, rule)
-
-    // Infer board size from the txt (loadBoard pads to a square)
-    const lines = boardTxt.split('\n')
-    let size = 0
-    for (const line of lines) {
-      if (line.length > size) size = line.length
-    }
+    const { board, pawns, sizeX, sizeY } = loadBoard(boardTxt, rule)
 
     const state: GameState = {
       board,
       pawns,
-      sizeX: size,
-      sizeY: size,
+      sizeX,
+      sizeY,
       currentPlayer: 1,
       phase: 'move',
     }

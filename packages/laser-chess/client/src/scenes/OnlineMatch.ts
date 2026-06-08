@@ -69,6 +69,11 @@ export class OnlineMatch extends BaseGameScene {
     this._logic = createGame({ bounceDamage: 1, kingHP: 5, kingMoveType: 'king' })
 
     this._syncStateToChunk()
+    const cam = this._engine.renderer.camera
+    cam.target.pos.setXY((initialState.sizeX - 1) / 2, (initialState.sizeY - 1) / 2)
+    cam.target.previousPos.setXY((initialState.sizeX - 1) / 2, (initialState.sizeY - 1) / 2)
+    cam.jumpToTarget()
+
     this._listenToServer()
     this._startPhase()
   }
@@ -333,7 +338,7 @@ export class OnlineMatch extends BaseGameScene {
     }
     this._syncStateToChunk()
     this._conn.send({ type: 'gameAction', action })
-    this._startPhase()
+    queueMicrotask(() => this._startPhase())
   }
 
   // ---------------------------------------------------------------------------
