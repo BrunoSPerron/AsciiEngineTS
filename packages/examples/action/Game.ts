@@ -1,5 +1,5 @@
 import type { AsciiEngine, Chunk } from 'ascii-game-engine'
-import { GridVector, CHUNK_SIZE, UISelectElement, UITextBox } from 'ascii-game-engine'
+import { GridVector, CHUNK_SIZE, UISelectNode, UITextBox } from 'ascii-game-engine'
 import { ActionHero } from './world/entities/ActionHero'
 
 export class Game {
@@ -45,7 +45,7 @@ export class Game {
       'Option f',
       'Option g',
     ]
-    const selectEl = new UISelectElement(options)
+    const selectEl = new UISelectNode(options)
     this.engine.renderer.ui.addElement(selectEl, {
       x: 0,
       y: 0,
@@ -60,8 +60,8 @@ export class Game {
       minW: 1,
       dock: 'right',
     })
-    selectEl.onSelect((selectId: number) => {
-      if (options[selectId] === 'Palette') {
+    selectEl.on('select', (selectId) => {
+      if (options[Number(selectId)] === 'Palette') {
         this.engine.renderer.ui.addPaletteElement({
           w: 30,
           h: 5,

@@ -1,4 +1,3 @@
-import type { AsciiEngine } from 'ascii-game-engine'
 import {
   Entity,
   GridVector,
@@ -6,7 +5,7 @@ import {
   maskToGlyph,
   invertDirectionMask,
   UITextBox,
-  UISelectElement,
+  UISelectNode,
 } from 'ascii-game-engine'
 
 import type {
@@ -16,9 +15,9 @@ import type {
   LaserResult,
   LaserWaypoint,
 } from '@laser-chess/shared'
-import { createGame, DIR_DELTA, DEFAULT_GAME_RULE, CELL, idx } from '@laser-chess/shared'
+import { createGame, DIR_DELTA, GAME_RULE_DEATHMATCH, CELL, idx } from '@laser-chess/shared'
 
-import type { BaseGameScene } from './BaseGameScene'
+import { BaseGameScene } from './BaseGameScene'
 import { ARROW_SET } from '../arrowSets'
 import type { Board } from '../Board'
 import { Scene, type SceneManager } from '../SceneManager'
@@ -82,25 +81,24 @@ function syncStateToChunk(state: GameState, board: Board): void {
 // GameScreen
 // ---------------------------------------------------------------------------
 
-export class GameScreen implements BaseGameScene {
+export class GameScreen extends BaseGameScene {
   sceneManager: SceneManager
   board: Board
 
-  private _engine: AsciiEngine
   private _state: GameState
   private _logic: GameLogic
 
   constructor(sceneManager: SceneManager, initialState: GameState) {
+    super(sceneManager)
     this.sceneManager = sceneManager
 
-    this._logic = createGame(DEFAULT_GAME_RULE)
-    this._engine = sceneManager.engine
-    this.board = buildBoardFromState(initialState, this._engine)
+    this._logic = createGame(GAME_RULE_DEATHMATCH)
 
     this._state = initialState
-    syncStateToChunk(this._state, this.board)
 
     this._startPhase()
+    this.board = buildBoardFromState(initialState, this._engine)
+    syncStateToChunk(this._state, this.board)
   }
 
   unload(): void {}
@@ -458,7 +456,7 @@ export class GameScreen implements BaseGameScene {
       y: -5,
     })
 
-    const confirm = new UISelectElement(['Main Menu'])
+    const confirm = new UISelectNode(['Main Menu'])
     this._engine.renderer.ui.addElement(confirm, {
       anchorX: 50,
       anchorY: 50,
@@ -468,7 +466,7 @@ export class GameScreen implements BaseGameScene {
       h: 1,
       y: 4,
     })
-    confirm.onSelect(() => {
+    confirm.on('select', () => {
       this._engine.renderer.ui.removeElement(message.id)
       this.board.clear()
       this.sceneManager.NavigateTo(Scene.MainMenu)

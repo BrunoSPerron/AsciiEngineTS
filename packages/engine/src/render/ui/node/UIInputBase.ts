@@ -17,21 +17,15 @@ export type UIInputOptions = {
  *  - `_rebuildContent()` — re-render on resize
  *  - `_focusInput()` — programmatically focus the native input
  */
-export abstract class UIInputBase<T extends string | number | boolean> extends UINode {
-  readonly result: Promise<T | null>
-
+export abstract class UIInputBase extends UINode {
   closeOnSubmit: boolean
 
-  protected _resolve!: (value: T | null) => void
   private _contextName = ''
   private _contextActive = false
 
   constructor(options: UIInputOptions = {}) {
     super()
     this.closeOnSubmit = options.closeOnSubmit ?? true
-    this.result = new Promise<T | null>((resolve) => {
-      this._resolve = resolve
-    })
   }
 
   // ---------------------------------------------------------------------------
@@ -76,11 +70,13 @@ export abstract class UIInputBase<T extends string | number | boolean> extends U
   // Submit / cancel — called by concrete subclass
   // ---------------------------------------------------------------------------
 
-  protected _submit(value: T | null): void {
+  protected _submit(value: number | string): void {
     if (this.closeOnSubmit) {
       this.engine.renderer.ui.removeElement(this.id)
     }
-    this._resolve(value)
+    if (value !== null) {
+      this.emit('select', value)
+    }
   }
 
   // ---------------------------------------------------------------------------

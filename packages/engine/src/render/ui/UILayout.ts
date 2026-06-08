@@ -2,7 +2,7 @@ import { MASK as LINE_MASK, maskToGlyph } from '../lineGlyph'
 import type { UINode, UISpatialConfig } from './node/UINode'
 import type { UIContainerBase } from './node/UIContainerBase'
 import type { UISelectBase } from './node/UISelectBase'
-import { UISelectElement } from './node/UISelectElement'
+import { UISelectNode } from './node/UISelectNode'
 import type { Segment } from './segment'
 import { BorderAnimator } from './BorderAnimator'
 import { WorldUILayer } from './WorldUILayer'
@@ -22,13 +22,9 @@ type CellEntry = {
 }
 
 type ContentRect = {
-  /** First usable tile column inside the frame (0-based, frame-relative) */
   x: number
-  /** First usable tile row inside the frame (0-based, frame-relative) */
   y: number
-  /** Number of usable columns */
   cols: number
-  /** Number of usable rows */
   rows: number
 }
 
@@ -46,7 +42,7 @@ export class UILayout extends EngineObject<UILayoutEvents> {
   private _layoutEl!: HTMLDivElement
   private _layerEl!: HTMLDivElement
 
-  /** World-space anchored elements — speech bubbles, labels, health bars, etc. */
+  /** World-space anchored elements: speech bubbles, labels, health bars, etc. */
   readonly world: WorldUILayer
 
   private _cols = 0
@@ -231,17 +227,17 @@ export class UILayout extends EngineObject<UILayoutEvents> {
     const currentTheme = themeManager.current
     const previousTheme = currentTheme
 
-    const selectEl = uiSelectClass ? new uiSelectClass(themes) : new UISelectElement(themes)
+    const selectEl = uiSelectClass ? new uiSelectClass(themes) : new UISelectNode(themes)
     this.engine.renderer.ui.addElement(selectEl, spatialConfig)
     selectEl.currentIndex = themes.indexOf(currentTheme)
 
-    selectEl.onChange((selectId: number) => {
-      themeManager.set(themes[selectId])
+    selectEl.on('change', (selectId) => {
+      themeManager.set(themes[Number(selectId)])
     })
 
-    selectEl.onSelect((selectId: number) => {
+    selectEl.on('select', (selectId) => {
       if (selectId === -1) themeManager.set(previousTheme)
-      else themeManager.set(themes[selectId])
+      else themeManager.set(themes[Number(selectId)])
     })
   }
 

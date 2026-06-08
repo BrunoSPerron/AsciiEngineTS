@@ -1,15 +1,15 @@
 import type { UILayout } from 'ascii-game-engine'
-import { UISelectElement, type Chunk } from 'ascii-game-engine'
+import { UISelectNode, type Chunk } from 'ascii-game-engine'
 import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
-import { DEFAULT_GAME_RULE, loadBoard, type GameRule, type GameState } from '@laser-chess/shared'
+import { GAME_RULE_DEATHMATCH, loadBoard, type GameRule, type GameState } from '@laser-chess/shared'
 
 export class BoardConfig extends BaseGameScene {
   ui: UILayout
   chunk: Chunk
   boardMap: Map<string, string> = new Map<string, string>()
 
-  private _gameRule: GameRule = DEFAULT_GAME_RULE
+  private _gameRule: GameRule = GAME_RULE_DEATHMATCH
 
   //current CheckerPattern Dimensions
   private _sizeX: number = 0
@@ -69,7 +69,7 @@ export class BoardConfig extends BaseGameScene {
   unload() {}
 
   openBoardConfigMenu() {
-    const boardSelectElement = new UISelectElement([...this.boardMap.keys()], {
+    const boardSelectElement = new UISelectNode([...this.boardMap.keys()], {
       captureInput: true,
     })
 
@@ -87,12 +87,12 @@ export class BoardConfig extends BaseGameScene {
       dock: 'right',
     })
 
-    boardSelectElement.onChange((selectId: number) => {
+    boardSelectElement.on('change', (selectId) => {
       if (selectId === -1) return
-      this._previewBoard([...this.boardMap.keys()][selectId])
+      this._previewBoard([...this.boardMap.keys()][Number(selectId)])
     })
 
-    boardSelectElement.onSelect(() => {
+    boardSelectElement.on('select', () => {
       const name = [...this.boardMap.keys()][boardSelectElement.currentIndex]
       const txt = this.boardMap.get(name)
       if (!txt) return

@@ -6,7 +6,7 @@ export type GameRule = {
   kingMoveType: MoveType
 }
 
-export const DEFAULT_GAME_RULE: GameRule = {
+export const GAME_RULE_DEATHMATCH: GameRule = {
   bounceDamage: 1,
   kingHP: 3,
   kingMoveType: 'king',

@@ -12,7 +12,7 @@ import { computeLaser, type Direction, type LaserResult } from './laser'
 
 export type { VictoryResult } from './actions'
 export { idx, loadBoard } from './board'
-export { DEFAULT_GAME_RULE, type GameRule } from './GameRules'
+export { GAME_RULE_DEATHMATCH, type GameRule } from './GameRules'
 export type { Action, MoveAction, MirrorAction, ShootAction, GameState } from './GameState'
 export { CELL, type CellChar } from './GameState'
 export { type Direction, type LaserResult, type LaserWaypoint, DIR_DELTA } from './laser'

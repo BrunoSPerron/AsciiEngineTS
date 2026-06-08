@@ -1,47 +1,51 @@
 import { UIContainerBase, UITextBox, UITextInputNode, type InnerLineData } from 'ascii-game-engine'
 import type { ServerConnection } from '../net/ServerConnection'
 
+const MAX_CHAT_LINES = 200
+
 export class UIChatNode extends UIContainerBase {
   private _conn: ServerConnection
   private _inputNode: UITextInputNode
   private _msgBox: UITextBox
+  private _chatLines: string[] = []
 
   constructor(conn: ServerConnection) {
     super()
     this._conn = conn
-    this._inputNode = new UITextInputNode('msg:')
-    this._msgBox = new UITextBox([])
+    this._inputNode = new UITextInputNode('msg', { closeOnSubmit: false })
+    this._msgBox = new UITextBox([], 'bottom')
     this.addChild(this._msgBox, {})
-    this.addChild(this._inputNode, { y: 1 })
+    this.addChild(this._inputNode, {})
   }
 
   loaded(): void {
     this.listen(
+      this._inputNode.on('select', (text) => {
+        const trimmed = String(text).trim()
+        if (!trimmed) return
+        this._conn.send({ type: 'message', text: trimmed })
+      }),
+    )
+
+    this.listen(
       this._conn.on('message', (msg) => {
         switch (msg.type) {
+          case 'message':
+            this.appendChat(`${msg.player.name}: ${msg.text}`)
+            break
           case 'playerJoined':
-            /*this._players.push(msg.player)
-          this._rebuildPlayerList()
-          this._appendChat(`  ${msg.player.name} joined`)*/
+            this.appendChat(`${msg.player.name} joined`)
             break
           case 'playerLeft':
-            /*this._players = this._players.filter((p) => p.id !== msg.player.id)
-          this._rebuildPlayerList()
-          this._appendChat(`  ${msg.player.name} left`)*/
+            this.appendChat(`${msg.player.name} left`)
             break
           case 'playerReadyChanged': {
-            /*const idx = this._players.findIndex((p) => p.id === msg.player.id)
-          if (idx !== -1) this._players[idx] = msg.player
-          this._rebuildPlayerList()
-          const label = msg.player.ready ? 'ready' : 'not ready'
-          this._appendChat(`  ${msg.player.name} is ${label}`)*/
+            const label = msg.player.ready ? 'ready' : 'not ready'
+            this.appendChat(`${msg.player.name} is ${label}`)
             break
           }
-          case 'matchStart':
-            /*this._onMatchStart(msg.players)*/
-            break
           case 'error':
-            /*this._appendChat(`  [error] ${msg.message}`)*/
+            this.appendChat(`  [error] ${msg.message}`)
             break
         }
       }),
@@ -53,12 +57,13 @@ export class UIChatNode extends UIContainerBase {
   }
 
   protected _layoutChildren(): void {
-    this._msgBox.w = this.w
-    this._msgBox.h = this.h - 2
-    this._msgBox.resized()
+    this._msgBox.layout(0, 0, this.w, this.h - 1)
+    this._inputNode.layout(0, this.h - 1, this.w, 1)
+  }
 
-    this._inputNode.w = this.w
-    this._inputNode.y = this.h - 1
-    this._inputNode.resized()
+  appendChat(line: string): void {
+    this._chatLines.push(line)
+    if (this._chatLines.length > MAX_CHAT_LINES) this._chatLines.shift()
+    this._msgBox.content = this._chatLines
   }
 }

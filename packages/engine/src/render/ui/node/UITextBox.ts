@@ -1,6 +1,6 @@
 import { UINode } from './UINode'
 
-export type MODE = 'simple' | 'centered'
+export type MODE = 'simple' | 'centered' | 'bottom'
 
 export class UITextBox extends UINode {
   private _content: string[]
@@ -33,8 +33,25 @@ export class UITextBox extends UINode {
     this.el.innerHTML = this._content.join('<br>')
     this.el.style.display = 'flex'
     this.el.style.flexDirection = 'column'
-    this.el.style.justifyContent = this.mode === 'centered' ? 'center' : 'flex-start'
-    this.el.style.alignItems = this.mode === 'centered' ? 'center' : 'flex-start'
-    this.el.style.textAlign = this.mode === 'centered' ? 'center' : ''
+
+    switch (this.mode) {
+      case 'centered':
+        this.el.style.justifyContent = 'center'
+        this.el.style.alignItems = 'center'
+        this.el.style.textAlign = 'center'
+        this.el.style.overflow = ''
+        break
+      case 'bottom':
+        this.el.style.justifyContent = 'flex-end'
+        this.el.style.alignItems = 'flex-start'
+        this.el.style.textAlign = ''
+        this.el.style.overflow = 'hidden'
+        break
+      default:
+        this.el.style.justifyContent = 'flex-start'
+        this.el.style.alignItems = 'flex-start'
+        this.el.style.textAlign = ''
+        this.el.style.overflow = ''
+    }
   }
 }

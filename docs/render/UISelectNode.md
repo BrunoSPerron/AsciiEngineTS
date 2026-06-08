@@ -81,7 +81,7 @@ Selection wraps around at both ends in all modes.
 
 ## Listeners
 
-See [[EngineObject#Event bus]] for more info
+- See [[EngineObject#Event bus|engine object event]] for more info
 
 ### `change`
 
@@ -125,7 +125,7 @@ If `closeOnSelect` is `true` (default), the element removes itself before the li
 
 | Member            | Type          | Description                                                                                                        |
 | ----------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `currentIndex`    | `number`      | Get or set the highlighted index. Setting it triggers `onChange` listeners and updates the display.                |
+| `currentIndex`    | `number`      | Get or set the highlighted index. Setting it triggers `change` listeners and updates the display.                  |
 | `closeOnSelect`   | `boolean`     | When `true` (default), the element removes itself after a confirmed selection or cancellation.                     |
 | `suppressOnClose` | `Set<string>` | Action names suppressed in the restored context when the element closes. Defaults to `confirm`, `cancel`, `pause`. |
 | `confirm()`       | `void`        | Programmatically confirm the current selection.                                                                    |

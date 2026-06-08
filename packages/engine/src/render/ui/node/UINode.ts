@@ -23,7 +23,8 @@ export type UISpatialConfig = {
 }
 
 type UINodeEvents = {
-  none: []
+  change: [current: number | string]
+  select: [result: number | string]
 }
 
 /**

@@ -17,8 +17,10 @@ export type UITextInputOptions = UIInputOptions & {
  * The message block is shown only when h > 1 and there are rows to spare.
  *
  * Resolves result with the entered string, or null on cancel (Escape).
+ * When closeOnSubmit is false, the native input is cleared after each submit
+ * so the field stays ready for the next entry.
  */
-export class UITextInputNode extends UIInputBase<string> {
+export class UITextInputNode extends UIInputBase {
   private _label: string
   private _message: string[]
 
@@ -119,10 +121,12 @@ export class UITextInputNode extends UIInputBase<string> {
   private _onKeyDown(e: KeyboardEvent): void {
     if (e.code === 'Enter' || e.code === 'NumpadEnter') {
       e.preventDefault()
-      this._submit(this._inputEl?.value ?? '')
+      const value = this._inputEl?.value ?? ''
+      if (!this.closeOnSubmit && this._inputEl) this._inputEl.value = ''
+      this._submit(value)
     } else if (e.code === 'Escape') {
       e.preventDefault()
-      this._submit(null)
+      this._submit('cancel')
     }
     // All other keys are handled natively by the browser — no engine involvement
     e.stopPropagation()

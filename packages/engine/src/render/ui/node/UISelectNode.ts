@@ -24,7 +24,7 @@ function cropLabel(text: string, maxChars: number): string {
  * to the bar rectangle only. Using the default css this result in perfect a↔b color
  * swapthat works with smooth scrolling and partial row transitions.
  */
-export class UISelectElement extends UISelectBase {
+export class UISelectNode extends UISelectBase {
   private _items: string[]
   private _currentIndex: number = 0
   private _mode: Mode = 'list'
@@ -390,7 +390,7 @@ export class UISelectElement extends UISelectBase {
 
     const left = document.createElement('div')
     left.className = 'ui-select-arrow'
-    left.textContent = UISelectElement.ARROW_L
+    left.textContent = UISelectNode.ARROW_L
     wrap.appendChild(left)
 
     const label = document.createElement('div')
@@ -400,15 +400,15 @@ export class UISelectElement extends UISelectBase {
 
     const right = document.createElement('div')
     right.className = 'ui-select-arrow'
-    right.textContent = UISelectElement.ARROW_R
+    right.textContent = UISelectNode.ARROW_R
     wrap.appendChild(right)
 
     const disposeLeft = this.engine.pointerManager.registerUIElement(left, {
       hover: () => {
-        left.textContent = UISelectElement.ARROW_L_HOV
+        left.textContent = UISelectNode.ARROW_L_HOV
       },
       hoverEnd: () => {
-        left.textContent = UISelectElement.ARROW_L
+        left.textContent = UISelectNode.ARROW_L
       },
       pointerDown: (btn) => {
         if (btn === 0) this._setSelected(this._clamp(this._currentIndex - 1))
@@ -417,10 +417,10 @@ export class UISelectElement extends UISelectBase {
 
     const disposeRight = this.engine.pointerManager.registerUIElement(right, {
       hover: () => {
-        right.textContent = UISelectElement.ARROW_R_HOV
+        right.textContent = UISelectNode.ARROW_R_HOV
       },
       hoverEnd: () => {
-        right.textContent = UISelectElement.ARROW_R
+        right.textContent = UISelectNode.ARROW_R
       },
       pointerDown: (btn) => {
         if (btn === 0) this._setSelected(this._clamp(this._currentIndex + 1))
@@ -456,7 +456,7 @@ export class UISelectElement extends UISelectBase {
   private _setSelected(index: number): void {
     const prev = this._currentIndex
     this._currentIndex = index
-    this._emitChange()
+    this.emit('change', index)
 
     if (this._mode === 'list') this._listRefresh()
     else if (this._mode === 'roller') {
@@ -493,7 +493,7 @@ export class UISelectElement extends UISelectBase {
       this.engine.contextManager.popContext(this._contextName, this.suppressOnClose)
       this.engine.renderer.ui.removeElement(this.id)
     }
-    this._emitSelect(index)
+    this.emit('select', index)
   }
 
   // ---------------------------------------------------------------------------
@@ -526,7 +526,7 @@ export class UISelectElement extends UISelectBase {
   }
 
   // ---------------------------------------------------------------------------
-  // Emit / cleanup
+  // cleanup
   // ---------------------------------------------------------------------------
 
   private _cleanupPointer(): void {

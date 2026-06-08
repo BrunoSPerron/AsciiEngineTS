@@ -209,6 +209,6 @@ All coordinates are in **viewport-local tile grid coordinates** — `(0, 0)` is 
 
 - [[engine/EngineObject|EngineObject]] — base class, `listen()` pattern, event bus
 - [[render/UiLayout|UILayout]] — creates and manages UINodes, handles positioning and border reconciliation
-- [[render/UISelectElement|UISelectElement]] — a ready-made select list built on UINode
+- [[render/UISelectNode|UISelectNode]] — a ready-made select list built on UINode
 - [[input/ContextManager|ContextManager]] — input context stack
 - [[engine/Engine|Engine]] — `engine.renderer.ui` access point

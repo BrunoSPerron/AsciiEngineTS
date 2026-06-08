@@ -19,7 +19,7 @@ UI elements take pointer priority — while the cursor is over a registered UI e
 
 ## UI element registration
 
-Use `registerUIElement` to attach pointer handlers to any DOM element. This is the primary way UI components participate in the pointer system — the engine's built-in elements (`UISelectElement` and others) use it internally for their hit zones.
+Use `registerUIElement` to attach pointer handlers to any DOM element. This is the primary way UI components participate in the pointer system — the engine's built-in elements (`UISelectNode` and others) use it internally for their hit zones.
 
 ### `registerUIElement(el, handlers)`
 

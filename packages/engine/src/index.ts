@@ -22,7 +22,7 @@ export { UIContainerVertical } from './render/ui/node/UIContainerVertical'
 export { UIInputBase, type UIInputOptions } from './render/ui/node/UIInputBase'
 export { UINode } from './render/ui/node/UINode'
 export { UISelectBase } from './render/ui/node/UISelectBase'
-export { UISelectElement } from './render/ui/node/UISelectElement'
+export { UISelectNode } from './render/ui/node/UISelectNode'
 export { UITextBox } from './render/ui/node/UITextBox'
 export { UITextInputNode, type UITextInputOptions } from './render/ui/node/UITextInputNode'
 

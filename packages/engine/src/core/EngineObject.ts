@@ -4,7 +4,7 @@ type EventMap = Record<string, unknown[]>
 type Handler<A extends unknown[]> = (...args: A) => void
 
 export class EngineObject<E extends EventMap = Record<never, never>> {
-  protected _engine: AsciiEngine | null = null
+  protected _engine!: AsciiEngine
   private _events = new Map<keyof E, Set<Handler<unknown[]>>>()
   private _subscriptions = new Set<() => void>()
   protected _destroyed = false
@@ -80,6 +80,5 @@ export class EngineObject<E extends EventMap = Record<never, never>> {
     this._events.clear()
     for (const unsub of this._subscriptions) unsub()
     this._subscriptions.clear()
-    this._engine = null
   }
 }

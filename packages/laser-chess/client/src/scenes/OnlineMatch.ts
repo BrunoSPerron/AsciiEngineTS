@@ -1,4 +1,3 @@
-import type { AsciiEngine } from 'ascii-game-engine'
 import {
   Entity,
   GridVector,
@@ -6,7 +5,7 @@ import {
   maskToGlyph,
   invertDirectionMask,
   UITextBox,
-  UISelectElement,
+  UISelectNode,
 } from 'ascii-game-engine'
 import type {
   GameLogic,
@@ -18,7 +17,7 @@ import type {
   Action,
 } from '@laser-chess/shared'
 import { createGame, DIR_DELTA, CELL } from '@laser-chess/shared'
-import type { BaseGameScene } from './BaseGameScene'
+import { BaseGameScene } from './BaseGameScene'
 import type { Board } from '../Board'
 import { Scene, type SceneManager } from '../SceneManager'
 import { runLaserSequence, type LaserAnimSeqInfo } from '../animations/laser'
@@ -43,10 +42,7 @@ const DIR_TO_MASK: Record<Direction, number> = {
 // OnlineMatch
 // ---------------------------------------------------------------------------
 
-export class OnlineMatch implements BaseGameScene {
-  sceneManager: SceneManager
-
-  private _engine: AsciiEngine
+export class OnlineMatch extends BaseGameScene {
   private _conn: ServerConnection
   private _board: Board
   private _state: GameState
@@ -65,8 +61,7 @@ export class OnlineMatch implements BaseGameScene {
     myPlayer: 1 | 2,
     _players: PlayerSummary[],
   ) {
-    this.sceneManager = sceneManager
-    this._engine = sceneManager.engine
+    super(sceneManager)
     this._conn = conn
     this._board = board
     this._state = initialState
@@ -544,7 +539,7 @@ export class OnlineMatch implements BaseGameScene {
       y: -5,
     })
 
-    const confirm = new UISelectElement(['Main Menu'])
+    const confirm = new UISelectNode(['Main Menu'])
     this._engine.renderer.ui.addElement(confirm, {
       anchorX: 50,
       anchorY: 50,
@@ -554,7 +549,7 @@ export class OnlineMatch implements BaseGameScene {
       h: 1,
       y: 4,
     })
-    confirm.onSelect(() => {
+    confirm.on('select', () => {
       this._engine.renderer.ui.removeElement(message.id)
       this._board.clear()
       this.sceneManager.NavigateTo(Scene.MainMenu)
@@ -573,7 +568,7 @@ export class OnlineMatch implements BaseGameScene {
       y: -5,
     })
 
-    const confirm = new UISelectElement(['Main Menu'])
+    const confirm = new UISelectNode(['Main Menu'])
     this._engine.renderer.ui.addElement(confirm, {
       anchorX: 50,
       anchorY: 50,
@@ -583,7 +578,7 @@ export class OnlineMatch implements BaseGameScene {
       h: 1,
       y: 4,
     })
-    confirm.onSelect(() => {
+    confirm.on('select', () => {
       this._engine.renderer.ui.removeElement(message.id)
       this._board.clear()
       this.sceneManager.NavigateTo(Scene.MainMenu)

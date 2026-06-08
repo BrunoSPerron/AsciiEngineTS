@@ -1,10 +1,11 @@
 import type { UILayout } from 'ascii-game-engine'
-import { UISelectElement, UITextBox } from 'ascii-game-engine'
+import { UISelectNode, UITextBox } from 'ascii-game-engine'
 import { Scene, type SceneManager } from '../SceneManager'
 import { BaseGameScene } from './BaseGameScene'
 import { ServerConnection } from '../net/ServerConnection'
 
-const SERVER_URL = 'wss://laser-chess.fly.dev'
+//const SERVER_URL = 'wss://laser-chess.fly.dev'
+const SERVER_URL = 'ws://localhost:8080'
 
 export class MainMenu extends BaseGameScene {
   ui: UILayout
@@ -44,7 +45,7 @@ export class MainMenu extends BaseGameScene {
 
   openMainMenu() {
     const options = ['Hotseat', 'Multiplayer', 'Palette']
-    const selectEl = new UISelectElement(options, { closeOnSelect: false })
+    const selectEl = new UISelectNode(options, { closeOnSelect: false })
     this.ui.addElement(selectEl, {
       x: 0,
       y: 6,
@@ -57,9 +58,9 @@ export class MainMenu extends BaseGameScene {
       minH: 1,
       minW: 1,
     })
-    selectEl.onSelect((selectId: number) => {
+    selectEl.on('select', (selectId) => {
       if (selectId === -1) return
-      switch (options[selectId]) {
+      switch (options[Number(selectId)]) {
         case 'Hotseat':
           this.ui.removeElement(selectEl.id)
           this.sceneManager.NavigateTo(Scene.BoardConfig)

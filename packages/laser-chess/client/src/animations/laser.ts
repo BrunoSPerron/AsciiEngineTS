@@ -6,7 +6,7 @@ export type LaserAnimSeqInfo = {
   length: number
 }
 
-const LASERSPEED = { x: 20 }
+const LASERSPEED = { x: 30 }
 
 // ─── Internals ────────────────────────────────────────────────────────────────
 

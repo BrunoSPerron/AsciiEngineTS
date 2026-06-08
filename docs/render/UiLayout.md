@@ -13,7 +13,7 @@ Available at `engine.renderer.ui` after engine initialization.
 ## Creating elements
 
 ```ts
-const uiEl = new UISelectElement()
+const uiEl = new UISelectNode()
 const id = this.engine.renderer.ui.addElement({
   w: 40,
   h: 10,

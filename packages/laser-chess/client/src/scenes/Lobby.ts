@@ -1,4 +1,4 @@
-import { UISelectElement, UITextBox, UITextInputNode } from 'ascii-game-engine'
+import { UISelectNode, UITextBox, UITextInputNode } from 'ascii-game-engine'
 import type { RoomSummary } from '@laser-chess/shared'
 import type { SceneManager } from '../SceneManager'
 import { Scene } from '../SceneManager'
@@ -16,8 +16,8 @@ export class Lobby extends BaseGameScene {
   // UI elements for cleanup
   private _titleEl: UITextBox | null = null
   private _statusEl: UITextBox | null = null
-  private _roomListEl: UISelectElement | null = null
-  private _actionsEl: UISelectElement | null = null
+  private _roomListEl: UISelectNode | null = null
+  private _actionsEl: UISelectNode | null = null
 
   private _unlisten: () => void = () => {}
 
@@ -99,7 +99,7 @@ export class Lobby extends BaseGameScene {
     })
 
     // Room list — left side
-    this._roomListEl = new UISelectElement(this._roomLabels(), { closeOnSelect: false })
+    this._roomListEl = new UISelectNode(this._roomLabels(), { closeOnSelect: false })
     ui.addElement(this._roomListEl, {
       w: 30,
       h: 12,
@@ -113,7 +113,7 @@ export class Lobby extends BaseGameScene {
 
     // Actions — right side
     const actions = ['Join', 'Create Room', 'Set Name', 'Refresh']
-    this._actionsEl = new UISelectElement(actions, { closeOnSelect: false })
+    this._actionsEl = new UISelectNode(actions, { closeOnSelect: false })
     ui.addElement(this._actionsEl, {
       w: 16,
       h: actions.length,
@@ -125,8 +125,8 @@ export class Lobby extends BaseGameScene {
       minW: 8,
     })
 
-    this._actionsEl.onSelect((i) => {
-      switch (actions[i]) {
+    this._actionsEl.on('select', (i) => {
+      switch (actions[Number(i)]) {
         case 'Join':
           this._joinSelected()
           break
@@ -165,10 +165,14 @@ export class Lobby extends BaseGameScene {
       pivotX: 50,
       pivotY: 50,
     })
-    void input.result.then((name) => {
-      if (name === null || name.trim() === '') return
-      this._conn.send({ type: 'createRoom', name: name.trim() })
-    })
+
+    this.listen(
+      input.on('select', (result) => {
+        const name = String(result).trim()
+        if (name === '') return
+        this._conn.send({ type: 'createRoom', name: name })
+      }),
+    )
   }
 
   private _openSetName(): void {
@@ -182,10 +186,13 @@ export class Lobby extends BaseGameScene {
       pivotX: 50,
       pivotY: 50,
     })
-    void input.result.then((name) => {
-      if (name === null || name.trim() === '') return
-      this._conn.send({ type: 'setName', name: name.trim() })
-    })
+    this.listen(
+      input.on('select', (result) => {
+        const name = String(result).trim()
+        if (name === '') return
+        this._conn.send({ type: 'setName', name: name })
+      }),
+    )
   }
 
   private _showError(message: string): void {
@@ -214,7 +221,7 @@ export class Lobby extends BaseGameScene {
     const prevIndex = this._roomListEl.currentIndex
     ui.removeElement(this._roomListEl.id, false)
 
-    this._roomListEl = new UISelectElement(this._roomLabels(), { closeOnSelect: false })
+    this._roomListEl = new UISelectNode(this._roomLabels(), { closeOnSelect: false })
     ui.addElement(this._roomListEl, {
       w: 30,
       h: 12,
