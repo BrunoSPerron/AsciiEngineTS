@@ -75,6 +75,7 @@ export class Room extends BaseGameScene {
     if (this._roomTitleEl) ui.removeElement(this._roomTitleEl.id, false)
     if (this._playerListEl) ui.removeElement(this._playerListEl.id, false)
     if (this._actionsEl) ui.removeElement(this._actionsEl.id, false)
+    if (this._chatEl) ui.removeElement(this._chatEl.id, false)
   }
 
   // ---------------------------------------------------------------------------
